@@ -1,0 +1,4 @@
+import type { Crawler, User } from "./types";
+const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
+async function request<T>(path:string, options?:RequestInit):Promise<T> { const response=await fetch(`${base}${path}`,{...options,headers:{"Content-Type":"application/json",...options?.headers}}); if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.error||`Request failed (${response.status})`)} return response.json(); }
+export const api={ crawlers:()=>request<{crawlers:Crawler[]}>("/crawlers"), toggleCrawler:(id:number,active:boolean)=>request(`/crawlers/${id}`,{method:"PATCH",body:JSON.stringify({active})}), users:()=>request<{users:User[]}>("/users"), setUserStatus:(id:string,status:string)=>request(`/users/${id}/status`,{method:"PATCH",body:JSON.stringify({status})}) };
