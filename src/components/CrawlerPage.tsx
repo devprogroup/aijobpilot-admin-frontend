@@ -1,4 +1,177 @@
-import { useEffect,useMemo,useState } from "react"; import { Activity, Bot, BrushCleaning, RefreshCw, Search } from "lucide-react"; import { api } from "../api"; import type { Crawler } from "../types"; import { StatusBadge } from "./StatusBadge";
-const time=(date:string|null)=>date?new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(date)):"—";
-export function CrawlerPage(){const [items,setItems]=useState<Crawler[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[query,setQuery]=useState(""); const load=async()=>{setLoading(true);setError("");try{setItems((await api.crawlers()).crawlers)}catch(e){setError(e instanceof Error?e.message:"Unable to load crawlers")}finally{setLoading(false)}};useEffect(()=>{load();const timer=setInterval(load,30000);return()=>clearInterval(timer)},[]); const live=items.filter(x=>x.status!=="idle");const shown=useMemo(()=>items.filter(x=>x.crawlerType.name.toLowerCase().includes(query.toLowerCase())||String(x.id).includes(query)),[items,query]); const toggle=async(x:Crawler)=>{setItems(v=>v.map(i=>i.id===x.id?{...i,active:!i.active}:i));try{await api.toggleCrawler(x.id,!x.active)}catch{setItems(v=>v.map(i=>i.id===x.id?x:i))}};
-return <><header className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-[#498366]">Operations</p><h1 className="m-0 text-3xl font-bold tracking-tight">Crawler fleet</h1><p className="mt-2 text-sm text-slate-500">Monitor activity and manage every crawler from one place.</p></div><button onClick={load} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-slate-50"><RefreshCw size={16} className={loading?"animate-spin":""}/>Refresh</button></header>{error&&<div className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</div>}<section className="mb-8"><div className="mb-4 flex items-center gap-2"><Activity size={18} className="text-emerald-600"/><h2 className="text-base font-bold">Live now</h2><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">{live.length}</span></div>{live.length?<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{live.map(x=><div key={x.id} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-soft"><div className={`absolute left-0 top-0 h-full w-1 ${x.status==="cleaning"?"bg-amber-400":"bg-blue-500"}`}/><div className="mb-5 flex items-start justify-between"><div className="flex items-center gap-3"><div className={`grid h-11 w-11 place-items-center rounded-xl ${x.status==="cleaning"?"bg-amber-50 text-amber-600":"bg-blue-50 text-blue-600"}`}>{x.status==="cleaning"?<BrushCleaning size={21}/>:<Bot size={21}/>}</div><div><div className="font-bold">{x.crawlerType.name}</div><div className="text-xs text-slate-400">Crawler #{x.id}</div></div></div><StatusBadge status={x.status}/></div><div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs"><div><div className="text-slate-400">Started</div><div className="mt-1 font-semibold">{time(x.latestRun?.startedAt||null)}</div></div><div><div className="text-slate-400">Total runs</div><div className="mt-1 font-semibold">{x._count.botRuns.toLocaleString()}</div></div></div></div>)}</div>:<div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 py-10 text-center"><Bot className="mx-auto mb-3 text-slate-300"/><div className="font-semibold">No crawlers are active</div><p className="mt-1 text-sm text-slate-400">Running and cleaning crawlers will appear here.</p></div>}</section><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h2 className="m-0 font-bold">All crawlers</h2><p className="mt-1 text-xs text-slate-400">{items.length} crawlers registered</p></div><label className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-slate-400"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search crawlers" className="w-40 bg-transparent text-sm text-slate-700 outline-none"/></label></div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-400"><tr><th className="px-5 py-3 font-semibold">Crawler</th><th className="px-5 py-3 font-semibold">Status</th><th className="px-5 py-3 font-semibold">Latest run</th><th className="px-5 py-3 font-semibold">Runs</th><th className="px-5 py-3 font-semibold">Clean queue</th><th className="px-5 py-3 text-right font-semibold">Enabled</th></tr></thead><tbody className="divide-y divide-slate-100">{shown.map(x=><tr key={x.id} className="hover:bg-slate-50/60"><td className="px-5 py-4"><div className="font-semibold">{x.crawlerType.name}</div><div className="text-xs text-slate-400">ID {x.id}</div></td><td className="px-5 py-4"><StatusBadge status={x.status}/></td><td className="px-5 py-4 text-slate-500">{time(x.latestRun?.requestedAt||null)}</td><td className="px-5 py-4 font-medium">{x._count.botRuns}</td><td className="px-5 py-4 font-medium">{x._count.jobBoardCleanTasks}</td><td className="px-5 py-4 text-right"><button aria-label={`Toggle ${x.crawlerType.name}`} onClick={()=>toggle(x)} className={`relative h-6 w-11 rounded-full transition ${x.active?"bg-emerald-500":"bg-slate-200"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${x.active?"left-6":"left-1"}`}/></button></td></tr>)}</tbody></table></div></section></>}
+import { useEffect, useMemo, useState } from "react";
+import { Box, Button, chakra, Flex, Icon, Input, InputGroup, Switch, Table, Text } from "@chakra-ui/react";
+import { Play, Plus, RefreshCw, Search } from "lucide-react";
+import { Link } from "react-router-dom";
+import { api } from "../api";
+import type { Crawler } from "../types";
+import { StatusBadge } from "./StatusBadge";
+import { CreateCrawlerModal } from "./CreateCrawlerModal";
+
+const ChakraRouterLink = chakra(Link);
+
+const time = (date: string | null) =>
+  date
+    ? new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(date))
+    : "—";
+
+export function CrawlerPage() {
+  const [items, setItems] = useState<Crawler[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [queueingId, setQueueingId] = useState<number | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setItems((await api.crawlers()).crawlers);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to load crawlers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    const timer = setInterval(load, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const shown = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return items.filter(
+      (crawler) => !term || crawler.name.toLowerCase().includes(term) || crawler.crawlerType.name.toLowerCase().includes(term),
+    );
+  }, [items, query]);
+
+  const toggle = async (crawler: Crawler) => {
+    setItems((current) => current.map((item) => (item.id === crawler.id ? { ...item, active: !item.active } : item)));
+    try {
+      await api.toggleCrawler(crawler.id, !crawler.active);
+    } catch (error) {
+      setItems((current) => current.map((item) => (item.id === crawler.id ? crawler : item)));
+      setError(error instanceof Error ? error.message : "Unable to update crawler");
+    }
+  };
+
+  const queue = async (crawler: Crawler) => {
+    setQueueingId(crawler.id);
+    setError("");
+    try {
+      const { crawler: updated } = await api.queueCrawler(crawler.id);
+      setItems((current) => current.map((item) => (item.id === crawler.id ? { ...item, queuedAt: updated.queuedAt } : item)));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to queue crawler");
+    } finally {
+      setQueueingId(null);
+    }
+  };
+
+  return (
+    <>
+      {showCreate && (
+        <CreateCrawlerModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            load();
+          }}
+        />
+      )}
+
+      <Flex as="header" mb="8" flexWrap="wrap" align="flex-end" justify="space-between" gap="4">
+        <Box>
+          <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Operations</Text>
+          <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Crawler fleet</Text>
+          <Text mt="2" fontSize="sm" color="gray.500">Manage crawler availability and queue runs.</Text>
+        </Box>
+        <Flex align="center" gap="3">
+          <Button onClick={() => setShowCreate(true)} bg="green.600" color="white" _hover={{ bg: "green.700" }}>
+            <Icon as={Plus} boxSize="4" />Create crawler
+          </Button>
+          <Button onClick={load} variant="outline" borderColor="gray.200" bg="white">
+            <Icon as={RefreshCw} boxSize="4" className={loading ? "animate-spin" : undefined} />Refresh
+          </Button>
+        </Flex>
+      </Flex>
+
+      {error && <Box mb="5" borderRadius="xl" bg="red.50" p="4" fontSize="sm" color="red.700">{error}</Box>}
+
+      <Box as="section" overflow="hidden" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+        <Flex flexWrap="wrap" align="center" justify="space-between" gap="3" borderBottom="1px solid" borderColor="gray.100" p="5">
+          <Box>
+            <Text m="0" fontWeight="bold">Crawlers</Text>
+            <Text mt="1" fontSize="xs" color="gray.400">{items.length} crawlers registered</Text>
+          </Box>
+          <InputGroup startElement={<Icon as={Search} boxSize="4" color="gray.400" />} maxW="44">
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search crawlers" bg="gray.100" border="none" fontSize="sm" />
+          </InputGroup>
+        </Flex>
+        <Box overflowX="auto">
+          <Table.Root minW="900px" size="sm">
+            <Table.Header bg="gray.50">
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Crawler name</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Crawler type</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Latest run</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Enabled</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3" textAlign="right">Run</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {!loading && shown.length === 0 && (
+                <Table.Row>
+                  <Table.Cell colSpan={6} px="5" py="10" textAlign="center" color="gray.400">No crawlers found.</Table.Cell>
+                </Table.Row>
+              )}
+              {shown.map((crawler) => (
+                <Table.Row key={crawler.id} _hover={{ bg: "gray.50" }}>
+                  <Table.Cell px="5" py="4">
+                    <ChakraRouterLink to={`/crawlers/fleets/${crawler.id}`} fontWeight="semibold" color="green.700" _hover={{ textDecoration: "underline" }}>
+                      {crawler.name}
+                    </ChakraRouterLink>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.600">{crawler.crawlerType.name}</Table.Cell>
+                  <Table.Cell px="5" py="4"><StatusBadge status={crawler.status} /></Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">{time(crawler.latestRun?.requestedAt ?? null)}</Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    <Switch.Root checked={crawler.active} onCheckedChange={() => toggle(crawler)} colorPalette="green">
+                      <Switch.HiddenInput />
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                      <Switch.Label srOnly>Toggle {crawler.name}</Switch.Label>
+                    </Switch.Root>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" textAlign="right">
+                    <Button
+                      size="xs"
+                      disabled={ !(crawler.status === "idle" && crawler.active) }
+                      onClick={() => queue(crawler)}
+                      bg="gray.900"
+                      color="white"
+                      _hover={{ bg: "gray.700" }}
+                    >
+                      <Icon as={Play} boxSize="3.5" />
+                      {queueingId === crawler.id ? "Queueing…" : crawler.status === "running" ? "Running…" : crawler.queuedAt ? "Queue again" : "Run"}
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        </Box>
+      </Box>
+    </>
+  );
+}

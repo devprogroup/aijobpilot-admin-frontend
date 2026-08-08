@@ -1,1 +1,21 @@
-export function StatusBadge({status}:{status:string}) { const styles:Record<string,string>={running:"bg-blue-50 text-blue-700 ring-blue-600/15",cleaning:"bg-amber-50 text-amber-700 ring-amber-600/15",idle:"bg-slate-100 text-slate-600 ring-slate-500/10",active:"bg-emerald-50 text-emerald-700 ring-emerald-600/15",inactive:"bg-slate-100 text-slate-600 ring-slate-500/10",suspended:"bg-red-50 text-red-700 ring-red-600/15"}; return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${styles[status]||styles.idle}`}><span className="h-1.5 w-1.5 rounded-full bg-current"/>{status}</span> }
+import { Badge, Box } from "@chakra-ui/react";
+
+const PALETTE: Record<string, string> = {
+  running: "blue",
+  queued: "orange",
+  idle: "gray",
+  active: "green",
+  inactive: "gray",
+  suspended: "red",
+  finished: "green",
+  failed: "red",
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  return (
+    <Badge colorPalette={PALETTE[status] ?? "gray"} variant="subtle" borderRadius="full" px="2.5" py="1" textTransform="capitalize" display="inline-flex" alignItems="center" gap="1.5">
+      <Box as="span" h="1.5" w="1.5" borderRadius="full" bg="currentColor" />
+      {status}
+    </Badge>
+  );
+}

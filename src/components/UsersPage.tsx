@@ -1,2 +1,108 @@
-import { useEffect,useMemo,useState } from "react"; import { Search,Users } from "lucide-react";import {api} from "../api";import type {User} from "../types";import {StatusBadge} from "./StatusBadge";
-export function UsersPage(){const[users,setUsers]=useState<User[]>([]),[query,setQuery]=useState(""),[error,setError]=useState("");useEffect(()=>{api.users().then(x=>setUsers(x.users)).catch(e=>setError(e.message))},[]);const shown=useMemo(()=>users.filter(x=>x.username.toLowerCase().includes(query.toLowerCase())||x.role.toLowerCase().includes(query.toLowerCase())),[users,query]);const change=async(u:User,status:string)=>{const old=u.status;setUsers(v=>v.map(x=>x.id===u.id?{...x,status}:x));try{await api.setUserStatus(u.id,status)}catch{setUsers(v=>v.map(x=>x.id===u.id?{...x,status:old}:x))}};return <><header className="mb-8"><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-[#498366]">People</p><h1 className="m-0 text-3xl font-bold tracking-tight">Users</h1><p className="mt-2 text-sm text-slate-500">Manage access and review account activity.</p></header>{error&&<div className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</div>}<div className="mb-6 grid gap-4 sm:grid-cols-3">{[["Total users",users.length],["Active",users.filter(x=>x.status==="active").length],["Applications",users.reduce((n,x)=>n+x._count.applications,0)]].map(([a,b])=><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft" key={String(a)}><div className="text-xs font-semibold uppercase tracking-wider text-slate-400">{a}</div><div className="mt-2 text-3xl font-bold">{b}</div></div>)}</div><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div className="flex items-center gap-2"><Users size={19}/><h2 className="font-bold">All users</h2></div><label className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-slate-400"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search users" className="w-40 bg-transparent text-sm text-slate-700 outline-none"/></label></div><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-400"><tr><th className="px-5 py-3">User</th><th className="px-5 py-3">Role</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Profiles</th><th className="px-5 py-3">Applications</th><th className="px-5 py-3">Joined</th></tr></thead><tbody className="divide-y divide-slate-100">{shown.map(u=><tr key={u.id} className="hover:bg-slate-50/60"><td className="px-5 py-4"><div className="font-semibold">{u.username}</div><div className="max-w-48 truncate text-xs text-slate-400">{u.id}</div></td><td className="px-5 py-4 capitalize text-slate-500">{u.role}</td><td className="px-5 py-4"><button title="Click to toggle status" onClick={()=>change(u,u.status==="active"?"suspended":"active")}><StatusBadge status={u.status}/></button></td><td className="px-5 py-4">{u._count.profiles}</td><td className="px-5 py-4">{u._count.applications}</td><td className="px-5 py-4 text-slate-500">{new Date(u.createdAt).toLocaleDateString()}</td></tr>)}</tbody></table></div></section></>}
+import { useEffect, useMemo, useState } from "react";
+import { Box, Flex, Icon, IconButton, Input, InputGroup, SimpleGrid, Table, Text } from "@chakra-ui/react";
+import { Search, Users } from "lucide-react";
+import { api } from "../api";
+import type { User } from "../types";
+import { StatusBadge } from "./StatusBadge";
+
+export function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.users().then((x) => setUsers(x.users)).catch((e) => setError(e.message));
+  }, []);
+
+  const shown = useMemo(
+    () => users.filter((x) => x.username.toLowerCase().includes(query.toLowerCase()) || x.role.toLowerCase().includes(query.toLowerCase())),
+    [users, query],
+  );
+
+  const change = async (u: User, status: string) => {
+    const old = u.status;
+    setUsers((v) => v.map((x) => (x.id === u.id ? { ...x, status } : x)));
+    try { await api.setUserStatus(u.id, status); }
+    catch { setUsers((v) => v.map((x) => (x.id === u.id ? { ...x, status: old } : x))); }
+  };
+
+  const stats: [string, number][] = [
+    ["Total users", users.length],
+    ["Active", users.filter((x) => x.status === "active").length],
+    ["Applications", users.reduce((n, x) => n + x._count.applications, 0)],
+  ];
+
+  return (
+    <>
+      <Box as="header" mb="8">
+        <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">People</Text>
+        <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Users</Text>
+        <Text mt="2" fontSize="sm" color="gray.500">Manage access and review account activity.</Text>
+      </Box>
+
+      {error && <Box mb="5" borderRadius="xl" bg="red.50" p="4" fontSize="sm" color="red.700">{error}</Box>}
+
+      <SimpleGrid columns={{ base: 1, sm: 3 }} gap="4" mb="6">
+        {stats.map(([label, value]) => (
+          <Box key={label} borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+            <Text fontSize="xs" fontWeight="semibold" letterSpacing="wider" textTransform="uppercase" color="gray.400">{label}</Text>
+            <Text mt="2" fontSize="3xl" fontWeight="bold">{value}</Text>
+          </Box>
+        ))}
+      </SimpleGrid>
+
+      <Box as="section" overflow="hidden" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+        <Flex flexWrap="wrap" align="center" justify="space-between" gap="3" borderBottom="1px solid" borderColor="gray.100" p="5">
+          <Flex align="center" gap="2">
+            <Icon as={Users} boxSize="19px" />
+            <Text fontWeight="bold">All users</Text>
+          </Flex>
+          <InputGroup startElement={<Icon as={Search} boxSize="4" color="gray.400" />} maxW="44">
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search users" bg="gray.100" border="none" fontSize="sm" />
+          </InputGroup>
+        </Flex>
+        <Box overflowX="auto">
+          <Table.Root minW="720px" size="sm">
+            <Table.Header bg="gray.50">
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">User</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Role</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Profiles</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Applications</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Joined</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {shown.map((u) => (
+                <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
+                  <Table.Cell px="5" py="4">
+                    <Text fontWeight="semibold">{u.username}</Text>
+                    <Text maxW="48" truncate fontSize="xs" color="gray.400">{u.id}</Text>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" textTransform="capitalize" color="gray.500">{u.role}</Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    <IconButton
+                      aria-label="Toggle status"
+                      title="Click to toggle status"
+                      onClick={() => change(u, u.status === "active" ? "suspended" : "active")}
+                      variant="plain"
+                      p="0"
+                      h="auto"
+                      minW="0"
+                    >
+                      <StatusBadge status={u.status} />
+                    </IconButton>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4">{u._count.profiles}</Table.Cell>
+                  <Table.Cell px="5" py="4">{u._count.applications}</Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">{new Date(u.createdAt).toLocaleDateString()}</Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        </Box>
+      </Box>
+    </>
+  );
+}
