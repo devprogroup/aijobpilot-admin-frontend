@@ -5,4 +5,4 @@ export interface Crawler { id:number; name:string; status:CrawlerStatus; active:
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:{ email:string; password:string; matchScoreMin?:number; url?:string; searchQuery?:string } }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown }
 export interface CrawlerTypePayload { name:string; url:string; config:unknown }
-export interface User { id:string; username:string; role:string; status:string; createdAt:string; updatedAt:string; _count:{profiles:number;applications:number} }
+export interface User { id:string; username:string; role:string; status:string; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }

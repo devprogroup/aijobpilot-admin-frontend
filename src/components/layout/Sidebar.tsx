@@ -1,5 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Box, chakra, Collapsible, Flex, Icon, IconButton, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  chakra,
+  Collapsible,
+  Flex,
+  Icon,
+  IconButton,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import {
   Bot,
   Boxes,
@@ -13,7 +22,17 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 
 const ChakraRouterLink = chakra(Link);
 
-function ChildLink({ to, icon, children, onClick }: { to: string; icon: typeof Boxes; children: ReactNode; onClick: () => void }) {
+function ChildLink({
+  to,
+  icon,
+  children,
+  onClick,
+}: {
+  to: string;
+  icon: typeof Boxes;
+  children: ReactNode;
+  onClick: () => void;
+}) {
   return (
     <NavLink to={to} onClick={onClick} style={{ textDecoration: "none" }}>
       {({ isActive }) => (
@@ -29,7 +48,9 @@ function ChildLink({ to, icon, children, onClick }: { to: string; icon: typeof B
           bg={isActive ? "white" : "transparent"}
           color={isActive ? "#17211b" : "whiteAlpha.700"}
           boxShadow={isActive ? "sm" : "none"}
-          _hover={isActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}
+          _hover={
+            isActive ? undefined : { bg: "whiteAlpha.200", color: "white" }
+          }
         >
           <Icon as={icon} boxSize="4" />
           {children}
@@ -39,7 +60,13 @@ function ChildLink({ to, icon, children, onClick }: { to: string; icon: typeof B
   );
 }
 
-export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function Sidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const location = useLocation();
   const crawlerActive = location.pathname.startsWith("/crawlers/");
   const usersActive = location.pathname.startsWith("/users");
@@ -79,17 +106,38 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         color="white"
         p="5"
         boxShadow={{ base: "xl", lg: "none" }}
-        transform={{ base: open ? "translateX(0)" : "translateX(-100%)", lg: "translateX(0)" }}
+        transform={{
+          base: open ? "translateX(0)" : "translateX(-100%)",
+          lg: "translateX(0)",
+        }}
         transition="transform .2s"
       >
         <Flex align="center" justify="space-between" mb="8">
-          <ChakraRouterLink to="/crawlers/fleets" onClick={onClose} display="flex" alignItems="center" gap="3">
-            <Flex h="10" w="10" align="center" justify="center" borderRadius="xl" bg="#b7e4c7" color="#19382b">
+          <ChakraRouterLink
+            to="/crawlers/fleets"
+            onClick={onClose}
+            display="flex"
+            alignItems="center"
+            gap="3"
+          >
+            <Flex
+              h="10"
+              w="10"
+              align="center"
+              justify="center"
+              borderRadius="xl"
+              bg="#b7e4c7"
+              color="#19382b"
+            >
               <Icon as={Sparkles} boxSize="5" />
             </Flex>
             <Box>
-              <Text fontWeight="bold" letterSpacing="tight">JobPilot</Text>
-              <Text fontSize="xs" color="whiteAlpha.500">Admin console</Text>
+              <Text fontWeight="bold" letterSpacing="tight">
+                JobPilot
+              </Text>
+              <Text fontSize="xs" color="whiteAlpha.500">
+                Admin console
+              </Text>
             </Box>
           </ChakraRouterLink>
           <IconButton
@@ -105,7 +153,10 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </Flex>
 
         <VStack align="stretch" gap="2">
-          <Collapsible.Root open={crawlersOpen} onOpenChange={(details) => setCrawlersOpen(details.open)}>
+          <Collapsible.Root
+            open={crawlersOpen}
+            onOpenChange={(details) => setCrawlersOpen(details.open)}
+          >
             <Collapsible.Trigger asChild>
               <chakra.button
                 type="button"
@@ -123,18 +174,44 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               >
                 <Icon as={Bot} boxSize="5" />
                 <Text>Crawlers</Text>
-                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={crawlersOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+                <Icon
+                  as={ChevronDown}
+                  boxSize="4"
+                  ml="auto"
+                  transform={crawlersOpen ? "rotate(180deg)" : undefined}
+                  transition="transform .2s"
+                />
               </chakra.button>
             </Collapsible.Trigger>
             <Collapsible.Content>
-              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
-                <ChildLink to="/crawlers/fleets" icon={Boxes} onClick={onClose}>Crawler fleet</ChildLink>
-                <ChildLink to="/crawlers/types" icon={ListTree} onClick={onClose}>Crawler types</ChildLink>
+              <VStack
+                align="stretch"
+                gap="1"
+                ml="5"
+                pl="3"
+                mt="1"
+                borderLeft="1px solid"
+                borderColor="whiteAlpha.200"
+              >
+                <ChildLink to="/crawlers/fleets" icon={Boxes} onClick={onClose}>
+                  Crawler fleet
+                </ChildLink>
+                <ChildLink
+                  to="/crawlers/types"
+                  icon={ListTree}
+                  onClick={onClose}
+                >
+                  Crawler types
+                </ChildLink>
               </VStack>
             </Collapsible.Content>
           </Collapsible.Root>
 
-          <NavLink to="/users" onClick={onClose} style={{ textDecoration: "none" }}>
+          <NavLink
+            to="/users"
+            onClick={onClose}
+            style={{ textDecoration: "none" }}
+          >
             <Flex
               align="center"
               gap="3"
@@ -146,7 +223,11 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               bg={usersActive ? "white" : "transparent"}
               color={usersActive ? "#17211b" : "whiteAlpha.700"}
               boxShadow={usersActive ? "sm" : "none"}
-              _hover={usersActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}
+              _hover={
+                usersActive
+                  ? undefined
+                  : { bg: "whiteAlpha.200", color: "white" }
+              }
             >
               <Icon as={Users} boxSize="5" />
               Users
@@ -154,9 +235,29 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           </NavLink>
         </VStack>
 
-        <Box mt="auto" borderRadius="2xl" border="1px solid" borderColor="whiteAlpha.200" bg="whiteAlpha.100" p="4">
-          <Flex align="center" gap="2" mb="2" fontSize="xs" fontWeight="semibold">
-            <Box position="relative" h="2" w="2" borderRadius="full" bg="green.400" className="live-dot" />
+        <Box
+          mt="auto"
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor="whiteAlpha.200"
+          bg="whiteAlpha.100"
+          p="4"
+        >
+          <Flex
+            align="center"
+            gap="2"
+            mb="2"
+            fontSize="xs"
+            fontWeight="semibold"
+          >
+            <Box
+              position="relative"
+              h="2"
+              w="2"
+              borderRadius="full"
+              bg="green.400"
+              className="live-dot"
+            />
             System online
           </Flex>
           <Text fontSize="xs" lineHeight="5" color="whiteAlpha.500">
