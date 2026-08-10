@@ -11,11 +11,13 @@ import {
 } from "@chakra-ui/react";
 import {
   Bot,
+  Activity,
   Boxes,
   ChevronDown,
   ListTree,
   PanelLeftClose,
   Sparkles,
+  Settings,
   Users,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -70,6 +72,8 @@ export function Sidebar({
   const location = useLocation();
   const crawlerActive = location.pathname.startsWith("/crawlers/");
   const usersActive = location.pathname.startsWith("/users");
+  const dashboardActive = location.pathname.startsWith("/dashboard");
+  const settingsActive = location.pathname.startsWith("/settings");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -114,7 +118,7 @@ export function Sidebar({
       >
         <Flex align="center" justify="space-between" mb="8">
           <ChakraRouterLink
-            to="/crawlers/fleets"
+            to="/dashboard"
             onClick={onClose}
             display="flex"
             alignItems="center"
@@ -153,6 +157,12 @@ export function Sidebar({
         </Flex>
 
         <VStack align="stretch" gap="2">
+          <NavLink to="/dashboard" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={dashboardActive ? "white" : "transparent"} color={dashboardActive ? "#17211b" : "whiteAlpha.700"} boxShadow={dashboardActive ? "sm" : "none"} _hover={dashboardActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Activity} boxSize="5" />
+              Dashboard
+            </Flex>
+          </NavLink>
           <Collapsible.Root
             open={crawlersOpen}
             onOpenChange={(details) => setCrawlersOpen(details.open)}
@@ -231,6 +241,12 @@ export function Sidebar({
             >
               <Icon as={Users} boxSize="5" />
               Users
+            </Flex>
+          </NavLink>
+          <NavLink to="/settings" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={settingsActive ? "white" : "transparent"} color={settingsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={settingsActive ? "sm" : "none"} _hover={settingsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Settings} boxSize="5" />
+              Settings
             </Flex>
           </NavLink>
         </VStack>

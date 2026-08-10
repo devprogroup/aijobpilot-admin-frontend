@@ -37,7 +37,6 @@ export function CrawlerFleetPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [queueingId, setQueueingId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -65,7 +64,7 @@ export function CrawlerFleetPage() {
       (crawler) =>
         !term ||
         crawler.name.toLowerCase().includes(term) ||
-        crawler.crawlerType.name.toLowerCase().includes(term),
+        (crawler.crawlerType?.name || "").toLowerCase().includes(term),
     );
   }, [items, query]);
 
@@ -88,23 +87,30 @@ export function CrawlerFleetPage() {
   };
 
   const queue = async (crawler: Crawler) => {
-    setQueueingId(crawler.id);
     setError("");
+    setItems((current) =>
+      current.map((item) =>
+        item.id === crawler.id
+          ? { ...item, status: "queued", queuedAt: new Date().toISOString() }
+          : item,
+      ),
+    );
     try {
       const { crawler: updated } = await api.queueCrawler(crawler.id);
       setItems((current) =>
         current.map((item) =>
           item.id === crawler.id
-            ? { ...item, queuedAt: updated.queuedAt }
+            ? { ...item, status: updated.status, queuedAt: updated.queuedAt }
             : item,
         ),
       );
     } catch (error) {
+      setItems((current) =>
+        current.map((item) => (item.id === crawler.id ? crawler : item)),
+      );
       setError(
         error instanceof Error ? error.message : "Unable to queue crawler",
       );
-    } finally {
-      setQueueingId(null);
     }
   };
 
@@ -319,13 +325,13 @@ export function CrawlerFleetPage() {
                     </ChakraRouterLink>
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.600">
-                    {crawler.crawlerType.name}
+                    {crawler.crawlerType?.name ?? "Unknown type"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <StatusBadge status={crawler.status} />
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
-                    {time(crawler.latestRun?.requestedAt ?? null)}
+                    {time(crawler.latestRun?.startedAt ?? null)}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <Switch.Root
@@ -350,13 +356,7 @@ export function CrawlerFleetPage() {
                       _hover={{ bg: "gray.700" }}
                     >
                       <Icon as={Play} boxSize="3.5" />
-                      {queueingId === crawler.id
-                        ? "Queueing…"
-                        : crawler.status === "running"
-                          ? "Running…"
-                          : crawler.queuedAt
-                            ? "Queue again"
-                            : "Run"}
+                      Run
                     </Button>
                   </Table.Cell>
                 </Table.Row>

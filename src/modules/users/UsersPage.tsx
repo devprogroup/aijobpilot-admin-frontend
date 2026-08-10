@@ -31,6 +31,7 @@ export function UsersPage() {
     () =>
       users.filter(
         (x) =>
+          (x.name || "").toLowerCase().includes(query.toLowerCase()) ||
           (x.username || "").toLowerCase().includes(query.toLowerCase()) ||
           (x.role || "").toLowerCase().includes(query.toLowerCase()),
       ),
@@ -136,7 +137,7 @@ export function UsersPage() {
           </InputGroup>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="720px" size="sm">
+          <Table.Root minW="800px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
                 <Table.ColumnHeader
@@ -173,6 +174,15 @@ export function UsersPage() {
                   px="5"
                   py="3"
                 >
+                  Credit
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Profiles
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -199,10 +209,12 @@ export function UsersPage() {
               {shown.map((u) => (
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
-                    <Text fontWeight="semibold">{u.username}</Text>
-                    <Text maxW="48" truncate fontSize="xs" color="gray.400">
-                      {u.id}
-                    </Text>
+                    <Text fontWeight="semibold">{u.name || u.username || "—"}</Text>
+                    {u.name && (
+                      <Text fontSize="xs" color="gray.400">
+                        {u.username}
+                      </Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell
                     px="5"
@@ -229,6 +241,9 @@ export function UsersPage() {
                     >
                       <StatusBadge status={u.status} />
                     </IconButton>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    {u.credit} (+{u.freeCredit} free)
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     {u._count?.profiles ?? 0}

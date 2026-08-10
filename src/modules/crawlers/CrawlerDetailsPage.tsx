@@ -238,18 +238,9 @@ export function CrawlerDetailsPage() {
           </Text>
         </Box>
         <Box overflowX="auto">
-          <Table.Root minW="850px" size="sm">
+          <Table.Root minW="900px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Requested
-                </Table.ColumnHeader>
                 <Table.ColumnHeader
                   fontSize="xs"
                   textTransform="uppercase"
@@ -284,7 +275,25 @@ export function CrawlerDetailsPage() {
                   px="5"
                   py="3"
                 >
-                  Error
+                  Inserted
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
+                  Ignored
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
+                  Duplicated
                 </Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
@@ -292,7 +301,7 @@ export function CrawlerDetailsPage() {
               {!crawler.botRuns?.length && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={5}
+                    colSpan={6}
                     px="5"
                     py="10"
                     textAlign="center"
@@ -304,9 +313,6 @@ export function CrawlerDetailsPage() {
               )}
               {crawler.botRuns?.map((run) => (
                 <Table.Row key={run.id}>
-                  <Table.Cell px="5" py="4">
-                    {time(run.requestedAt)}
-                  </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {time(run.startedAt)}
                   </Table.Cell>
@@ -316,9 +322,9 @@ export function CrawlerDetailsPage() {
                   <Table.Cell px="5" py="4">
                     <StatusBadge status={run.status} />
                   </Table.Cell>
-                  <Table.Cell maxW="sm" truncate px="5" py="4" color="gray.500">
-                    {run.errorMessage || "—"}
-                  </Table.Cell>
+                  <Table.Cell px="5" py="4">{run.inserted}</Table.Cell>
+                  <Table.Cell px="5" py="4">{run.ignored}</Table.Cell>
+                  <Table.Cell px="5" py="4">{run.duplicated}</Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>

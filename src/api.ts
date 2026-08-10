@@ -5,6 +5,8 @@ import type {
   CreateCrawlerPayload,
   UpdateCrawlerPayload,
   User,
+  ServiceHealth,
+  AppConfig,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -20,6 +22,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 export const api = {
+  serviceHealth: () => request<{ services: ServiceHealth[] }>("/service-health"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
@@ -59,4 +62,17 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
+  settings: () => request<{ settings: AppConfig[] }>("/settings"),
+  createSetting: (payload: Pick<AppConfig, "key" | "value">) =>
+    request<{ setting: AppConfig }>("/settings", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateSetting: (key: string, value: string) =>
+    request<{ setting: AppConfig }>(`/settings/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value }),
+    }),
+  deleteSetting: (key: string) =>
+    request<void>(`/settings/${encodeURIComponent(key)}`, { method: "DELETE" }),
 };
