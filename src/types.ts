@@ -8,3 +8,6 @@ export interface CrawlerTypePayload { name:string; url:string; config:unknown }
 export interface User { id:string; name:string|null; username:string; credit:number; freeCredit:number; role:string; status:string; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+export interface EmailTemplateParameter { name:string; default?:string }
+export interface EmailTemplate { id:number; name:string; title:string; body:string; parameters:EmailTemplateParameter[] }
+export type EmailTemplatePayload = Omit<EmailTemplate, "id">

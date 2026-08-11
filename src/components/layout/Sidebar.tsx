@@ -15,6 +15,7 @@ import {
   Boxes,
   ChevronDown,
   ListTree,
+  Mail,
   PanelLeftClose,
   Sparkles,
   Settings,
@@ -74,6 +75,7 @@ export function Sidebar({
   const usersActive = location.pathname.startsWith("/users");
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
+  const emailTemplatesActive = location.pathname.startsWith("/email-templates");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -247,6 +249,12 @@ export function Sidebar({
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={settingsActive ? "white" : "transparent"} color={settingsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={settingsActive ? "sm" : "none"} _hover={settingsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Settings} boxSize="5" />
               Settings
+            </Flex>
+          </NavLink>
+          <NavLink to="/email-templates" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailTemplatesActive ? "white" : "transparent"} color={emailTemplatesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailTemplatesActive ? "sm" : "none"} _hover={emailTemplatesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Mail} boxSize="5" />
+              Email templates
             </Flex>
           </NavLink>
         </VStack>

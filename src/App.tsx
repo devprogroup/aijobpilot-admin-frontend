@@ -6,6 +6,7 @@ import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { SettingsPage } from "./modules/settings/SettingsPage";
+import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/email-templates" element={<EmailTemplatesPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

@@ -7,6 +7,8 @@ import type {
   User,
   ServiceHealth,
   AppConfig,
+  EmailTemplate,
+  EmailTemplatePayload,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -75,4 +77,18 @@ export const api = {
     }),
   deleteSetting: (key: string) =>
     request<void>(`/settings/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  emailTemplates: () =>
+    request<{ emailTemplates: EmailTemplate[] }>("/email-templates"),
+  createEmailTemplate: (payload: EmailTemplatePayload) =>
+    request<{ emailTemplate: EmailTemplate }>("/email-templates", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateEmailTemplate: (id: number, payload: EmailTemplatePayload) =>
+    request<{ emailTemplate: EmailTemplate }>(`/email-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  deleteEmailTemplate: (id: number) =>
+    request<void>(`/email-templates/${id}`, { method: "DELETE" }),
 };
