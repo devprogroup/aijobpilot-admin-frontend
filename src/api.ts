@@ -9,21 +9,30 @@ import type {
   AppConfig,
   EmailTemplate,
   EmailTemplatePayload,
+  AdminUser,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${base}${path}`, {
     ...options,
+    credentials: "include",
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
+    if (response.status === 401 && path !== "/auth/login" && path !== "/auth/me") {
+      window.dispatchEvent(new Event("admin:unauthorized"));
+    }
     throw new Error(body.error || `Request failed (${response.status})`);
   }
   if (response.status === 204) return undefined as T;
   return response.json();
 }
 export const api = {
+  login: (email: string, password: string) =>
+    request<{ user: AdminUser }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  me: () => request<{ user: AdminUser }>("/auth/me"),
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
   serviceHealth: () => request<{ services: ServiceHealth[] }>("/service-health"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),

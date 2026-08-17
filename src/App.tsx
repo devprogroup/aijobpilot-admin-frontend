@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AppLayout } from "./components/layout/AppLayout";
 import { CrawlerTypesPage } from "./modules/crawler-types/CrawlerTypesPage";
 import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
 import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
@@ -7,11 +6,14 @@ import { UsersPage } from "./modules/users/UsersPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { SettingsPage } from "./modules/settings/SettingsPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
+import { LoginPage } from "./auth/LoginPage";
+import { ProtectedLayout } from "./auth/ProtectedLayout";
 
 export default function App() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<ProtectedLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/crawlers/fleets" element={<CrawlerFleetPage />} />
         <Route

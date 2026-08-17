@@ -11,3 +11,4 @@ export interface AppConfig { key:string; value:string; updatedAt:string }
 export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
+export interface AdminUser { id:number; email:string; name:string|null; role:string }

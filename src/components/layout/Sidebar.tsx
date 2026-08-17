@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Box,
+  Button,
   chakra,
   Collapsible,
   Flex,
@@ -15,6 +16,7 @@ import {
   Boxes,
   ChevronDown,
   ListTree,
+  LogOut,
   Mail,
   PanelLeftClose,
   Sparkles,
@@ -22,6 +24,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 
 const ChakraRouterLink = chakra(Link);
 
@@ -71,6 +74,7 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const crawlerActive = location.pathname.startsWith("/crawlers/");
   const usersActive = location.pathname.startsWith("/users");
   const dashboardActive = location.pathname.startsWith("/dashboard");
@@ -267,6 +271,7 @@ export function Sidebar({
           bg="whiteAlpha.100"
           p="4"
         >
+          <Text mb="3" fontSize="xs" color="whiteAlpha.700" overflow="hidden" textOverflow="ellipsis">{user?.email}</Text>
           <Flex
             align="center"
             gap="2"
@@ -287,6 +292,9 @@ export function Sidebar({
           <Text fontSize="xs" lineHeight="5" color="whiteAlpha.500">
             Crawler network is connected and reporting.
           </Text>
+          <Button mt="3" size="sm" w="full" variant="ghost" color="whiteAlpha.700" _hover={{ bg: "whiteAlpha.200", color: "white" }} onClick={() => void logout()}>
+            <Icon as={LogOut} boxSize="4" /> Sign out
+          </Button>
         </Box>
       </Box>
     </>

@@ -19,6 +19,15 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
     if (url) command("createLink", url);
   };
 
+  const paste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const content = event.clipboardData.getData("text/plain");
+    if (!/<[a-z][\s\S]*>/i.test(content)) return;
+    event.preventDefault();
+    const html = content.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+    document.execCommand("insertHTML", false, html);
+    onChange(editor.current?.innerHTML ?? "");
+  };
+
   return (
     <Box overflow="hidden" border="1px solid" borderColor="gray.200" borderRadius="md" _focusWithin={{ borderColor: "green.500", boxShadow: "0 0 0 1px var(--chakra-colors-green-500)" }}>
       <Flex gap="1" flexWrap="wrap" p="2" bg="gray.50" borderBottom="1px solid" borderColor="gray.200">
@@ -39,7 +48,9 @@ export function RichTextEditor({ value, onChange }: { value: string; onChange: (
         p="4"
         bg="white"
         lineHeight="1.6"
+        whiteSpace="normal"
         outline="none"
+        onPaste={paste}
         onInput={(event) => onChange(event.currentTarget.innerHTML)}
       />
     </Box>
