@@ -12,3 +12,10 @@ export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
 export interface AdminUser { id:number; email:string; name:string|null; role:string }
+export interface ProviderBalance {
+  provider: "deepseek" | "openai" | "2captcha";
+  amount: number | null;
+  currency: string;
+  error?: string;
+  updatedAt: string;
+}

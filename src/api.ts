@@ -10,6 +10,7 @@ import type {
   EmailTemplate,
   EmailTemplatePayload,
   AdminUser,
+  ProviderBalance,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -33,7 +34,11 @@ export const api = {
     request<{ user: AdminUser }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request<{ user: AdminUser }>("/auth/me"),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  serviceHealth: () => request<{ services: ServiceHealth[] }>("/service-health"),
+  serviceHealth: (serviceId: ServiceHealth["id"]) =>
+    request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
+  deepSeekBalance: () => request<ProviderBalance>("/provider-balances/deepseek"),
+  openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
+  twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
