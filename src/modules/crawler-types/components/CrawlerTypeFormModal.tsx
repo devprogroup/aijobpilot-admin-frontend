@@ -7,6 +7,7 @@ import {
   Flex,
   IconButton,
   Input,
+  NativeSelect,
   Portal,
   Textarea,
 } from "@chakra-ui/react";
@@ -15,17 +16,22 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType } from "../../../types";
+import type { CrawlerMode, CrawlerType } from "../../../types";
 
 interface FormValues {
   name: string;
   url: string;
+  mode: CrawlerMode;
   config: string;
 }
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
   url: yup.string().url("Invalid URL").required("URL is required"),
+  mode: yup
+    .mixed<CrawlerMode>()
+    .oneOf(["headless", "headed", "chrome-ext"])
+    .required("Mode is required"),
   config: yup
     .string()
     .required("Config is required")
@@ -63,6 +69,7 @@ export function CrawlerTypeFormModal({
     defaultValues: {
       name: crawlerType?.name ?? "",
       url: crawlerType?.url ?? "",
+      mode: crawlerType?.mode ?? "headless",
       config: crawlerType
         ? JSON.stringify(crawlerType.config, null, 2)
         : "{\n  \n}",
@@ -74,6 +81,7 @@ export function CrawlerTypeFormModal({
     const payload = {
       name: data.name,
       url: data.url,
+      mode: data.mode,
       config: JSON.parse(data.config),
     };
     try {
@@ -143,6 +151,21 @@ export function CrawlerTypeFormModal({
                     fontSize="sm"
                   />
                   <Field.ErrorText>{errors.url?.message}</Field.ErrorText>
+                </Field.Root>
+
+                <Field.Root invalid={!!errors.mode}>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Mode
+                  </Field.Label>
+                  <NativeSelect.Root>
+                    <NativeSelect.Field {...register("mode")} borderColor="gray.200" fontSize="sm">
+                      <option value="headless">Headless</option>
+                      <option value="headed">Headed</option>
+                      <option value="chrome-ext">Chrome extension</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                  <Field.ErrorText>{errors.mode?.message}</Field.ErrorText>
                 </Field.Root>
 
                 <Field.Root invalid={!!errors.config}>

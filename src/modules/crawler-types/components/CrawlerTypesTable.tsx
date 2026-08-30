@@ -141,6 +141,15 @@ export function CrawlerTypesTable() {
                   px="5"
                   py="3"
                 >
+                  Mode
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Config
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -168,7 +177,7 @@ export function CrawlerTypesTable() {
               {!loading && types.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={5}
+                    colSpan={6}
                     px="5"
                     py="8"
                     textAlign="center"
@@ -185,6 +194,9 @@ export function CrawlerTypesTable() {
                   </Table.Cell>
                   <Table.Cell maxW="xs" truncate px="5" py="4" color="gray.500">
                     {t.url}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
+                    {t.mode}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <Box
