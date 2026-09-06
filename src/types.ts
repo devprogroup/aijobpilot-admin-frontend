@@ -10,7 +10,7 @@ export interface User { id:string; name:string|null; username:string; credit:num
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface AppConfig { key:string; value:string; updatedAt:string }
 export interface EmailTemplateParameter { name:string; default?:string }
-export interface EmailTemplate { id:number; name:string; title:string; body:string; parameters:EmailTemplateParameter[] }
+export interface EmailTemplate { id:number; name:string; fromName:string; fromEmailId:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
 export interface AdminUser { id:number; email:string; name:string|null; role:string }
 export interface ProviderBalance {

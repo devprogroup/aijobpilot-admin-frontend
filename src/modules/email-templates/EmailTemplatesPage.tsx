@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { EmailTemplate, EmailTemplatePayload } from "../../types";
 import { RichTextEditor } from "./RichTextEditor";
 
-const emptyForm = { name: "", title: "", body: "", parameters: [] as Array<{ name: string; default?: string }> };
+const emptyForm = { name: "", fromName: "Job Pilot", fromEmailId: "no-reply", title: "", body: "", parameters: [] as Array<{ name: string; default?: string }> };
 
 function editorHtml(body: string): string {
   return body.includes("\n") ? body.replace(/\r\n/g, "\n").replace(/\n/g, "<br>") : body;
@@ -29,6 +29,8 @@ export function EmailTemplatesPage() {
     setEditing(template ?? null);
     setForm(template ? {
       name: template.name,
+      fromName: template.fromName,
+      fromEmailId: template.fromEmailId,
       title: template.title,
       body: editorHtml(template.body),
       parameters: (template.parameters ?? []).map((parameter) => ({ ...parameter })),
@@ -44,6 +46,8 @@ export function EmailTemplatesPage() {
     try {
       const payload: EmailTemplatePayload = {
         name: form.name.trim(),
+        fromName: form.fromName.trim(),
+        fromEmailId: form.fromEmailId.trim(),
         title: form.title.trim(),
         body: form.body.trim(),
         parameters: form.parameters.map((parameter) => ({
@@ -91,15 +95,16 @@ export function EmailTemplatesPage() {
 
       <Box overflowX="auto" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white">
         <Table.Root minW="760px" size="sm">
-          <Table.Header bg="gray.50"><Table.Row><Table.ColumnHeader px="5" py="3">Name</Table.ColumnHeader><Table.ColumnHeader px="5" py="3">Subject</Table.ColumnHeader><Table.ColumnHeader px="5" py="3">Parameters</Table.ColumnHeader><Table.ColumnHeader px="5" py="3" textAlign="right">Actions</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Header bg="gray.50"><Table.Row><Table.ColumnHeader px="5" py="3">Name</Table.ColumnHeader><Table.ColumnHeader px="5" py="3">From</Table.ColumnHeader><Table.ColumnHeader px="5" py="3">Subject</Table.ColumnHeader><Table.ColumnHeader px="5" py="3">Parameters</Table.ColumnHeader><Table.ColumnHeader px="5" py="3" textAlign="right">Actions</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>
             {templates.map((template) => <Table.Row key={template.id}>
               <Table.Cell px="5" py="4" fontWeight="semibold">{template.name}</Table.Cell>
+              <Table.Cell px="5" py="4">{template.fromName} &lt;{template.fromEmailId}@aijobpilot.co&gt;</Table.Cell>
               <Table.Cell px="5" py="4">{template.title}</Table.Cell>
               <Table.Cell px="5" py="4" color="gray.500">{template.parameters?.map((parameter) => `{{${parameter.name}}}`).join(", ") || "None"}</Table.Cell>
               <Table.Cell px="5" py="4"><Flex justify="flex-end" gap="2"><Button size="sm" onClick={() => openForm(template)}>Edit</Button><Button size="sm" variant="outline" colorPalette="red" onClick={() => setDeleteTemplate(template)}>Delete</Button></Flex></Table.Cell>
             </Table.Row>)}
-            {!templates.length && <Table.Row><Table.Cell colSpan={4} px="5" py="10" textAlign="center" color="gray.500">No email templates configured.</Table.Cell></Table.Row>}
+            {!templates.length && <Table.Row><Table.Cell colSpan={5} px="5" py="10" textAlign="center" color="gray.500">No email templates configured.</Table.Cell></Table.Row>}
           </Table.Body>
         </Table.Root>
       </Box>
@@ -109,6 +114,10 @@ export function EmailTemplatesPage() {
           <Dialog.Title fontSize="lg" fontWeight="bold">{editing ? "Edit email template" : "Add email template"}</Dialog.Title>
           <Dialog.Description mt="1" color="gray.500">Use placeholders such as {"{{full name}}"} in the subject or HTML body.</Dialog.Description>
           <Box mt="5"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">Name</Text><Input required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="password-reset" /></Box>
+          <Flex mt="4" gap="3" align="end">
+            <Box flex="1"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">From name</Text><Input required maxLength={100} value={form.fromName} onChange={(event) => setForm((current) => ({ ...current, fromName: event.target.value }))} placeholder="Job Pilot" /></Box>
+            <Box flex="1"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">From email ID</Text><Flex align="center" gap="2"><Input required maxLength={64} value={form.fromEmailId} onChange={(event) => setForm((current) => ({ ...current, fromEmailId: event.target.value }))} placeholder="no-reply" /><Text whiteSpace="nowrap" color="gray.500">@aijobpilot.co</Text></Flex></Box>
+          </Flex>
           <Box mt="4"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">Subject</Text><Input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Reset your JobPilot password" /></Box>
           <Box mt="4"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">Email body</Text><RichTextEditor value={form.body} onChange={(body) => setForm((current) => ({ ...current, body }))} /></Box>
           <Box mt="4">
