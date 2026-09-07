@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Dialog, Flex, Input, Portal, Table, Text } from "@chakra-ui/react";
+import { Box, Button, Dialog, Flex, Input, Portal, Table, Text, Textarea } from "@chakra-ui/react";
 import { api } from "../../api";
 import type { EmailTemplate, EmailTemplatePayload } from "../../types";
-import { RichTextEditor } from "./RichTextEditor";
 
 const emptyForm = { name: "", fromName: "Job Pilot", fromEmailId: "no-reply", title: "", body: "", parameters: [] as Array<{ name: string; default?: string }> };
-
-function editorHtml(body: string): string {
-  return body.includes("\n") ? body.replace(/\r\n/g, "\n").replace(/\n/g, "<br>") : body;
-}
 
 export function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -18,6 +13,7 @@ export function EmailTemplatesPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [bodyMode, setBodyMode] = useState<"edit" | "preview">("edit");
 
   const load = async () => setTemplates((await api.emailTemplates()).emailTemplates);
 
@@ -32,9 +28,10 @@ export function EmailTemplatesPage() {
       fromName: template.fromName,
       fromEmailId: template.fromEmailId,
       title: template.title,
-      body: editorHtml(template.body),
+      body: template.body,
       parameters: (template.parameters ?? []).map((parameter) => ({ ...parameter })),
     } : { ...emptyForm, parameters: [] });
+    setBodyMode("edit");
     setError("");
   };
 
@@ -119,7 +116,36 @@ export function EmailTemplatesPage() {
             <Box flex="1"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">From email ID</Text><Flex align="center" gap="2"><Input required maxLength={64} value={form.fromEmailId} onChange={(event) => setForm((current) => ({ ...current, fromEmailId: event.target.value }))} placeholder="no-reply" /><Text whiteSpace="nowrap" color="gray.500">@aijobpilot.co</Text></Flex></Box>
           </Flex>
           <Box mt="4"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">Subject</Text><Input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Reset your JobPilot password" /></Box>
-          <Box mt="4"><Text mb="1" fontSize="xs" fontWeight="semibold" color="gray.500">Email body</Text><RichTextEditor value={form.body} onChange={(body) => setForm((current) => ({ ...current, body }))} /></Box>
+          <Box mt="4">
+            <Flex mb="2" align="center" justify="space-between">
+              <Text fontSize="xs" fontWeight="semibold" color="gray.500">Email body</Text>
+              <Flex gap="1" border="1px solid" borderColor="gray.200" borderRadius="md" p="1">
+                <Button type="button" size="xs" variant={bodyMode === "edit" ? "solid" : "ghost"} colorPalette={bodyMode === "edit" ? "green" : undefined} onClick={() => setBodyMode("edit")}>Edit HTML</Button>
+                <Button type="button" size="xs" variant={bodyMode === "preview" ? "solid" : "ghost"} colorPalette={bodyMode === "preview" ? "green" : undefined} onClick={() => setBodyMode("preview")}>Preview</Button>
+              </Flex>
+            </Flex>
+            {bodyMode === "edit" ? (
+              <Textarea
+                required
+                value={form.body}
+                onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))}
+                minH="320px"
+                resize="vertical"
+                fontFamily="mono"
+                fontSize="sm"
+                spellCheck={false}
+                placeholder={'<!doctype html>\n<html>\n  <body>\n    <p>Hello {{full name}},</p>\n  </body>\n</html>'}
+              />
+            ) : (
+              <Box overflow="hidden" minH="320px" border="1px solid" borderColor="gray.200" borderRadius="md" bg="white">
+                {form.body.trim() ? (
+                  <iframe title="Email template preview" srcDoc={form.body} sandbox="" style={{ width: "100%", height: 320, border: 0 }} />
+                ) : (
+                  <Flex h="320px" align="center" justify="center"><Text color="gray.500">Enter HTML to preview the email.</Text></Flex>
+                )}
+              </Box>
+            )}
+          </Box>
           <Box mt="4">
             <Flex mb="2" align="center" justify="space-between"><Text fontSize="xs" fontWeight="semibold" color="gray.500">Parameters</Text><Button type="button" size="xs" variant="outline" onClick={() => setForm((current) => ({ ...current, parameters: [...current.parameters, { name: "", default: "" }] }))}>Add parameter</Button></Flex>
             <Flex mb="1" gap="2"><Text flex="1" fontSize="xs" color="gray.500">Name</Text><Text flex="1" fontSize="xs" color="gray.500">Default</Text><Box w="70px" /></Flex>

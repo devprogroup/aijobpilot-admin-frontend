@@ -243,7 +243,7 @@ export function UsersPage() {
                     </IconButton>
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
-                    {u.credit} (+{u.freeCredit} free)
+                    {u.credit}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     {u._count?.profiles ?? 0}

@@ -1,4 +1,16 @@
 export type CrawlerStatus = "idle" | "queued" | "running";
+export interface ApplicationSite {
+  id: number;
+  typeName: string;
+  displayText: string;
+  domainRegex: string;
+  active: boolean;
+  newContextRequired: boolean;
+  mode: "headless" | "headed" | "chrome-extension";
+  fieldInputGapMs: number;
+  config: Record<string, unknown>;
+}
+export type ApplicationSitePayload = Omit<ApplicationSite, "id">;
 export type CrawlerMode = "headless" | "headed" | "chrome-ext";
 export interface CrawlerType { id:number; name:string; url:string; mode:CrawlerMode; config:unknown; _count:{crawlers:number} }
 export interface BotRun { id:string; status:string; startedAt:string|null; finishedAt:string|null; inserted:number; ignored:number; duplicated:number }

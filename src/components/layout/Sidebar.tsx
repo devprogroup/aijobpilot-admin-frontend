@@ -18,6 +18,7 @@ import {
   ListTree,
   LogOut,
   Mail,
+  Globe,
   PanelLeftClose,
   Sparkles,
   Settings,
@@ -222,6 +223,9 @@ export function Sidebar({
               </VStack>
             </Collapsible.Content>
           </Collapsible.Root>
+          <ChildLink to="/application-sites" icon={Globe} onClick={onClose}>
+            Application sites
+          </ChildLink>
 
           <NavLink
             to="/users"

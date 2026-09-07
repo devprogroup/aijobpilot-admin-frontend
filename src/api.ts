@@ -1,4 +1,6 @@
 import type {
+  ApplicationSite,
+  ApplicationSitePayload,
   Crawler,
   CrawlerType,
   CrawlerTypePayload,
@@ -30,6 +32,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 export const api = {
+  applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
+  createApplicationSite: (payload: ApplicationSitePayload) =>
+    request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
+  updateApplicationSite: (id: number, payload: Partial<ApplicationSitePayload>) =>
+    request<{ applicationSite: ApplicationSite }>(`/application-sites/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   login: (email: string, password: string) =>
     request<{ user: AdminUser }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request<{ user: AdminUser }>("/auth/me"),
