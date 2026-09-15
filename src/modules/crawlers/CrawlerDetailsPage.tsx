@@ -17,6 +17,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { BotRunLogDialog } from "./components/BotRunLogDialog";
 
 const ChakraRouterLink = chakra(Link);
 
@@ -36,6 +37,7 @@ export function CrawlerDetailsPage() {
   const [config, setConfig] = useState("{}");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [logRunId, setLogRunId] = useState<string | null>(null);
 
   const load = async () => {
     if (!Number.isInteger(crawlerId) || crawlerId < 1) return;
@@ -295,13 +297,14 @@ export function CrawlerDetailsPage() {
                 >
                   Duplicated
                 </Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Log</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
               {!crawler.botRuns?.length && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={6}
+                    colSpan={7}
                     px="5"
                     py="10"
                     textAlign="center"
@@ -325,12 +328,18 @@ export function CrawlerDetailsPage() {
                   <Table.Cell px="5" py="4">{run.inserted}</Table.Cell>
                   <Table.Cell px="5" py="4">{run.ignored}</Table.Cell>
                   <Table.Cell px="5" py="4">{run.duplicated}</Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    {run.logFilePath ? (
+                      <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => setLogRunId(String(run.id))}>View log</Button>
+                    ) : <Text color="gray.400">Unavailable</Text>}
+                  </Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
           </Table.Root>
         </Box>
       </Box>
+      {logRunId !== null && <BotRunLogDialog crawlerId={crawlerId} runId={logRunId} onClose={() => setLogRunId(null)} />}
     </>
   );
 }

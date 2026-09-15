@@ -7,6 +7,8 @@ import type {
   CreateCrawlerPayload,
   UpdateCrawlerPayload,
   User,
+  UserDetails,
+  FailedApplication,
   ServiceHealth,
   AppConfig,
   EmailTemplate,
@@ -32,6 +34,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 export const api = {
+  failedApplications: (page: number, search: string, from: string, to: string) =>
+    request<{ applications: FailedApplication[]; total: number; page: number; pageSize: number }>(`/applications/failed?${new URLSearchParams({ page: String(page), search, ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+  applicationScreenshotUrl: (applicationId: number, key: "preview" | "result") =>
+    `${base}/applications/${applicationId}/screenshots/${key}`,
+  failedApplicationStats: (from: string, to: string) =>
+    request<{ total: number; bySite: { siteName: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
   createApplicationSite: (payload: ApplicationSitePayload) =>
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
@@ -48,6 +56,8 @@ export const api = {
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
+  botRunLog: (crawlerId: number, runId: string) =>
+    request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}`, {
       method: "PATCH",
@@ -80,8 +90,15 @@ export const api = {
   deleteCrawlerType: (id: number) =>
     request<void>(`/crawler-types/${id}`, { method: "DELETE" }),
   users: () => request<{ users: User[] }>("/users"),
-  setUserStatus: (id: string, status: string) =>
-    request(`/users/${id}/status`, {
+  user: (id: number) => request<UserDetails>(`/users/${id}`),
+  userPayments: (id: number, page: number) => request<{
+    payments: { id:number; amount:number; currency:string; description:string|null; status:string; invoiceUrl:string|null; createdAt:string }[];
+    total:number; page:number; pageSize:number;
+  }>(`/users/${id}/payments?page=${page}`),
+  updateUser: (id: number, name: string | null) =>
+    request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+  setUserStatus: (id: number, status: User["status"]) =>
+    request<{ user: User }>(`/users/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),

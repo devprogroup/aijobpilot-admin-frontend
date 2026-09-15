@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Box,
+  Button,
+  NativeSelect,
   Flex,
   Icon,
-  IconButton,
   Input,
   InputGroup,
   Table,
@@ -12,43 +13,56 @@ import {
 import { Search, Users } from "lucide-react";
 import { api } from "../../api";
 import type { User } from "../../types";
-import { StatusBadge } from "../../components/ui/StatusBadge";
 import { UserStats } from "./components/UserStats";
+import { UserDetailsDialog } from "./components/UserDetailsDialog";
+import { Link } from "react-router-dom";
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [revision, setRevision] = useState(0);
+  const [pending, setPending] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<User | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     api
       .users()
       .then((x) => setUsers(x.users))
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [revision]);
 
   const shown = useMemo(
     () =>
       users.filter(
-        (x) =>
+        (x) => (!statusFilter || x.status === statusFilter) && (
           (x.name || "").toLowerCase().includes(query.toLowerCase()) ||
           (x.username || "").toLowerCase().includes(query.toLowerCase()) ||
-          (x.role || "").toLowerCase().includes(query.toLowerCase()),
+          (x.email || "").toLowerCase().includes(query.toLowerCase()) ||
+          String(x.id).includes(query.trim())),
       ),
-    [users, query],
+    [users, query, statusFilter],
   );
 
-  const change = async (u: User, status: string) => {
-    const old = u.status;
-    setUsers((v) => v.map((x) => (x.id === u.id ? { ...x, status } : x)));
+  const change = async (u: User, status: User["status"]) => {
+    setPending(u.id);
+    setError("");
     try {
-      await api.setUserStatus(u.id, status);
-    } catch {
-      setUsers((v) =>
-        v.map((x) => (x.id === u.id ? { ...x, status: old } : x)),
-      );
-    }
+      const { user } = await api.setUserStatus(u.id, status);
+      setUsers((values) => values.map((old) => old.id === u.id ? { ...old, ...user } : old));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to update user status");
+    } finally { setPending(null); }
   };
+  const pages = Math.max(1, Math.ceil(shown.length / 20));
+  const currentPage = Math.min(page, pages);
+  const visible = shown.slice((currentPage - 1) * 20, currentPage * 20);
   const stats: [string, number][] = [
     ["Total users", users.length],
     ["Active", users.filter((x) => x.status === "active").length],
@@ -99,6 +113,12 @@ export function UsersPage() {
       )}
 
       <UserStats stats={stats} />
+      <Flex gap="3" mb="4">
+        <Button variant="outline" disabled={loading || pending !== null} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+        <NativeSelect.Root maxW="48"><NativeSelect.Field aria-label="Filter users by status" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+          <option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
+        </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+      </Flex>
 
       <Box
         as="section"
@@ -128,7 +148,8 @@ export function UsersPage() {
           >
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+              aria-label="Search users by name, username, email or ID"
               placeholder="Search users"
               bg="gray.100"
               border="none"
@@ -156,7 +177,7 @@ export function UsersPage() {
                   px="5"
                   py="3"
                 >
-                  Role
+                  Email
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
                   fontSize="xs"
@@ -206,7 +227,8 @@ export function UsersPage() {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {shown.map((u) => (
+              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
+              {!loading && visible.map((u) => (
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
                     <Text fontWeight="semibold">{u.name || u.username || "—"}</Text>
@@ -215,6 +237,8 @@ export function UsersPage() {
                         {u.username}
                       </Text>
                     )}
+                    <Link to={`/users/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
+                    <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>
                   </Table.Cell>
                   <Table.Cell
                     px="5"
@@ -222,28 +246,16 @@ export function UsersPage() {
                     textTransform="capitalize"
                     color="gray.500"
                   >
-                    {u.role}
+                    <Text textTransform="none">{u.email || "—"}</Text>
+                    {u.email && <Text fontSize="xs">{u.emailVerified ? "Verified" : "Unverified"}</Text>}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
-                    <IconButton
-                      aria-label="Toggle status"
-                      title="Click to toggle status"
-                      onClick={() =>
-                        change(
-                          u,
-                          u.status === "active" ? "suspended" : "active",
-                        )
-                      }
-                      variant="plain"
-                      p="0"
-                      h="auto"
-                      minW="0"
-                    >
-                      <StatusBadge status={u.status} />
-                    </IconButton>
+                    <NativeSelect.Root size="sm" disabled={pending !== null}><NativeSelect.Field aria-label={`Status for ${u.username}`} value={u.status} onChange={(event) => void change(u, event.target.value as User["status"])}>
+                      <option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
+                    </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
-                    {u.credit}
+                    {u.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     {u._count?.profiles ?? 0}
@@ -260,6 +272,11 @@ export function UsersPage() {
           </Table.Root>
         </Box>
       </Box>
+      <Flex mt="4" justify="space-between" align="center"><Text fontSize="sm">{shown.length} users · Page {currentPage} of {pages}</Text><Flex gap="2"><Button size="sm" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex></Flex>
+      {selected && <UserDetailsDialog user={selected} onClose={() => setSelected(null)} onSaved={(user) => {
+        setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
+        setSelected(null);
+      }} />}
     </>
   );
 }

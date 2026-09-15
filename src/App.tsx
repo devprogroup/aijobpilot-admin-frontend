@@ -1,9 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { CrawlerTypesPage } from "./modules/crawler-types/CrawlerTypesPage";
-import { ApplicationSitesPage } from "./modules/application-sites/ApplicationSitesPage";
+import { ApplicationSitesPage } from "./modules/applications/ApplicationSitesPage";
+import { FailedApplicationsPage } from "./modules/applications/FailedApplicationsPage";
+import { ApplicationStatisticsPage } from "./modules/applications/ApplicationStatisticsPage";
 import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
 import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
+import { CrawlerSettingsPage } from "./modules/crawlers/CrawlerSettingsPage";
 import { UsersPage } from "./modules/users/UsersPage";
+import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { SettingsPage } from "./modules/settings/SettingsPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
@@ -22,8 +26,14 @@ export default function App() {
           element={<CrawlerDetailsPage />}
         />
         <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
-        <Route path="/application-sites" element={<ApplicationSitesPage />} />
+        <Route path="/crawlers/settings" element={<CrawlerSettingsPage />} />
+        <Route path="/applications/sites" element={<ApplicationSitesPage />} />
+        <Route path="/applications/failed" element={<FailedApplicationsPage />} />
+        <Route path="/applications/statistics" element={<ApplicationStatisticsPage />} />
+        <Route path="/applications" element={<Navigate to="/applications/sites" replace />} />
+        <Route path="/application-sites" element={<Navigate to="/applications/sites" replace />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/users/:userId" element={<UserDetailsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
       </Route>

@@ -13,7 +13,9 @@ import {
 import {
   Bot,
   Activity,
+  BarChart3,
   Boxes,
+  Briefcase,
   ChevronDown,
   ListTree,
   LogOut,
@@ -77,6 +79,8 @@ export function Sidebar({
   const location = useLocation();
   const { user, logout } = useAuth();
   const crawlerActive = location.pathname.startsWith("/crawlers/");
+  const applicationsActive = location.pathname.startsWith("/applications");
+  const [applicationsOpen, setApplicationsOpen] = useState(applicationsActive);
   const usersActive = location.pathname.startsWith("/users");
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
@@ -86,6 +90,10 @@ export function Sidebar({
   useEffect(() => {
     if (crawlerActive) setCrawlersOpen(true);
   }, [crawlerActive]);
+
+  useEffect(() => {
+    if (applicationsActive) setApplicationsOpen(true);
+  }, [applicationsActive]);
 
   return (
     <>
@@ -220,12 +228,34 @@ export function Sidebar({
                 >
                   Crawler types
                 </ChildLink>
+                <ChildLink to="/crawlers/settings" icon={Settings} onClick={onClose}>
+                  Crawler settings
+                </ChildLink>
               </VStack>
             </Collapsible.Content>
           </Collapsible.Root>
-          <ChildLink to="/application-sites" icon={Globe} onClick={onClose}>
-            Application sites
-          </ChildLink>
+          <Collapsible.Root open={applicationsOpen} onOpenChange={({ open }) => setApplicationsOpen(open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={applicationsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Briefcase} boxSize="5" />
+                <Text>Applications</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={applicationsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/applications/sites" icon={Globe} onClick={onClose}>
+                  Application sites
+                </ChildLink>
+                <ChildLink to="/applications/failed" icon={ListTree} onClick={onClose}>
+                  Failed applications
+                </ChildLink>
+                <ChildLink to="/applications/statistics" icon={BarChart3} onClick={onClose}>
+                  Statistics
+                </ChildLink>
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>
 
           <NavLink
             to="/users"

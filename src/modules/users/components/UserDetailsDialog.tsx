@@ -1,0 +1,34 @@
+import { useState } from "react";
+import { Box, Button, Dialog, Field, Flex, Input, Portal, Text } from "@chakra-ui/react";
+import type { User } from "../../../types";
+import { api } from "../../../api";
+import { StatusBadge } from "../../../components/ui/StatusBadge";
+
+export function UserDetailsDialog({ user, onClose, onSaved }: { user: User; onClose: () => void; onSaved: (user: User) => void }) {
+  const [name, setName] = useState(user.name || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try { onSaved((await api.updateUser(user.id, name.trim() || null)).user); }
+    catch (error) { setError(error instanceof Error ? error.message : "Unable to update account"); }
+    finally { setSaving(false); }
+  };
+  return <Dialog.Root open onOpenChange={({ open }) => { if (!open && !saving) onClose(); }}><Portal><Dialog.Backdrop /><Dialog.Positioner><Dialog.Content p="6" mx="4" maxW="lg" borderRadius="2xl">
+    <Dialog.Title mb="4">Account #{user.id}</Dialog.Title>
+    <Box as="form" onSubmit={save}>
+      <Text mb="2">Username: {user.username}</Text><Text mb="2">Email: {user.email || "Not provided"}</Text>
+      {user.email && <Text mb="2">Email {user.emailVerified ? "verified" : "unverified"}</Text>}
+      <StatusBadge status={user.status} />
+      <Text mt="3">Credit: {user.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })}</Text>
+      <Text fontSize="sm" mt="2">Profiles: {user._count?.profiles ?? 0} · Applications: {user._count?.applications ?? 0}</Text>
+      <Text fontSize="sm" mt="2">Joined: {new Date(user.createdAt).toLocaleString()}</Text>
+      <Text fontSize="sm" mb="4">Updated: {new Date(user.updatedAt).toLocaleString()}</Text>
+      <Field.Root><Field.Label>Display name</Field.Label><Input value={name} maxLength={255} disabled={saving} onChange={(event) => setName(event.target.value)} /></Field.Root>
+      {error && <Text role="alert" mt="3" color="red.600">{error}</Text>}
+      <Flex justify="flex-end" gap="3" mt="5"><Button type="button" variant="outline" disabled={saving} onClick={onClose}>Close</Button><Button type="submit" bg="green.600" color="white" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button></Flex>
+    </Box>
+  </Dialog.Content></Dialog.Positioner></Portal></Dialog.Root>;
+}

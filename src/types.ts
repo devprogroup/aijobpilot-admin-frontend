@@ -8,18 +8,31 @@ export interface ApplicationSite {
   newContextRequired: boolean;
   mode: "headless" | "headed" | "chrome-extension";
   fieldInputGapMs: number;
+  pageTimeout: number;
   config: Record<string, unknown>;
 }
 export type ApplicationSitePayload = Omit<ApplicationSite, "id">;
 export type CrawlerMode = "headless" | "headed" | "chrome-ext";
 export interface CrawlerType { id:number; name:string; url:string; mode:CrawlerMode; config:unknown; _count:{crawlers:number} }
-export interface BotRun { id:string; status:string; startedAt:string|null; finishedAt:string|null; inserted:number; ignored:number; duplicated:number }
+export interface BotRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; inserted:number; ignored:number; duplicated:number }
 export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; crawlerType:{id:number;name:string}; latestRun:BotRun|null; botRuns?:BotRun[]; _count:{botRuns:number} }
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:{ email:string; password:string; matchScoreMin?:number; url?:string; searchQuery?:string } }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown }
 export interface CrawlerTypePayload { name:string; url:string; mode:CrawlerMode; config:unknown }
-export interface User { id:string; name:string|null; username:string; credit:number; freeCredit:number; role:string; status:string; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
+export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
+export interface FailedApplication {
+  id: number; status: string; message: string | null; createdAt: string; updatedAt: string;
+  previewScreenshot: string | null; resultScreenshot: string | null;
+  job?: { id: number; positionName: string | null; companyName: string | null; siteName: string | null; url: string } | null;
+  user?: { id: number; name: string | null; username: string } | null;
+  profile?: { id: number; name: string | null } | null;
+}
+export interface UserDetails {
+  user: User;
+  profiles: { id:number; name:string|null; email:string|null; status:string; lastApplicationAt:string|null }[];
+  applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
+}
 export interface AppConfig { key:string; value:string; updatedAt:string }
 export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; fromName:string; fromEmailId:string; title:string; body:string; parameters:EmailTemplateParameter[] }
