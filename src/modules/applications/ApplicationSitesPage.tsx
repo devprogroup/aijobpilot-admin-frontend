@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, Box, Button, Flex, IconButton, Table, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, IconButton, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { Pencil, Plus } from "lucide-react";
 import { api } from "../../api";
 import type { ApplicationSite } from "../../types";
@@ -11,6 +11,21 @@ export function ApplicationSitesPage() {
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [modal, setModal] = useState<"create" | ApplicationSite | null>(null);
+  const [pending, setPending] = useState<number | null>(null);
+
+  const setActive = async (site: ApplicationSite, active: boolean) => {
+    setPending(site.id);
+    setError("");
+    try {
+      const { applicationSite } = await api.updateApplicationSite(site.id, { active });
+      setSites((current) => current.map((item) => item.id === applicationSite.id ? applicationSite : item));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to update application site status");
+    } finally {
+      setPending(null);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -50,7 +65,19 @@ export function ApplicationSitesPage() {
                 <Table.Cell px="4" py="4" fontWeight="semibold">{site.displayText}</Table.Cell>
                 <Table.Cell px="4">{site.typeName}</Table.Cell>
                 <Table.Cell px="4" maxW="xs" wordBreak="break-all" fontFamily="mono" fontSize="xs">{site.domainRegex}</Table.Cell>
-                <Table.Cell px="4"><Badge colorPalette={site.active ? "green" : "gray"}>{site.active ? "Active" : "Inactive"}</Badge></Table.Cell>
+                <Table.Cell px="4">
+                  <NativeSelect.Root size="sm" disabled={pending === site.id}>
+                    <NativeSelect.Field
+                      aria-label={`Status for ${site.displayText}`}
+                      value={site.active ? "active" : "inactive"}
+                      onChange={(event) => void setActive(site, event.target.value === "active")}
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Table.Cell>
                 <Table.Cell px="4">{site.mode === "chrome-extension" ? "Chrome extension" : site.mode === "headed" ? "Headed" : "Headless"}</Table.Cell>
                 <Table.Cell px="4">{site.newContextRequired ? "Yes" : "No"}</Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.fieldInputGapMs} ms</Table.Cell>
