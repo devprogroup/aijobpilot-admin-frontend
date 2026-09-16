@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { CrawlerTypesPage } from "./modules/crawler-types/CrawlerTypesPage";
 import { ApplicationSitesPage } from "./modules/applications/ApplicationSitesPage";
+import { AllApplicationsPage } from "./modules/applications/AllApplicationsPage";
 import { FailedApplicationsPage } from "./modules/applications/FailedApplicationsPage";
 import { ApplicationStatisticsPage } from "./modules/applications/ApplicationStatisticsPage";
 import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
         <Route path="/crawlers/settings" element={<CrawlerSettingsPage />} />
         <Route path="/applications/sites" element={<ApplicationSitesPage />} />
+        <Route path="/applications/all" element={<AllApplicationsPage />} />
         <Route path="/applications/failed" element={<FailedApplicationsPage />} />
         <Route path="/applications/statistics" element={<ApplicationStatisticsPage />} />
         <Route path="/applications" element={<Navigate to="/applications/sites" replace />} />

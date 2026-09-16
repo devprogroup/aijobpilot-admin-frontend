@@ -17,6 +17,7 @@ import {
   Boxes,
   Briefcase,
   ChevronDown,
+  List,
   ListTree,
   LogOut,
   Mail,
@@ -246,6 +247,9 @@ export function Sidebar({
               <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
                 <ChildLink to="/applications/sites" icon={Globe} onClick={onClose}>
                   Application sites
+                </ChildLink>
+                <ChildLink to="/applications/all" icon={List} onClick={onClose}>
+                  All applications
                 </ChildLink>
                 <ChildLink to="/applications/failed" icon={ListTree} onClick={onClose}>
                   Failed applications

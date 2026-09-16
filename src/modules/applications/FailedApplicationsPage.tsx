@@ -54,7 +54,7 @@ export function FailedApplicationsPage() {
             <Table.Cell p="4">
               <Text fontWeight="semibold">{application.job?.positionName || "Job unavailable"}</Text>
               <Text fontSize="xs" color="gray.500">{application.job?.companyName || "—"}</Text>
-              {application.job?.siteName && <Text fontSize="xs" color="gray.500">{application.job.siteName}</Text>}
+              {application.job?.applicationSite?.typeName && <Text fontSize="xs" color="gray.500">{application.job.applicationSite.typeName}</Text>}
               {application.job?.url && <Text fontSize="xs"><a href={application.job.url} target="_blank" rel="noreferrer" style={{ color: "#15803d", textDecoration: "underline" }}>View posting</a></Text>}
             </Table.Cell>
             <Table.Cell p="4">{application.user ? <Link to={`/users/${application.user.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>{application.user.name || application.user.username}</Link> : "—"}</Table.Cell>

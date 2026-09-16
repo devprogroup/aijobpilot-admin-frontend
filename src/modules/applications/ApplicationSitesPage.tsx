@@ -42,10 +42,10 @@ export function ApplicationSitesPage() {
         </Flex>
         <Box overflowX="auto">
           <Table.Root minW="900px" size="sm">
-            <Table.Header bg="gray.50"><Table.Row>{["Display text", "Type name", "Domain pattern", "Status", "Mode", "New context", "Input gap", "Page timeout", "Actions"].map((label) => <Table.ColumnHeader key={label} px="4" py="3">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+            <Table.Header bg="gray.50"><Table.Row>{["Display text", "Type name", "Domain pattern", "Status", "Mode", "New context", "Input gap", "Submit delay", "Page timeout", "Actions"].map((label) => <Table.ColumnHeader key={label} px="4" py="3">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
             <Table.Body>
-              {loading && <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">Loading application sites...</Table.Cell></Table.Row>}
-              {!loading && !error && sites.length === 0 && <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center" color="gray.500">No application sites configured yet. Add a site to get started.</Table.Cell></Table.Row>}
+              {loading && <Table.Row><Table.Cell colSpan={10} p="8" textAlign="center">Loading application sites...</Table.Cell></Table.Row>}
+              {!loading && !error && sites.length === 0 && <Table.Row><Table.Cell colSpan={10} p="8" textAlign="center" color="gray.500">No application sites configured yet. Add a site to get started.</Table.Cell></Table.Row>}
               {!loading && sites.map((site) => <Table.Row key={site.id} _hover={{ bg: "gray.50" }}>
                 <Table.Cell px="4" py="4" fontWeight="semibold">{site.displayText}</Table.Cell>
                 <Table.Cell px="4">{site.typeName}</Table.Cell>
@@ -54,6 +54,7 @@ export function ApplicationSitesPage() {
                 <Table.Cell px="4">{site.mode === "chrome-extension" ? "Chrome extension" : site.mode === "headed" ? "Headed" : "Headless"}</Table.Cell>
                 <Table.Cell px="4">{site.newContextRequired ? "Yes" : "No"}</Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.fieldInputGapMs} ms</Table.Cell>
+                <Table.Cell px="4" whiteSpace="nowrap">{site.submitDelayMs} ms</Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.pageTimeout} ms</Table.Cell>
                 <Table.Cell px="4"><IconButton aria-label={`Edit ${site.displayText}`} variant="ghost" size="sm" onClick={() => setModal(site)}><Pencil size={16} /></IconButton></Table.Cell>
               </Table.Row>)}

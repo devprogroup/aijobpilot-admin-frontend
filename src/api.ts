@@ -9,6 +9,8 @@ import type {
   User,
   UserDetails,
   FailedApplication,
+  AdminApplication,
+  ApplicationFilters,
   ServiceHealth,
   AppConfig,
   EmailTemplate,
@@ -34,6 +36,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 export const api = {
+  applications: (page: number, filters: ApplicationFilters) =>
+    request<{ applications: AdminApplication[]; total: number; page: number; pageSize: number }>(`/applications?${new URLSearchParams({
+      page: String(page),
+      ...(filters.search ? { search: filters.search } : {}),
+      ...(filters.from ? { from: filters.from } : {}),
+      ...(filters.to ? { to: filters.to } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.applicationSiteId ? { applicationSiteId: String(filters.applicationSiteId) } : {}),
+      ...(filters.userId ? { userId: String(filters.userId) } : {}),
+      ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
+    })}`),
   failedApplications: (page: number, search: string, from: string, to: string) =>
     request<{ applications: FailedApplication[]; total: number; page: number; pageSize: number }>(`/applications/failed?${new URLSearchParams({ page: String(page), search, ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationScreenshotUrl: (applicationId: number, key: "preview" | "result") =>

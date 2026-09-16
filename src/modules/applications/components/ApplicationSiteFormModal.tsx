@@ -17,6 +17,7 @@ const schema = yup.object({
   newContextRequired: yup.boolean().required(),
   mode: yup.mixed<ApplicationSite["mode"]>().oneOf(["headless", "headed", "chrome-extension"]).required(),
   fieldInputGapMs: yup.number().typeError("Enter a number").integer().min(0).max(2147483647).required("Input gap is required"),
+  submitDelayMs: yup.number().typeError("Enter a number").integer().min(0).max(2147483647).required("Submit delay is required"),
   pageTimeout: yup.number().typeError("Enter a number").integer().min(0).max(2147483647).required("Page timeout is required"),
   config: yup.string().required("Config is required").test("json", "Config must be a valid JSON object", (value) => {
     try { const parsed = JSON.parse(value || ""); return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed); } catch { return false; }
@@ -35,6 +36,7 @@ export function ApplicationSiteFormModal({ site, onClose, onSaved }: {
       typeName: site?.typeName ?? "", displayText: site?.displayText ?? "", domainRegex: site?.domainRegex ?? "",
       active: site?.active ?? true, newContextRequired: site?.newContextRequired ?? false,
       mode: site?.mode ?? "headless", fieldInputGapMs: site?.fieldInputGapMs ?? 500,
+      submitDelayMs: site?.submitDelayMs ?? 500,
       pageTimeout: site?.pageTimeout ?? 5000,
       config: JSON.stringify(site?.config ?? {}, null, 2),
     },
@@ -79,6 +81,11 @@ export function ApplicationSiteFormModal({ site, onClose, onSaved }: {
                     <Field.Label>Field input gap (ms)</Field.Label>
                     <Input type="number" min={0} max={2147483647} step={1} {...register("fieldInputGapMs")} disabled={isSubmitting} />
                     <Field.ErrorText>{errors.fieldInputGapMs?.message}</Field.ErrorText>
+                  </Field.Root>
+                  <Field.Root invalid={!!errors.submitDelayMs}>
+                    <Field.Label>Submit delay (ms)</Field.Label>
+                    <Input type="number" min={0} max={2147483647} step={1} {...register("submitDelayMs")} disabled={isSubmitting} />
+                    <Field.ErrorText>{errors.submitDelayMs?.message}</Field.ErrorText>
                   </Field.Root>
                   <Field.Root invalid={!!errors.pageTimeout}>
                     <Field.Label>Page timeout (ms)</Field.Label>

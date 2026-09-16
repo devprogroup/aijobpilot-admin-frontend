@@ -8,6 +8,7 @@ export interface ApplicationSite {
   newContextRequired: boolean;
   mode: "headless" | "headed" | "chrome-extension";
   fieldInputGapMs: number;
+  submitDelayMs: number;
   pageTimeout: number;
   config: Record<string, unknown>;
 }
@@ -24,9 +25,22 @@ export interface ServiceHealth { id:string; name:string; running:boolean; checke
 export interface FailedApplication {
   id: number; status: string; message: string | null; createdAt: string; updatedAt: string;
   previewScreenshot: string | null; resultScreenshot: string | null;
-  job?: { id: number; positionName: string | null; companyName: string | null; siteName: string | null; url: string } | null;
+  job?: { id: number; positionName: string | null; companyName: string | null; applicationSite: { typeName: string } | null; url: string } | null;
   user?: { id: number; name: string | null; username: string } | null;
   profile?: { id: number; name: string | null } | null;
+}
+export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
+export interface AdminApplication {
+  id: number; status: ApplicationStatus; message: string | null;
+  createdAt: string; updatedAt: string; appliedAt: string | null;
+  previewScreenshot: string | null; resultScreenshot: string | null;
+  job?: { id: number; positionName: string | null; companyName: string | null; url: string; applicationSite: { id: number; typeName: string; displayText: string } | null } | null;
+  user?: { id: number; name: string | null; username: string } | null;
+  profile?: { id: number; name: string | null } | null;
+}
+export interface ApplicationFilters {
+  search?: string; from?: string; to?: string; status?: ApplicationStatus;
+  applicationSiteId?: number; userId?: number; profileId?: number;
 }
 export interface UserDetails {
   user: User;
