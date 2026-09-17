@@ -17,6 +17,12 @@ import { api } from "../../api";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CreateCrawlerModal } from "./components/CreateCrawlerModal";
+import { onSocketEvent } from "../../services/websocket";
+
+interface CrawlerStatusChangedEvent {
+  crawlerId: number;
+  status: Crawler["status"];
+}
 
 const ChakraRouterLink = chakra(Link);
 
@@ -57,6 +63,12 @@ export function CrawlerFleetPage() {
     const timer = setInterval(load, 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => onSocketEvent<CrawlerStatusChangedEvent>("crawler:status-changed", (event) => {
+    setItems((current) => current.map((item) =>
+      item.id === event.crawlerId ? { ...item, status: event.status } : item,
+    ));
+  }), []);
 
   const shown = useMemo(() => {
     const term = query.trim().toLowerCase();
