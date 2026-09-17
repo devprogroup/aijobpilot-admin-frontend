@@ -17,18 +17,12 @@ export type CrawlerMode = "headless" | "headed" | "chrome-ext";
 export interface CrawlerType { id:number; name:string; url:string; mode:CrawlerMode; config:unknown; _count:{crawlers:number} }
 export interface BotRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; inserted:number; ignored:number; duplicated:number }
 export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; crawlerType:{id:number;name:string}; latestRun:BotRun|null; botRuns?:BotRun[]; _count:{botRuns:number} }
+export interface CrawledJobRow { id:number; createdAt:string; title:string; company:string; status:string; crawlerName:string; crawlerType:string }
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:{ email:string; password:string; matchScoreMin?:number; url?:string; searchQuery?:string } }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown }
 export interface CrawlerTypePayload { name:string; url:string; mode:CrawlerMode; config:unknown }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
-export interface FailedApplication {
-  id: number; status: string; message: string | null; createdAt: string; updatedAt: string;
-  previewScreenshot: string | null; resultScreenshot: string | null;
-  job?: { id: number; positionName: string | null; companyName: string | null; applicationSite: { typeName: string } | null; url: string } | null;
-  user?: { id: number; name: string | null; username: string } | null;
-  profile?: { id: number; name: string | null } | null;
-}
 export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;

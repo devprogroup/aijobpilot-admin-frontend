@@ -2,13 +2,13 @@ import type {
   ApplicationSite,
   ApplicationSitePayload,
   Crawler,
+  CrawledJobRow,
   CrawlerType,
   CrawlerTypePayload,
   CreateCrawlerPayload,
   UpdateCrawlerPayload,
   User,
   UserDetails,
-  FailedApplication,
   AdminApplication,
   ApplicationFilters,
   ServiceHealth,
@@ -47,12 +47,10 @@ export const api = {
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
     })}`),
-  failedApplications: (page: number, search: string, from: string, to: string) =>
-    request<{ applications: FailedApplication[]; total: number; page: number; pageSize: number }>(`/applications/failed?${new URLSearchParams({ page: String(page), search, ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationScreenshotUrl: (applicationId: number, key: "preview" | "result") =>
     `${base}/applications/${applicationId}/screenshots/${key}`,
   failedApplicationStats: (from: string, to: string) =>
-    request<{ total: number; bySite: { siteName: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+    request<{ total: number; bySite: { siteName: string; count: number }[]; byStatus: { status: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
   createApplicationSite: (payload: ApplicationSitePayload) =>
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
@@ -69,6 +67,10 @@ export const api = {
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
+  crawledJobs: (page: number, pageSize = 25) =>
+    request<{ crawledJobs: CrawledJobRow[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }>(
+      `/crawlers/crawled-jobs?${new URLSearchParams({ page: String(page), pageSize: String(pageSize) })}`,
+    ),
   botRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>

@@ -12,7 +12,6 @@ const money = new Intl.NumberFormat("en-US", {
 });
 const serviceDefinitions = [
   { id: "redis", name: "Redis" },
-  { id: "kafka", name: "Kafka" },
   { id: "ats-engine", name: "ATS Engine" },
   { id: "crawler-backend", name: "Crawler Backend" },
   { id: "client-backend", name: "Client Backend" },
@@ -283,7 +282,7 @@ export function DashboardPage() {
         templateColumns={{
           base: "1fr",
           sm: "repeat(2, 1fr)",
-          xl: "repeat(5, 1fr)",
+          xl: "repeat(4, 1fr)",
         }}
         gap="4"
       >

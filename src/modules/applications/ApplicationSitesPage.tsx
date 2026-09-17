@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Button, Flex, IconButton, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { Pencil, Plus } from "lucide-react";
 import { api } from "../../api";
-import type { ApplicationSite } from "../../types";
+import type { ApplicationSite, ApplicationSitePayload } from "../../types";
 import { ApplicationSiteFormModal } from "./components/ApplicationSiteFormModal";
 
 export function ApplicationSitesPage() {
@@ -13,14 +13,14 @@ export function ApplicationSitesPage() {
   const [modal, setModal] = useState<"create" | ApplicationSite | null>(null);
   const [pending, setPending] = useState<number | null>(null);
 
-  const setActive = async (site: ApplicationSite, active: boolean) => {
+  const updateSite = async (site: ApplicationSite, payload: Partial<ApplicationSitePayload>) => {
     setPending(site.id);
     setError("");
     try {
-      const { applicationSite } = await api.updateApplicationSite(site.id, { active });
+      const { applicationSite } = await api.updateApplicationSite(site.id, payload);
       setSites((current) => current.map((item) => item.id === applicationSite.id ? applicationSite : item));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to update application site status");
+      setError(reason instanceof Error ? reason.message : "Unable to update application site");
     } finally {
       setPending(null);
     }
@@ -70,7 +70,7 @@ export function ApplicationSitesPage() {
                     <NativeSelect.Field
                       aria-label={`Status for ${site.displayText}`}
                       value={site.active ? "active" : "inactive"}
-                      onChange={(event) => void setActive(site, event.target.value === "active")}
+                      onChange={(event) => void updateSite(site, { active: event.target.value === "active" })}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -78,8 +78,33 @@ export function ApplicationSitesPage() {
                     <NativeSelect.Indicator />
                   </NativeSelect.Root>
                 </Table.Cell>
-                <Table.Cell px="4">{site.mode === "chrome-extension" ? "Chrome extension" : site.mode === "headed" ? "Headed" : "Headless"}</Table.Cell>
-                <Table.Cell px="4">{site.newContextRequired ? "Yes" : "No"}</Table.Cell>
+                <Table.Cell px="4">
+                  <NativeSelect.Root size="sm" disabled={pending === site.id}>
+                    <NativeSelect.Field
+                      aria-label={`Mode for ${site.displayText}`}
+                      value={site.mode}
+                      onChange={(event) => void updateSite(site, { mode: event.target.value as ApplicationSite["mode"] })}
+                    >
+                      <option value="headless">Headless</option>
+                      <option value="headed">Headed</option>
+                      <option value="chrome-extension">Chrome extension</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Table.Cell>
+                <Table.Cell px="4">
+                  <NativeSelect.Root size="sm" disabled={pending === site.id}>
+                    <NativeSelect.Field
+                      aria-label={`New context required for ${site.displayText}`}
+                      value={site.newContextRequired ? "yes" : "no"}
+                      onChange={(event) => void updateSite(site, { newContextRequired: event.target.value === "yes" })}
+                    >
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.fieldInputGapMs} ms</Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.submitDelayMs} ms</Table.Cell>
                 <Table.Cell px="4" whiteSpace="nowrap">{site.pageTimeout} ms</Table.Cell>

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { api } from "../../api";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import type { ApplicationStatus } from "../../types";
 
 const BAR_HUE = "#2a78d6";
+const STATUS_ORDER: ApplicationStatus[] = ["queued", "applying", "applied", "failed"];
 
 export function ApplicationStatisticsPage() {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof api.failedApplicationStats>> | null>(null);
@@ -27,7 +30,7 @@ export function ApplicationStatisticsPage() {
 
   return <>
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
-      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">Statistics</Text><Text color="gray.500">Failed application volume, overall and by site.</Text></Box>
+      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">Statistics</Text><Text color="gray.500">Application volume by status, and failures by site.</Text></Box>
       <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
     </Flex>
     <Flex as="form" gap="3" mb="5" wrap="wrap" onSubmit={(event) => event.preventDefault()}>
@@ -45,9 +48,20 @@ export function ApplicationStatisticsPage() {
         </Text>
         {(from || to) && <Text fontSize="xs" color="gray.500" mt="2">{from || "…"} to {to || "…"}</Text>}
       </Box>
+      {STATUS_ORDER.map((status) => {
+        const count = stats?.byStatus.find((row) => row.status === status)?.count ?? 0;
+        return (
+          <Box key={status} bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" minW="40">
+            <Box mb="2"><StatusBadge status={status} /></Box>
+            <Text fontSize="5xl" fontWeight="bold" lineHeight="1" color="#0b0b0b">
+              {loading ? "—" : count.toLocaleString()}
+            </Text>
+          </Box>
+        );
+      })}
     </Flex>
 
-    <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6">
+    <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" mb="5">
       <Text fontWeight="bold" mb="1">Failures by site</Text>
       <Text fontSize="xs" color="gray.500" mb="5">Highest failure count first</Text>
       {loading ? <Text color="gray.500">Loading...</Text>

@@ -229,6 +229,9 @@ export function Sidebar({
                 >
                   Crawler types
                 </ChildLink>
+                <ChildLink to="/crawlers/crawled-jobs" icon={Briefcase} onClick={onClose}>
+                  Crawled jobs
+                </ChildLink>
                 <ChildLink to="/crawlers/settings" icon={Settings} onClick={onClose}>
                   Crawler settings
                 </ChildLink>
@@ -250,9 +253,6 @@ export function Sidebar({
                 </ChildLink>
                 <ChildLink to="/applications/all" icon={List} onClick={onClose}>
                   All applications
-                </ChildLink>
-                <ChildLink to="/applications/failed" icon={ListTree} onClick={onClose}>
-                  Failed applications
                 </ChildLink>
                 <ChildLink to="/applications/statistics" icon={BarChart3} onClick={onClose}>
                   Statistics

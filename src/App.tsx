@@ -2,11 +2,11 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { CrawlerTypesPage } from "./modules/crawler-types/CrawlerTypesPage";
 import { ApplicationSitesPage } from "./modules/applications/ApplicationSitesPage";
 import { AllApplicationsPage } from "./modules/applications/AllApplicationsPage";
-import { FailedApplicationsPage } from "./modules/applications/FailedApplicationsPage";
 import { ApplicationStatisticsPage } from "./modules/applications/ApplicationStatisticsPage";
 import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
 import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
 import { CrawlerSettingsPage } from "./modules/crawlers/CrawlerSettingsPage";
+import { CrawledJobsPage } from "./modules/crawlers/CrawledJobsPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
@@ -27,10 +27,11 @@ export default function App() {
           element={<CrawlerDetailsPage />}
         />
         <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
+        <Route path="/crawlers/crawled-jobs" element={<CrawledJobsPage />} />
         <Route path="/crawlers/settings" element={<CrawlerSettingsPage />} />
         <Route path="/applications/sites" element={<ApplicationSitesPage />} />
         <Route path="/applications/all" element={<AllApplicationsPage />} />
-        <Route path="/applications/failed" element={<FailedApplicationsPage />} />
+        <Route path="/applications/failed" element={<Navigate to="/applications/all" replace />} />
         <Route path="/applications/statistics" element={<ApplicationStatisticsPage />} />
         <Route path="/applications" element={<Navigate to="/applications/sites" replace />} />
         <Route path="/application-sites" element={<Navigate to="/applications/sites" replace />} />
