@@ -12,12 +12,13 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { ArrowLeft, Save } from "lucide-react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { ArrowLeft, Play, Save, Trash2 } from "lucide-react";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { BotRunLogDialog } from "./components/BotRunLogDialog";
+import { toaster } from "../../components/ui/toaster";
 
 const ChakraRouterLink = chakra(Link);
 
@@ -32,12 +33,15 @@ const time = (date: string | null) =>
 export function CrawlerDetailsPage() {
   const { crawlerId: crawlerIdParam } = useParams();
   const crawlerId = Number(crawlerIdParam);
+  const navigate = useNavigate();
   const [crawler, setCrawler] = useState<Crawler | null>(null);
   const [name, setName] = useState("");
   const [config, setConfig] = useState("{}");
   const [stopSignalData, setStopSignalData] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [logRunId, setLogRunId] = useState<string | null>(null);
 
   const load = async () => {
@@ -79,6 +83,42 @@ export function CrawlerDetailsPage() {
     }
   };
 
+  const start = async () => {
+    setError("");
+    setStarting(true);
+    try {
+      await api.queueCrawler(crawlerId);
+      await load();
+      toaster.create({ title: "Crawler queued to run now.", type: "success" });
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Unable to start crawler",
+      );
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const remove = async () => {
+    if (
+      !crawler ||
+      !window.confirm(`Delete crawler "${crawler.name}"? This cannot be undone.`)
+    )
+      return;
+    setError("");
+    setDeleting(true);
+    try {
+      await api.deleteCrawler(crawlerId);
+      toaster.create({ title: "Crawler deleted.", type: "success" });
+      navigate("/crawlers/fleets");
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Unable to delete crawler",
+      );
+      setDeleting(false);
+    }
+  };
+
   if (!Number.isInteger(crawlerId) || crawlerId < 1)
     return <Navigate to="/crawlers/fleets" replace />;
   if (!crawler) {
@@ -112,33 +152,58 @@ export function CrawlerDetailsPage() {
         Back to crawler fleet
       </ChakraRouterLink>
 
-      <Box as="header" mb="8">
-        <Text
-          mb="2"
-          fontSize="xs"
-          fontWeight="bold"
-          letterSpacing="0.18em"
-          textTransform="uppercase"
-          color="#498366"
-        >
-          Crawler details
-        </Text>
-        <Flex align="center" gap="3">
+      <Flex as="header" mb="8" align="flex-start" justify="space-between" gap="4" flexWrap="wrap">
+        <Box>
           <Text
-            as="h1"
-            m="0"
-            fontSize="3xl"
+            mb="2"
+            fontSize="xs"
             fontWeight="bold"
-            letterSpacing="tight"
+            letterSpacing="0.18em"
+            textTransform="uppercase"
+            color="#498366"
           >
-            {crawler.name}
+            Crawler details
           </Text>
-          <StatusBadge status={crawler.status} />
+          <Flex align="center" gap="3">
+            <Text
+              as="h1"
+              m="0"
+              fontSize="3xl"
+              fontWeight="bold"
+              letterSpacing="tight"
+            >
+              {crawler.name}
+            </Text>
+            <StatusBadge status={crawler.status} />
+          </Flex>
+          <Text mt="2" fontSize="sm" color="gray.500">
+            {crawler.crawlerType.name} · Crawler #{crawler.id}
+          </Text>
+        </Box>
+        <Flex gap="3">
+          <Button
+            onClick={start}
+            disabled={starting || !(crawler.status === "idle" && crawler.active)}
+            bg="gray.900"
+            color="white"
+            _hover={{ bg: "gray.700" }}
+          >
+            <Icon as={Play} boxSize="4" />
+            {starting ? "Starting…" : "Start"}
+          </Button>
+          <Button
+            onClick={remove}
+            disabled={deleting || crawler.status === "running"}
+            variant="outline"
+            borderColor="red.200"
+            color="red.600"
+            _hover={{ bg: "red.50" }}
+          >
+            <Icon as={Trash2} boxSize="4" />
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
         </Flex>
-        <Text mt="2" fontSize="sm" color="gray.500">
-          {crawler.crawlerType.name} · Crawler #{crawler.id}
-        </Text>
-      </Box>
+      </Flex>
 
       {error && (
         <Box

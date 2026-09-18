@@ -67,10 +67,17 @@ export const api = {
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
-  crawledJobs: (page: number, pageSize = 25) =>
-    request<{ crawledJobs: CrawledJobRow[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }>(
-      `/crawlers/crawled-jobs?${new URLSearchParams({ page: String(page), pageSize: String(pageSize) })}`,
-    ),
+  crawledJobs: (
+    page: number,
+    filters: { pageSize?: number; status?: string; crawlerId?: number } = {},
+  ) => {
+    const params: Record<string, string> = { page: String(page), pageSize: String(filters.pageSize ?? 25) };
+    if (filters.status) params.status = filters.status;
+    if (filters.crawlerId) params.crawlerId = String(filters.crawlerId);
+    return request<{ crawledJobs: CrawledJobRow[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }>(
+      `/crawlers/crawled-jobs?${new URLSearchParams(params)}`,
+    );
+  },
   botRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
@@ -85,6 +92,13 @@ export const api = {
     }),
   queueCrawler: (id: number) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}/run`, { method: "POST" }),
+  deleteCrawler: (id: number) =>
+    request<void>(`/crawlers/${id}`, { method: "DELETE" }),
+  uploadCrawledJobs: (crawlerId: number, jobs: unknown[]) =>
+    request<{ botRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
+      method: "POST",
+      body: JSON.stringify({ jobs }),
+    }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),
   createCrawler: (payload: CreateCrawlerPayload) =>
