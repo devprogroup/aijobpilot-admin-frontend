@@ -7,7 +7,6 @@ import {
   Flex,
   IconButton,
   Input,
-  NativeSelect,
   Portal,
   Textarea,
 } from "@chakra-ui/react";
@@ -16,22 +15,16 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerMode, CrawlerType } from "../../../types";
+import type { CrawlerType } from "../../../types";
 
 interface FormValues {
   name: string;
-  url: string;
-  mode: CrawlerMode;
   config: string;
+  parameters: string;
 }
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
-  url: yup.string().url("Invalid URL").required("URL is required"),
-  mode: yup
-    .mixed<CrawlerMode>()
-    .oneOf(["headless", "headed", "chrome-ext"])
-    .required("Mode is required"),
   config: yup
     .string()
     .required("Config is required")
@@ -48,6 +41,53 @@ const schema = yup.object({
         return false;
       }
     }),
+  parameters: yup
+    .string()
+    .required("Parameters is required")
+    .test(
+      "is-parameter-map",
+      'Parameters must be a JSON object mapping each parameter name to { "controlType": "input" | "textarea" | "single-select" | "multi-select", "options"?: [{ "key": ..., "value": ... }] }, with options required for single-select/multi-select',
+      (value) => {
+        if (!value) return false;
+        try {
+          const parsed = JSON.parse(value);
+          if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+            return false;
+          }
+          const controlTypes = ["input", "textarea", "single-select", "multi-select"];
+          return Object.values(parsed).every((definition) => {
+            if (
+              definition === null ||
+              typeof definition !== "object" ||
+              !controlTypes.includes((definition as { controlType?: unknown }).controlType as string)
+            ) {
+              return false;
+            }
+            const { controlType, options } = definition as {
+              controlType: string;
+              options?: unknown;
+            };
+            if (options !== undefined) {
+              if (!Array.isArray(options)) return false;
+              const validOptions = options.every(
+                (option) =>
+                  option !== null &&
+                  typeof option === "object" &&
+                  typeof (option as { key?: unknown }).key === "string" &&
+                  typeof (option as { value?: unknown }).value === "string",
+              );
+              if (!validOptions) return false;
+            }
+            if (["single-select", "multi-select"].includes(controlType)) {
+              return Array.isArray(options) && options.length > 0;
+            }
+            return true;
+          });
+        } catch {
+          return false;
+        }
+      },
+    ),
 });
 
 export function CrawlerTypeFormModal({
@@ -68,10 +108,11 @@ export function CrawlerTypeFormModal({
     resolver: yupResolver(schema),
     defaultValues: {
       name: crawlerType?.name ?? "",
-      url: crawlerType?.url ?? "",
-      mode: crawlerType?.mode ?? "headless",
       config: crawlerType
         ? JSON.stringify(crawlerType.config, null, 2)
+        : "{\n  \n}",
+      parameters: crawlerType
+        ? JSON.stringify(crawlerType.parameters, null, 2)
         : "{\n  \n}",
     },
   });
@@ -80,9 +121,8 @@ export function CrawlerTypeFormModal({
     setError("");
     const payload = {
       name: data.name,
-      url: data.url,
-      mode: data.mode,
       config: JSON.parse(data.config),
+      parameters: JSON.parse(data.parameters),
     };
     try {
       if (crawlerType) {
@@ -137,37 +177,6 @@ export function CrawlerTypeFormModal({
                   <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
                 </Field.Root>
 
-                <Field.Root invalid={!!errors.url}>
-                  <Field.Label
-                    fontSize="xs"
-                    fontWeight="semibold"
-                    color="gray.500"
-                  >
-                    URL
-                  </Field.Label>
-                  <Input
-                    {...register("url")}
-                    borderColor="gray.200"
-                    fontSize="sm"
-                  />
-                  <Field.ErrorText>{errors.url?.message}</Field.ErrorText>
-                </Field.Root>
-
-                <Field.Root invalid={!!errors.mode}>
-                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-                    Mode
-                  </Field.Label>
-                  <NativeSelect.Root>
-                    <NativeSelect.Field {...register("mode")} borderColor="gray.200" fontSize="sm">
-                      <option value="headless">Headless</option>
-                      <option value="headed">Headed</option>
-                      <option value="chrome-ext">Chrome extension</option>
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
-                  <Field.ErrorText>{errors.mode?.message}</Field.ErrorText>
-                </Field.Root>
-
                 <Field.Root invalid={!!errors.config}>
                   <Field.Label
                     fontSize="xs"
@@ -184,6 +193,34 @@ export function CrawlerTypeFormModal({
                     fontSize="xs"
                   />
                   <Field.ErrorText>{errors.config?.message}</Field.ErrorText>
+                </Field.Root>
+
+                <Field.Root invalid={!!errors.parameters}>
+                  <Field.Label
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="gray.500"
+                  >
+                    Parameters (JSON: name → control definition)
+                  </Field.Label>
+                  <Textarea
+                    {...register("parameters")}
+                    rows={6}
+                    placeholder={
+                      '{\n' +
+                      '  "email": { "controlType": "input" },\n' +
+                      '  "payload": { "controlType": "textarea" },\n' +
+                      '  "mode": { "controlType": "single-select", "options": [\n' +
+                      '    { "key": "Headless", "value": "headless" },\n' +
+                      '    { "key": "Headed", "value": "headed" }\n' +
+                      '  ] }\n' +
+                      '}'
+                    }
+                    borderColor="gray.200"
+                    fontFamily="mono"
+                    fontSize="xs"
+                  />
+                  <Field.ErrorText>{errors.parameters?.message}</Field.ErrorText>
                 </Field.Root>
 
                 {error && (

@@ -132,25 +132,16 @@ export function CrawlerTypesTable() {
                   px="5"
                   py="3"
                 >
-                  URL
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Mode
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
                   Config
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
+                  Parameters
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
                   fontSize="xs"
@@ -177,7 +168,7 @@ export function CrawlerTypesTable() {
               {!loading && types.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={6}
+                    colSpan={5}
                     px="5"
                     py="8"
                     textAlign="center"
@@ -192,12 +183,6 @@ export function CrawlerTypesTable() {
                   <Table.Cell px="5" py="4" fontWeight="semibold">
                     {t.name}
                   </Table.Cell>
-                  <Table.Cell maxW="xs" truncate px="5" py="4" color="gray.500">
-                    {t.url}
-                  </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {t.mode}
-                  </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <Box
                       as="pre"
@@ -209,6 +194,19 @@ export function CrawlerTypesTable() {
                       color="gray.500"
                     >
                       {JSON.stringify(t.config)}
+                    </Box>
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    <Box
+                      as="pre"
+                      maxW="xs"
+                      overflowX="auto"
+                      whiteSpace="pre-wrap"
+                      wordBreak="break-all"
+                      fontSize="xs"
+                      color="gray.500"
+                    >
+                      {JSON.stringify(t.parameters) || "—"}
                     </Box>
                   </Table.Cell>
                   <Table.Cell

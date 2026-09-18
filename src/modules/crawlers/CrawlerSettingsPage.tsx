@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Field, Flex, Input, Text } from "@chakra-ui/react";
 import { api } from "../../api";
+import { toaster } from "../../components/ui/toaster";
 
 const SETTING_KEY = "CRAWLER_RUN_TIMES";
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -22,7 +23,6 @@ export function CrawlerSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loadFailed, setLoadFailed] = useState(false);
   const [revision, setRevision] = useState(0);
 
@@ -57,7 +57,6 @@ export function CrawlerSettingsPage() {
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    setSuccess("");
     if (!times.length || times.some((time) => !TIME_PATTERN.test(time))) {
       setError("Enter a valid local time for every row.");
       return;
@@ -70,7 +69,11 @@ export function CrawlerSettingsPage() {
       else await api.createSetting({ key: SETTING_KEY, value });
       setExists(true);
       setTimes(normalized);
-      setSuccess("Crawler run times saved. The worker has been notified to update its schedule.");
+      toaster.create({
+        title: "Crawler run times saved.",
+        description: "The worker has been notified to update its schedule.",
+        type: "success",
+      });
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to save crawler settings");
     } finally { setSaving(false); }
@@ -84,7 +87,6 @@ export function CrawlerSettingsPage() {
         <Text fontWeight="bold" mb="2">Daily run times ({timezone.name})</Text>
         <Text fontSize="sm" color="gray.500" mb="5">Enter times in your local timezone. Times are saved in UTC using your current timezone offset, so local run times may shift when daylight saving time changes. Each scheduled run queues idle crawlers and waits if another pass is active.</Text>
         {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
-        {success && <Text role="status" color="green.700" mb="4">{success}</Text>}
         {loading ? <Text role="status">Loading schedule...</Text> : loadFailed ? (
           <Button onClick={() => setRevision((value) => value + 1)}>Retry</Button>
         ) : (
@@ -95,17 +97,15 @@ export function CrawlerSettingsPage() {
                   <Field.Label>Run time {index + 1}</Field.Label>
                   <Input type="time" step={60} required value={time} disabled={saving} onChange={(event) => {
                     setTimes((values) => values.map((value, position) => position === index ? event.target.value : value));
-                    setSuccess("");
                   }} />
                 </Field.Root>
                 <Button type="button" variant="outline" disabled={saving || times.length === 1} aria-label={`Remove run time ${index + 1}`} onClick={() => {
                   setTimes((values) => values.filter((_, position) => position !== index));
-                  setSuccess("");
                 }}>Remove</Button>
               </Flex>
             ))}
             <Flex justify="space-between" gap="3" mt="6">
-              <Button type="button" variant="outline" disabled={saving} onClick={() => { setTimes((values) => [...values, ""]); setSuccess(""); }}>Add time</Button>
+              <Button type="button" variant="outline" disabled={saving} onClick={() => setTimes((values) => [...values, ""])}>Add time</Button>
               <Button type="submit" bg="green.600" color="white" disabled={saving}>{saving ? "Saving..." : "Save schedule"}</Button>
             </Flex>
           </>

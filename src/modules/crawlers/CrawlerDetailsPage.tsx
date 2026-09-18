@@ -35,6 +35,7 @@ export function CrawlerDetailsPage() {
   const [crawler, setCrawler] = useState<Crawler | null>(null);
   const [name, setName] = useState("");
   const [config, setConfig] = useState("{}");
+  const [stopSignalData, setStopSignalData] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [logRunId, setLogRunId] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function CrawlerDetailsPage() {
       setCrawler(result.crawler);
       setName(result.crawler.name);
       setConfig(JSON.stringify(result.crawler.config, null, 2));
+      setStopSignalData(result.crawler.stopSignalData ?? "");
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to load crawler",
@@ -65,6 +67,7 @@ export function CrawlerDetailsPage() {
       await api.updateCrawler(crawlerId, {
         name: name.trim(),
         config: parsedConfig,
+        stopSignalData: stopSignalData.trim() || null,
       });
       await load();
     } catch (error) {
@@ -192,6 +195,18 @@ export function CrawlerDetailsPage() {
               borderColor="gray.200"
               fontSize="sm"
               color="gray.500"
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+              Stop signal data
+            </Field.Label>
+            <Input
+              value={stopSignalData}
+              onChange={(event) => setStopSignalData(event.target.value)}
+              borderColor="gray.200"
+              fontSize="sm"
+              placeholder="e.g. minScore"
             />
           </Field.Root>
         </SimpleGrid>
@@ -325,9 +340,9 @@ export function CrawlerDetailsPage() {
                   <Table.Cell px="5" py="4">
                     <StatusBadge status={run.status} />
                   </Table.Cell>
-                  <Table.Cell px="5" py="4">{run.inserted}</Table.Cell>
-                  <Table.Cell px="5" py="4">{run.ignored}</Table.Cell>
-                  <Table.Cell px="5" py="4">{run.duplicated}</Table.Cell>
+                  <Table.Cell px="5" py="4">{run.counts.inserted}</Table.Cell>
+                  <Table.Cell px="5" py="4">{run.counts.ignored}</Table.Cell>
+                  <Table.Cell px="5" py="4">{run.counts.duplicated}</Table.Cell>
                   <Table.Cell px="5" py="4">
                     {run.logFilePath ? (
                       <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => setLogRunId(String(run.id))}>View log</Button>

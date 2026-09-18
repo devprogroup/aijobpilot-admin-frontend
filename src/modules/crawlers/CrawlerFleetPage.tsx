@@ -296,6 +296,15 @@ export function CrawlerFleetPage() {
                   px="5"
                   py="3"
                 >
+                  Stop signal data
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Enabled
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -314,7 +323,7 @@ export function CrawlerFleetPage() {
               {!loading && shown.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={6}
+                    colSpan={7}
                     px="5"
                     py="10"
                     textAlign="center"
@@ -344,6 +353,9 @@ export function CrawlerFleetPage() {
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {time(crawler.latestRun?.startedAt ?? null)}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
+                    {crawler.stopSignalData ?? "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <Switch.Root

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -10,378 +10,128 @@ import {
   NativeSelect,
   Portal,
   Text,
+  Textarea,
 } from "@chakra-ui/react";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType } from "../../../types";
+import type { CrawlerType, CrawlerTypeParameter } from "../../../types";
 
-interface FormProps {
-  crawlerName: string;
-  crawlerTypeId: number;
-  onCancel: () => void;
-  onCreated: () => void;
+type ParameterValue = string | string[];
+
+function labelFor(name: string): string {
+  const spaced = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-function FormField({
-  label,
-  error,
-  children,
+function defaultValueFor(definition: CrawlerTypeParameter): ParameterValue {
+  return definition.controlType === "multi-select" ? [] : "";
+}
+
+function ParameterField({
+  name,
+  definition,
+  value,
+  onChange,
 }: {
-  label: string;
-  error?: string;
-  children: ReactNode;
+  name: string;
+  definition: CrawlerTypeParameter;
+  value: ParameterValue;
+  onChange: (value: ParameterValue) => void;
 }) {
+  const label = labelFor(name);
+  const options = definition.options ?? [];
+
+  if (definition.controlType === "single-select") {
+    return (
+      <Field.Root>
+        <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+          {label}
+        </Field.Label>
+        <NativeSelect.Root>
+          <NativeSelect.Field
+            value={typeof value === "string" ? value : ""}
+            onChange={(event) => onChange(event.target.value)}
+            borderColor="gray.200"
+            fontSize="sm"
+          >
+            <option value="" disabled>
+              Select an option
+            </option>
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.key}
+              </option>
+            ))}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+      </Field.Root>
+    );
+  }
+
+  if (definition.controlType === "multi-select") {
+    const selectedValues = Array.isArray(value) ? value : [];
+    return (
+      <Field.Root>
+        <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+          {label} (select multiple)
+        </Field.Label>
+        <NativeSelect.Root>
+          <NativeSelect.Field
+            multiple
+            value={selectedValues}
+            onChange={(event) =>
+              onChange(
+                Array.from(event.target.selectedOptions, (option) => option.value),
+              )
+            }
+            borderColor="gray.200"
+            fontSize="sm"
+            height="auto"
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.key}
+              </option>
+            ))}
+          </NativeSelect.Field>
+        </NativeSelect.Root>
+      </Field.Root>
+    );
+  }
+
+  if (definition.controlType === "textarea") {
+    return (
+      <Field.Root>
+        <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+          {label}
+        </Field.Label>
+        <Textarea
+          value={typeof value === "string" ? value : ""}
+          onChange={(event) => onChange(event.target.value)}
+          rows={4}
+          borderColor="gray.200"
+          fontFamily="mono"
+          fontSize="xs"
+        />
+      </Field.Root>
+    );
+  }
+
   return (
-    <Field.Root invalid={!!error}>
+    <Field.Root>
       <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
         {label}
       </Field.Label>
-      {children}
-      <Field.ErrorText>{error}</Field.ErrorText>
+      <Input
+        value={typeof value === "string" ? value : ""}
+        onChange={(event) => onChange(event.target.value)}
+        borderColor="gray.200"
+        fontSize="sm"
+      />
     </Field.Root>
   );
 }
-
-interface JobrightFormValues {
-  email: string;
-  password: string;
-}
-const jobrightSchema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().required("Password is required"),
-});
-
-function JobrightForm({
-  crawlerName,
-  crawlerTypeId,
-  onCancel,
-  onCreated,
-}: FormProps) {
-  const [error, setError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<JobrightFormValues>({ resolver: yupResolver(jobrightSchema) });
-  const onSubmit = async (data: JobrightFormValues) => {
-    setError("");
-    try {
-      await api.createCrawler({
-        name: crawlerName,
-        crawlerTypeId,
-        config: { email: data.email, password: data.password },
-      });
-      onCreated();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create crawler");
-    }
-  };
-  return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="4">
-        <FormField label="Email" error={errors.email?.message}>
-          <Input {...register("email")} borderColor="gray.200" fontSize="sm" />
-        </FormField>
-        <FormField label="Password" error={errors.password?.message}>
-          <Input
-            {...register("password")}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        {error && (
-          <Box
-            borderRadius="xl"
-            bg="red.50"
-            p="3"
-            fontSize="sm"
-            color="red.700"
-          >
-            {error}
-          </Box>
-        )}
-        <Actions onCancel={onCancel} isSubmitting={isSubmitting} />
-      </Flex>
-    </Box>
-  );
-}
-
-interface TsentaFormValues {
-  email: string;
-  password: string;
-  matchScoreMin: number;
-}
-const tsentaSchema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().required("Password is required"),
-  matchScoreMin: yup
-    .number()
-    .typeError("Must be a number")
-    .min(0, "Min is 0")
-    .max(100, "Max is 100")
-    .required("Match score is required"),
-});
-
-function TsentaForm({
-  crawlerName,
-  crawlerTypeId,
-  onCancel,
-  onCreated,
-}: FormProps) {
-  const [error, setError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<TsentaFormValues>({ resolver: yupResolver(tsentaSchema) });
-  const onSubmit = async (data: TsentaFormValues) => {
-    setError("");
-    try {
-      await api.createCrawler({
-        name: crawlerName,
-        crawlerTypeId,
-        config: {
-          email: data.email,
-          password: data.password,
-          matchScoreMin: data.matchScoreMin,
-        },
-      });
-      onCreated();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create crawler");
-    }
-  };
-  return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="4">
-        <FormField label="Email" error={errors.email?.message}>
-          <Input {...register("email")} borderColor="gray.200" fontSize="sm" />
-        </FormField>
-        <FormField label="Password" error={errors.password?.message}>
-          <Input
-            {...register("password")}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        <FormField
-          label="Match score min"
-          error={errors.matchScoreMin?.message}
-        >
-          <Input
-            {...register("matchScoreMin")}
-            type="number"
-            min={0}
-            max={100}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        {error && (
-          <Box
-            borderRadius="xl"
-            bg="red.50"
-            p="3"
-            fontSize="sm"
-            color="red.700"
-          >
-            {error}
-          </Box>
-        )}
-        <Actions onCancel={onCancel} isSubmitting={isSubmitting} />
-      </Flex>
-    </Box>
-  );
-}
-
-interface HiringCafeFormValues {
-  email: string;
-  password: string;
-  searchQuery: string;
-}
-const hiringCafeSchema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().required("Password is required"),
-  searchQuery: yup.string().required("Search query is required"),
-});
-
-function HiringCafeForm({
-  crawlerName,
-  crawlerTypeId,
-  onCancel,
-  onCreated,
-}: FormProps) {
-  const [error, setError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<HiringCafeFormValues>({
-    resolver: yupResolver(hiringCafeSchema),
-  });
-  const onSubmit = async (data: HiringCafeFormValues) => {
-    setError("");
-    try {
-      await api.createCrawler({
-        name: crawlerName,
-        crawlerTypeId,
-        config: {
-          email: data.email,
-          password: data.password,
-          searchQuery: data.searchQuery,
-        },
-      });
-      onCreated();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create crawler");
-    }
-  };
-  return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="4">
-        <FormField label="Search query" error={errors.searchQuery?.message}>
-          <Input
-            {...register("searchQuery")}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        <FormField label="Email" error={errors.email?.message}>
-          <Input {...register("email")} borderColor="gray.200" fontSize="sm" />
-        </FormField>
-        <FormField label="Password" error={errors.password?.message}>
-          <Input
-            {...register("password")}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        {error && (
-          <Box
-            borderRadius="xl"
-            bg="red.50"
-            p="3"
-            fontSize="sm"
-            color="red.700"
-          >
-            {error}
-          </Box>
-        )}
-        <Actions onCancel={onCancel} isSubmitting={isSubmitting} />
-      </Flex>
-    </Box>
-  );
-}
-
-interface SimplifyFormValues {
-  email: string;
-  password: string;
-  url: string;
-}
-const simplifySchema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().required("Password is required"),
-  url: yup.string().url("Invalid URL").required("URL is required"),
-});
-
-function SimplifyForm({
-  crawlerName,
-  crawlerTypeId,
-  onCancel,
-  onCreated,
-}: FormProps) {
-  const [error, setError] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<SimplifyFormValues>({ resolver: yupResolver(simplifySchema) });
-  const onSubmit = async (data: SimplifyFormValues) => {
-    setError("");
-    try {
-      await api.createCrawler({
-        name: crawlerName,
-        crawlerTypeId,
-        config: { email: data.email, password: data.password, url: data.url },
-      });
-      onCreated();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create crawler");
-    }
-  };
-  return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="4">
-        <FormField label="URL" error={errors.url?.message}>
-          <Input {...register("url")} borderColor="gray.200" fontSize="sm" />
-        </FormField>
-        <FormField label="Email" error={errors.email?.message}>
-          <Input {...register("email")} borderColor="gray.200" fontSize="sm" />
-        </FormField>
-        <FormField label="Password" error={errors.password?.message}>
-          <Input
-            {...register("password")}
-            borderColor="gray.200"
-            fontSize="sm"
-          />
-        </FormField>
-        {error && (
-          <Box
-            borderRadius="xl"
-            bg="red.50"
-            p="3"
-            fontSize="sm"
-            color="red.700"
-          >
-            {error}
-          </Box>
-        )}
-        <Actions onCancel={onCancel} isSubmitting={isSubmitting} />
-      </Flex>
-    </Box>
-  );
-}
-
-function Actions({
-  onCancel,
-  isSubmitting,
-}: {
-  onCancel: () => void;
-  isSubmitting: boolean;
-}) {
-  return (
-    <Flex justify="flex-end" gap="3" pt="2">
-      <Button
-        type="button"
-        onClick={onCancel}
-        variant="outline"
-        borderColor="gray.200"
-        bg="white"
-      >
-        Cancel
-      </Button>
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        bg="green.600"
-        color="white"
-        _hover={{ bg: "green.700" }}
-      >
-        {isSubmitting ? "Creating..." : "Create"}
-      </Button>
-    </Flex>
-  );
-}
-
-const FORM_BY_TYPE: Record<string, React.ComponentType<FormProps>> = {
-  jobright: JobrightForm,
-  tsenta: TsentaForm,
-  hiringcafe: HiringCafeForm,
-  simplify: SimplifyForm,
-};
 
 export function CreateCrawlerModal({
   onClose,
@@ -393,7 +143,10 @@ export function CreateCrawlerModal({
   const [types, setTypes] = useState<CrawlerType[]>([]);
   const [selected, setSelected] = useState<CrawlerType | null>(null);
   const [crawlerName, setCrawlerName] = useState("");
+  const [stopSignalData, setStopSignalData] = useState("");
+  const [values, setValues] = useState<Record<string, ParameterValue>>({});
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     api
@@ -402,7 +155,72 @@ export function CreateCrawlerModal({
       .catch(() => setError("Unable to load crawler types"));
   }, []);
 
-  const FormComponent = selected ? FORM_BY_TYPE[selected.name] : null;
+  useEffect(() => {
+    if (!selected) {
+      setValues({});
+      return;
+    }
+    const initial: Record<string, ParameterValue> = {};
+    for (const [name, definition] of Object.entries(selected.parameters)) {
+      initial[name] = defaultValueFor(definition);
+    }
+    setValues(initial);
+  }, [selected]);
+
+  const parameterEntries = selected ? Object.entries(selected.parameters) : [];
+
+  function buildConfig(): Record<string, unknown> | null {
+    const config: Record<string, unknown> = {};
+
+    for (const [name, definition] of parameterEntries) {
+      const raw = values[name];
+
+      if (definition.controlType === "multi-select") {
+        const list = Array.isArray(raw) ? raw : [];
+        if (list.length === 0) {
+          setError(`${labelFor(name)} is required`);
+          return null;
+        }
+        config[name] = list;
+        continue;
+      }
+
+      const text = typeof raw === "string" ? raw.trim() : "";
+      if (!text) {
+        setError(`${labelFor(name)} is required`);
+        return null;
+      }
+
+      config[name] = text;
+    }
+
+    return config;
+  }
+
+  async function onSubmit() {
+    setError("");
+    if (!selected || !crawlerName.trim()) return;
+
+    const config = buildConfig();
+    if (config === null) return;
+
+    setSubmitting(true);
+    try {
+      await api.createCrawler({
+        name: crawlerName.trim(),
+        crawlerTypeId: selected.id,
+        stopSignalData: stopSignalData.trim() || undefined,
+        config,
+      });
+      onCreated();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to create crawler");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const canSubmit = Boolean(selected && crawlerName.trim());
 
   return (
     <Dialog.Root open onOpenChange={(details) => !details.open && onClose()}>
@@ -427,73 +245,127 @@ export function CreateCrawlerModal({
               </Dialog.CloseTrigger>
             </Flex>
 
-            {error && (
-              <Box
-                mb="4"
-                borderRadius="xl"
-                bg="red.50"
-                p="3"
-                fontSize="sm"
-                color="red.700"
-              >
-                {error}
-              </Box>
-            )}
+            <Box
+              as="form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void onSubmit();
+              }}
+            >
+              <Flex direction="column" gap="4">
+                {error && (
+                  <Box
+                    borderRadius="xl"
+                    bg="red.50"
+                    p="3"
+                    fontSize="sm"
+                    color="red.700"
+                  >
+                    {error}
+                  </Box>
+                )}
 
-            <Field.Root mb="4">
-              <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-                Unique crawler name
-              </Field.Label>
-              <Input
-                value={crawlerName}
-                onChange={(event) => setCrawlerName(event.target.value)}
-                borderColor="gray.200"
-                fontSize="sm"
-                placeholder="e.g. JobRight primary"
-              />
-            </Field.Root>
+                <Field.Root>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Unique crawler name
+                  </Field.Label>
+                  <Input
+                    value={crawlerName}
+                    onChange={(event) => setCrawlerName(event.target.value)}
+                    borderColor="gray.200"
+                    fontSize="sm"
+                    placeholder="e.g. JobRight primary"
+                  />
+                </Field.Root>
 
-            <Field.Root mb="4">
-              <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-                Crawler type
-              </Field.Label>
-              <NativeSelect.Root>
-                <NativeSelect.Field
-                  value={selected ? String(selected.id) : ""}
-                  onChange={(event) =>
-                    setSelected(
-                      types.find((t) => String(t.id) === event.target.value) ??
-                        null,
-                    )
-                  }
-                  borderColor="gray.200"
-                  fontSize="sm"
-                >
-                  <option value="" disabled>
-                    Select a type
-                  </option>
-                  {types.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
-            </Field.Root>
+                <Field.Root>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Crawler type
+                  </Field.Label>
+                  <NativeSelect.Root>
+                    <NativeSelect.Field
+                      value={selected ? String(selected.id) : ""}
+                      onChange={(event) =>
+                        setSelected(
+                          types.find((t) => String(t.id) === event.target.value) ??
+                            null,
+                        )
+                      }
+                      borderColor="gray.200"
+                      fontSize="sm"
+                    >
+                      <option value="" disabled>
+                        Select a type
+                      </option>
+                      {types.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Field.Root>
 
-            {FormComponent && selected && crawlerName.trim() ? (
-              <FormComponent
-                crawlerName={crawlerName.trim()}
-                crawlerTypeId={selected.id}
-                onCancel={onClose}
-                onCreated={onCreated}
-              />
-            ) : (
-              <Text fontSize="sm" color="gray.400">
-                Enter a unique name and select a crawler type to continue.
-              </Text>
-            )}
+                {selected ? (
+                  parameterEntries.length > 0 ? (
+                    parameterEntries.map(([name, definition]) => (
+                      <ParameterField
+                        key={name}
+                        name={name}
+                        definition={definition}
+                        value={values[name] ?? defaultValueFor(definition)}
+                        onChange={(value) =>
+                          setValues((prev) => ({ ...prev, [name]: value }))
+                        }
+                      />
+                    ))
+                  ) : (
+                    <Text fontSize="sm" color="gray.400">
+                      This crawler type has no configurable parameters.
+                    </Text>
+                  )
+                ) : (
+                  <Text fontSize="sm" color="gray.400">
+                    Select a crawler type to configure it.
+                  </Text>
+                )}
+
+                <Field.Root>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Stop signal data (optional)
+                  </Field.Label>
+                  <Input
+                    value={stopSignalData}
+                    onChange={(event) => setStopSignalData(event.target.value)}
+                    borderColor="gray.200"
+                    fontSize="sm"
+                    placeholder="e.g. minScore"
+                  />
+                </Field.Root>
+
+                <Flex justify="flex-end" gap="3" pt="2">
+                  <Button
+                    type="button"
+                    onClick={onClose}
+                    variant="outline"
+                    borderColor="gray.200"
+                    bg="white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!canSubmit || submitting}
+                    bg="green.600"
+                    color="white"
+                    _hover={{ bg: "green.700" }}
+                  >
+                    {submitting ? "Creating..." : "Create"}
+                  </Button>
+                </Flex>
+              </Flex>
+            </Box>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>

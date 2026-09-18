@@ -15,7 +15,6 @@ const serviceDefinitions = [
   { id: "ats-engine", name: "ATS Engine" },
   { id: "crawler-backend", name: "Crawler Backend" },
   { id: "client-backend", name: "Client Backend" },
-  { id: "crawler-worker", name: "Crawler Worker" },
 ] as const;
 
 function BalanceCard({
@@ -287,76 +286,9 @@ export function DashboardPage() {
         gap="4"
       >
         {serviceDefinitions
-          .filter((definition) => definition.id !== "crawler-worker")
           .map((definition) => {
             const service = services.find((item) => item.id === definition.id);
             const loading = serviceLoading[definition.id];
-            if (definition.id === "crawler-backend") {
-              return (
-                <Box
-                  key={definition.id}
-                  borderRadius="2xl"
-                  border="1px solid"
-                  borderColor="gray.200"
-                  bg="white"
-                  p="5"
-                  boxShadow="0 12px 35px rgba(24, 43, 34, .07)"
-                >
-                  <Flex align="center" gap="3" mb="4">
-                    <Icon as={Server} boxSize="5" color="gray.500" />
-                    <Text fontWeight="bold">Crawler</Text>
-                  </Flex>
-                  {[
-                    { id: "crawler-backend", label: "Backend" },
-                    { id: "crawler-worker", label: "Worker" },
-                  ].map(({ id, label }) => {
-                    const status = services.find((item) => item.id === id);
-                    const checking = serviceLoading[id];
-                    return (
-                      <Box key={id} mt="3">
-                        <Flex justify="space-between" align="center" gap="2">
-                          <Text fontSize="sm">{label}</Text>
-                          <Flex
-                            align="center"
-                            gap="2"
-                            fontSize="xs"
-                            fontWeight="bold"
-                            color={
-                              !status
-                                ? "gray.500"
-                                : status.running
-                                  ? "green.700"
-                                  : "red.600"
-                            }
-                          >
-                            {checking ? (
-                              <Spinner size="xs" />
-                            ) : (
-                              <Box
-                                h="2"
-                                w="2"
-                                borderRadius="full"
-                                bg={status?.running ? "green.400" : "red.400"}
-                              />
-                            )}
-                            {checking && !status
-                              ? "CHECKING"
-                              : status?.running
-                                ? "RUNNING"
-                                : "UNAVAILABLE"}
-                          </Flex>
-                        </Flex>
-                        <Text mt="1" fontSize="xs" color="gray.400">
-                          {status
-                            ? `Checked ${new Date(status.checkedAt).toLocaleTimeString()}`
-                            : "Waiting for health check"}
-                        </Text>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              );
-            }
             return (
               <Box
                 key={definition.id}
