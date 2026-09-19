@@ -94,7 +94,19 @@ export function AllApplicationsPage() {
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4"><Text mb="2">#{application.id}</Text><StatusBadge status={application.status} /></Table.Cell>
             <Table.Cell p="4">
-              <Text fontWeight="semibold">{application.job?.positionName || "Job unavailable"}</Text>
+              <Text fontWeight="semibold">
+                {application.job?.url ? (
+                  <a
+                    href={application.job.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    style={{ color: "#15803d", textDecoration: "underline" }}
+                  >
+                    {application.job.positionName || "Job unavailable"}
+                  </a>
+                ) : application.job?.positionName || "Job unavailable"}
+              </Text>
               <Text fontSize="xs" color="gray.500">{application.job?.companyName || "—"}</Text>
               {application.job?.url && <Text fontSize="xs"><a href={application.job.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>View posting</a></Text>}
             </Table.Cell>
