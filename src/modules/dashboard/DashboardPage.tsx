@@ -3,6 +3,7 @@ import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
 import { Bot, RefreshCw, Server, ShieldCheck, WalletCards } from "lucide-react";
 import { api } from "../../api";
 import type { ProviderBalance, ServiceHealth } from "../../types";
+import { Link } from "react-router-dom";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -119,6 +120,7 @@ export function DashboardPage() {
   );
   const [twoCaptchaBalance, setTwoCaptchaBalance] =
     useState<ProviderBalance | null>(null);
+  const [paymentBalance, setPaymentBalance] = useState<number | null>(null);
 
   const loadServices = useCallback(async () => {
     await Promise.all(
@@ -181,11 +183,17 @@ export function DashboardPage() {
     }
   }, []);
 
+  const loadPaymentBalance = useCallback(async () => {
+    try { setPaymentBalance((await api.paymentSummary()).totalBalance); }
+    catch { setPaymentBalance(null); }
+  }, []);
+
   const refresh = useCallback(() => {
     void loadServices();
     void loadDeepSeekBalance();
     void loadTwoCaptchaBalance();
-  }, [loadDeepSeekBalance, loadServices, loadTwoCaptchaBalance]);
+    void loadPaymentBalance();
+  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadTwoCaptchaBalance]);
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 15000);
@@ -275,6 +283,14 @@ export function DashboardPage() {
             )
           )}
         </Grid>
+      </Box>
+
+      <Box mb="8" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+        <Flex align="center" justify="space-between" gap="4">
+          <Box><Text fontWeight="bold">USDT payment balance</Text><Text mt="1" fontSize="xs" color="gray.400">Across confirmed customer deposit addresses</Text></Box>
+          <Text fontSize="2xl" fontWeight="bold">{paymentBalance === null ? "—" : `${paymentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`}</Text>
+        </Flex>
+        <Link to="/payments" style={{ textDecoration: "none" }}><Button mt="3" size="sm" variant="outline">Manage payments</Button></Link>
       </Box>
 
       <Grid

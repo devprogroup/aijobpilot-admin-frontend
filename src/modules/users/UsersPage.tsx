@@ -10,11 +10,13 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Search, Users } from "lucide-react";
+import { KeyRound, Search, Users } from "lucide-react";
 import { api } from "../../api";
 import type { User } from "../../types";
 import { UserStats } from "./components/UserStats";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
+import { UserPasswordDialog } from "./components/UserPasswordDialog";
+import { UserNameDialog } from "./components/UserNameDialog";
 import { Link } from "react-router-dom";
 
 export function UsersPage() {
@@ -27,6 +29,9 @@ export function UsersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<User | null>(null);
+  const [passwordUser, setPasswordUser] = useState<User | null>(null);
+  const [nameUser, setNameUser] = useState<User | null>(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -111,6 +116,7 @@ export function UsersPage() {
           {error}
         </Box>
       )}
+      {message && <Box mb="5" role="status" borderRadius="xl" bg="green.50" p="4" fontSize="sm" color="green.700">{message}</Box>}
 
       <UserStats stats={stats} />
       <Flex gap="3" mb="4">
@@ -158,7 +164,7 @@ export function UsersPage() {
           </InputGroup>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="800px" size="sm">
+          <Table.Root minW="940px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
                 <Table.ColumnHeader
@@ -224,10 +230,11 @@ export function UsersPage() {
                 >
                   Joined
                 </Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Actions</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
+              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={8} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
               {!loading && visible.map((u) => (
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
@@ -239,6 +246,7 @@ export function UsersPage() {
                     )}
                     <Link to={`/users/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
                     <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>
+                    <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setNameUser(u)}>Edit name</Button>
                   </Table.Cell>
                   <Table.Cell
                     px="5"
@@ -266,6 +274,7 @@ export function UsersPage() {
                   <Table.Cell px="5" py="4" color="gray.500">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </Table.Cell>
+                  <Table.Cell px="5" py="4"><Button size="sm" variant="outline" disabled={pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button></Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
@@ -276,6 +285,14 @@ export function UsersPage() {
       {selected && <UserDetailsDialog user={selected} onClose={() => setSelected(null)} onSaved={(user) => {
         setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
         setSelected(null);
+      }} />}
+      {passwordUser && <UserPasswordDialog user={passwordUser} onClose={() => setPasswordUser(null)} onSaved={() => {
+        setPasswordUser(null);
+        setMessage(`Password updated for ${passwordUser.username}.`);
+      }} />}
+      {nameUser && <UserNameDialog user={nameUser} onClose={() => setNameUser(null)} onSaved={(user) => {
+        setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
+        setNameUser(null);
       }} />}
     </>
   );

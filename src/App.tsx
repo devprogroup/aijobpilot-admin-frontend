@@ -12,6 +12,7 @@ import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { SettingsPage } from "./modules/settings/SettingsPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
+import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { LoginPage } from "./auth/LoginPage";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/application-sites" element={<Navigate to="/applications/sites" replace />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/users/:userId" element={<UserDetailsPage />} />
+        <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
       </Route>

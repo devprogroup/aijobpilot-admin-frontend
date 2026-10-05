@@ -4,7 +4,8 @@ import { api } from "../../api";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { ApplicationStatus } from "../../types";
 
-const BAR_HUE = "#2a78d6";
+const APPLIED_HUE = "#24845b";
+const FAILED_HUE = "#cf4646";
 const STATUS_ORDER: ApplicationStatus[] = ["queued", "applying", "applied", "failed"];
 
 export function ApplicationStatisticsPage() {
@@ -26,11 +27,9 @@ export function ApplicationStatisticsPage() {
     return () => { active = false; };
   }, [from, to, revision]);
 
-  const maxCount = stats?.bySite.reduce((max, row) => Math.max(max, row.count), 0) || 1;
-
   return <>
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
-      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">Statistics</Text><Text color="gray.500">Application volume by status, and failures by site.</Text></Box>
+      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">Statistics</Text><Text color="gray.500">Application volume by status and application site.</Text></Box>
       <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
     </Flex>
     <Flex as="form" gap="3" mb="5" wrap="wrap" onSubmit={(event) => event.preventDefault()}>
@@ -62,32 +61,36 @@ export function ApplicationStatisticsPage() {
     </Flex>
 
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" mb="5">
-      <Text fontWeight="bold" mb="1">Failures by site</Text>
-      <Text fontSize="xs" color="gray.500" mb="5">Highest failure count first</Text>
+      <Text fontWeight="bold" mb="1">Applied vs failed by site</Text>
+      <Text fontSize="xs" color="gray.500" mb="4">Share of completed applications at each site</Text>
+      <Flex gap="5" mb="5" fontSize="xs" color="gray.600"><Flex align="center" gap="2"><Box w="3" h="3" borderRadius="sm" bg={APPLIED_HUE} />Applied</Flex><Flex align="center" gap="2"><Box w="3" h="3" borderRadius="sm" bg={FAILED_HUE} />Failed</Flex></Flex>
       {loading ? <Text color="gray.500">Loading...</Text>
         : error ? <Text color="gray.500">Unable to load statistics. Use Refresh to retry.</Text>
-        : !stats?.bySite.length ? <Text color="gray.500">No failed applications in this range.</Text>
+        : !stats?.bySite.length ? <Text color="gray.500">No applied or failed applications in this range.</Text>
         : <Flex direction="column" gap="3">
             {stats.bySite.map((row) => (
-              <Flex key={row.siteName} align="center" gap="3">
+              <Flex key={row.siteName} align="start" gap="3">
                 <Text
-                  w="36" flexShrink={0} fontSize="sm" color="#52514e"
+                  w="36" flexShrink={0} mt="1" fontSize="sm" color="#52514e"
                   overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap"
                   title={row.siteName}
                 >
                   {row.siteName}
                 </Text>
-                <Flex align="center" flex="1" minW="0">
-                  <Box
-                    h="20px"
-                    bg={BAR_HUE}
-                    borderRadius="0 4px 4px 0"
-                    width={`${Math.max((row.count / maxCount) * 100, 2)}%`}
-                  />
-                  <Text ml="2" fontSize="sm" fontWeight="semibold" color="#0b0b0b" flexShrink={0}>
-                    {row.count.toLocaleString()}
-                  </Text>
-                </Flex>
+                {(() => {
+                  const total = row.applied + row.failed;
+                  const appliedPercent = total ? Math.round(row.applied / total * 10000) / 100 : 0;
+                  const failedPercent = total ? 100 - appliedPercent : 0;
+                  const appliedLabel = appliedPercent.toFixed(2);
+                  const failedLabel = failedPercent.toFixed(2);
+                  return <Box flex="1" minW="0">
+                    <Flex h="7" borderRadius="md" overflow="hidden" bg="gray.100" aria-label={`${row.siteName}: ${appliedLabel}% applied, ${failedLabel}% failed`} role="img">
+                      {row.applied > 0 && <Flex width={`${appliedPercent}%`} minW={appliedPercent < 2 ? "1px" : undefined} bg={APPLIED_HUE} align="center" justify="center" color="white" fontSize="xs" fontWeight="bold">{appliedPercent >= 15 ? `${appliedLabel}%` : ""}</Flex>}
+                      {row.failed > 0 && <Flex width={`${failedPercent}%`} minW={failedPercent < 2 ? "1px" : undefined} bg={FAILED_HUE} align="center" justify="center" color="white" fontSize="xs" fontWeight="bold">{failedPercent >= 15 ? `${failedLabel}%` : ""}</Flex>}
+                    </Flex>
+                    <Text mt="1" fontSize="xs" color="gray.500">{appliedLabel}% applied · {failedLabel}% failed ({total.toLocaleString()} total)</Text>
+                  </Box>;
+                })()}
               </Flex>
             ))}
           </Flex>}

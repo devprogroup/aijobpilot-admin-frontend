@@ -17,6 +17,9 @@ import type {
   EmailTemplatePayload,
   AdminUser,
   ProviderBalance,
+  AdminWallet,
+  PaymentNetwork,
+  PaymentReceivingAddresses,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -50,7 +53,7 @@ export const api = {
   applicationScreenshotUrl: (applicationId: number, key: "preview" | "result") =>
     `${base}/applications/${applicationId}/screenshots/${key}`,
   failedApplicationStats: (from: string, to: string) =>
-    request<{ total: number; bySite: { siteName: string; count: number }[]; byStatus: { status: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+    request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
   createApplicationSite: (payload: ApplicationSitePayload) =>
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
@@ -65,6 +68,13 @@ export const api = {
   deepSeekBalance: () => request<ProviderBalance>("/provider-balances/deepseek"),
   openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
+  paymentSummary: () => request<{ totalBalance: number; currency: "USDT" }>("/payments/summary"),
+  paymentWallets: (page: number) => request<{ wallets: AdminWallet[]; total: number; page: number; pageSize: number }>(`/payments?page=${page}`),
+  paymentReceivingAddresses: () => request<{ addresses: PaymentReceivingAddresses }>("/payments/receiving-addresses"),
+  updatePaymentReceivingAddress: (network: PaymentNetwork, address: string) => request<{ network: PaymentNetwork; address: string }>(`/payments/receiving-addresses/${network}`, { method: "PUT", body: JSON.stringify({ address }) }),
+  transferPayment: (walletId: number) => request<{ walletId: number; network: PaymentNetwork; token: string; amount: number; txHash: string; destination: string }>(`/payments/${walletId}/transfer`, { method: "POST" }),
+  updatePaymentBalance: (walletId: number, balance: number) => request<{ balance: number; status: "confirmed"; userId: number }>(`/payments/${walletId}`, { method: "PATCH", body: JSON.stringify({ balance }) }),
+  syncPaymentBalance: (walletId: number) => request<{ walletId: number; balance: number }>(`/payments/${walletId}/sync`, { method: "POST" }),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
   crawledJobs: (
@@ -124,8 +134,10 @@ export const api = {
     payments: { id:number; amount:number; currency:string; description:string|null; status:string; invoiceUrl:string|null; createdAt:string }[];
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
-  updateUser: (id: number, name: string | null) =>
-    request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+  updateUser: (id: number, payload: { name?: string | null; credit?: number }) =>
+    request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  updateUserPassword: (id: number, password: string) =>
+    request<{ success: boolean }>(`/users/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) }),
   setUserStatus: (id: number, status: User["status"]) =>
     request<{ user: User }>(`/users/${id}/status`, {
       method: "PATCH",

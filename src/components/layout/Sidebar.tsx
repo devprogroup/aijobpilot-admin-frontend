@@ -26,6 +26,7 @@ import {
   Sparkles,
   Settings,
   Users,
+  Wallet,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
@@ -85,6 +86,7 @@ export function Sidebar({
   const usersActive = location.pathname.startsWith("/users");
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
+  const paymentsActive = location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
@@ -285,6 +287,11 @@ export function Sidebar({
             >
               <Icon as={Users} boxSize="5" />
               Users
+            </Flex>
+          </NavLink>
+          <NavLink to="/payments" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={paymentsActive ? "white" : "transparent"} color={paymentsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={paymentsActive ? "sm" : "none"} _hover={paymentsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Wallet} boxSize="5" /> Payments
             </Flex>
           </NavLink>
           <NavLink to="/settings" onClick={onClose} style={{ textDecoration: "none" }}>

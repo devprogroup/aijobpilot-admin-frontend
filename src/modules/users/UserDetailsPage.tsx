@@ -5,6 +5,7 @@ import { api } from "../../api";
 import type { User, UserDetails } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
+import { UserNameDialog } from "./components/UserNameDialog";
 import { UserPaymentHistory } from "./components/UserPaymentHistory";
 
 const time = (value: string | null) => value ? new Date(value).toLocaleString() : "—";
@@ -16,6 +17,7 @@ export function UserDetailsPage() {
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     let active = true;
@@ -35,14 +37,14 @@ export function UserDetailsPage() {
   };
   return <Box>
     <Link to="/users">← Back to users</Link>
-    <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button></Flex>
+    <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Flex gap="2"><Button variant="outline" disabled={!details || loading || saving} onClick={() => setEditingName(true)}>Edit name</Button><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button></Flex></Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
     {loading && <Text role="status">Loading user details...</Text>}
     {details && <>
       <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" mb="6">
         <Flex justify="space-between" align="center" mb="4"><Text fontWeight="bold">Account information</Text><Button size="sm" variant="outline" disabled={saving} onClick={() => setEditing(true)}>Edit account</Button></Flex>
         <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap="5">
-          {[['Username', details.user.username], ['Email', details.user.email || 'Not provided'], ['Email verification', details.user.emailVerified ? 'Verified' : 'Unverified'], ['Credit', details.user.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })], ['Joined', time(details.user.createdAt)], ['Last updated', time(details.user.updatedAt)]].map(([label, value]) => <Box key={label}><Text fontSize="sm" color="gray.500">{label}</Text><Text overflowWrap="anywhere">{value}</Text></Box>)}
+          {[['Name', details.user.name || 'Not set'], ['Username', details.user.username], ['Email', details.user.email || 'Not provided'], ['Email verification', details.user.emailVerified ? 'Verified' : 'Unverified'], ['Credit', details.user.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })], ['Joined', time(details.user.createdAt)], ['Last updated', time(details.user.updatedAt)]].map(([label, value]) => <Box key={label}><Text fontSize="sm" color="gray.500">{label}</Text><Text overflowWrap="anywhere">{value}</Text></Box>)}
           <Box><Text fontSize="sm" color="gray.500" mb="1">Account status</Text><NativeSelect.Root disabled={saving}><NativeSelect.Field aria-label="Account status" value={details.user.status} onChange={(event) => void changeStatus(event.target.value as User['status'])}><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Box>
         </SimpleGrid>
       </Box>
@@ -62,6 +64,7 @@ export function UserDetailsPage() {
       </Box>
       <UserPaymentHistory key={id} userId={id} />
       {editing && <UserDetailsDialog user={details.user} onClose={() => setEditing(false)} onSaved={(user) => { update(user); setEditing(false); }} />}
+      {editingName && <UserNameDialog user={details.user} onClose={() => setEditingName(false)} onSaved={(user) => { update(user); setEditingName(false); }} />}
     </>}
   </Box>;
 }

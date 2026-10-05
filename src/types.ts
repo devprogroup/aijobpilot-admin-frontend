@@ -56,3 +56,16 @@ export interface ProviderBalance {
   error?: string;
   updatedAt: string;
 }
+export type PaymentNetwork = "erc20" | "bep20" | "trc20";
+export interface AdminWallet {
+  id: number;
+  user: { id: number; name: string | null; email: string | null; credit: number };
+  address: string;
+  network: PaymentNetwork;
+  token: "USDT";
+  balance: number;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+}
+export type PaymentReceivingAddresses = Record<PaymentNetwork, string>;
