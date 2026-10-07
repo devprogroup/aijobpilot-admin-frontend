@@ -1,17 +1,30 @@
 import { io, type Socket } from "socket.io-client";
+import { getAdminToken } from "../api";
 
 // admin-backend hosts its own Socket.IO server (see
 // admin-backend/src/services/socket-server.ts). Auth happens once at the
-// handshake via the same admin session cookie the REST API uses -- no
-// per-room token/join dance like client-frontend's socket needs, every
+// handshake via the same JWT the REST API uses. Every
 // authenticated socket is auto-joined to the one shared "admin" room.
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || API_URL.replace(/\/api\/?$/, "");
 
 let socket: Socket | null = null;
 
+export function disconnectAdminSocket(): void {
+  socket?.disconnect();
+  socket = null;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("admin:unauthorized", disconnectAdminSocket);
+}
+
 function getSocket(): Socket {
-  socket ??= io(WEBSOCKET_URL, { transports: ["websocket", "polling"], withCredentials: true });
+  socket ??= io(WEBSOCKET_URL, {
+    transports: ["websocket", "polling"],
+    withCredentials: false,
+    auth: (callback) => callback({ token: getAdminToken() }),
+  });
   return socket;
 }
 

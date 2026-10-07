@@ -22,16 +22,31 @@ import type {
   PaymentReceivingAddresses,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
+const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
+export const getAdminToken = () => window.localStorage.getItem(ADMIN_TOKEN_KEY);
+const setAdminToken = (token: string | null) => {
+  if (token) window.localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  else window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getAdminToken();
   const response = await fetch(`${base}${path}`, {
     ...options,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    credentials: "omit",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    if (response.status === 401 && path !== "/auth/login" && path !== "/auth/me") {
-      window.dispatchEvent(new Event("admin:unauthorized"));
+    if (response.status === 401) {
+      setAdminToken(null);
+      if (path !== "/auth/login" && path !== "/auth/me") {
+        window.dispatchEvent(new Event("admin:unauthorized"));
+      }
     }
     throw new Error(body.error || `Request failed (${response.status})`);
   }
@@ -50,8 +65,19 @@ export const api = {
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
     })}`),
-  applicationScreenshotUrl: (applicationId: number, key: "preview" | "result") =>
-    `${base}/applications/${applicationId}/screenshots/${key}`,
+  applicationScreenshot: async (applicationId: number, key: "preview" | "result") => {
+    const token = getAdminToken();
+    const response = await fetch(`${base}/applications/${applicationId}/screenshots/${key}`, {
+      credentials: "omit",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) {
+      setAdminToken(null);
+      window.dispatchEvent(new Event("admin:unauthorized"));
+    }
+    if (!response.ok) throw new Error("Unable to load application screenshot.");
+    return URL.createObjectURL(await response.blob());
+  },
   failedApplicationStats: (from: string, to: string) =>
     request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[] }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
@@ -59,10 +85,16 @@ export const api = {
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
   updateApplicationSite: (id: number, payload: Partial<ApplicationSitePayload>) =>
     request<{ applicationSite: ApplicationSite }>(`/application-sites/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  login: (email: string, password: string) =>
-    request<{ user: AdminUser }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  login: async (email: string, password: string) => {
+    const result = await request<{ user: AdminUser; token: string }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    setAdminToken(result.token);
+    return result;
+  },
   me: () => request<{ user: AdminUser }>("/auth/me"),
-  logout: () => request<void>("/auth/logout", { method: "POST" }),
+  logout: async () => {
+    try { await request<void>("/auth/logout", { method: "POST" }); }
+    finally { setAdminToken(null); }
+  },
   serviceHealth: (serviceId: ServiceHealth["id"]) =>
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
   deepSeekBalance: () => request<ProviderBalance>("/provider-balances/deepseek"),

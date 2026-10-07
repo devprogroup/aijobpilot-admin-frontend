@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "../api";
 import type { AdminUser } from "../types";
+import { disconnectAdminSocket } from "../services/websocket";
 
 type AuthState = {
   user: AdminUser | null;
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    try { await api.logout(); } finally { setUser(null); }
+    try { await api.logout(); } finally { disconnectAdminSocket(); setUser(null); }
   };
 
   return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;

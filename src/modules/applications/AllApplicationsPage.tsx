@@ -13,6 +13,24 @@ const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "failed", label: "Failed" },
 ];
 
+function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: number; kind: "preview" | "result"; alt: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    let active = true;
+    let objectUrl = "";
+    void api.applicationScreenshot(applicationId, kind).then((url) => {
+      objectUrl = url;
+      if (active) setSrc(url);
+      else URL.revokeObjectURL(url);
+    }).catch(() => setSrc(""));
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [applicationId, kind]);
+  return src ? <img src={src} alt={alt} style={{ maxWidth: "320px", borderRadius: "8px", border: "1px solid #e5e7eb" }} /> : <Text fontSize="xs" color="gray.500">Loading screenshot…</Text>;
+}
+
 export function AllApplicationsPage() {
   const [result, setResult] = useState<Awaited<ReturnType<typeof api.applications>> | null>(null);
   const [applicationSites, setApplicationSites] = useState<ApplicationSite[]>([]);
@@ -138,11 +156,11 @@ export function AllApplicationsPage() {
                 <Flex gap="4" flexWrap="wrap">
                   {messageModal.previewScreenshot && <Box>
                     <Text fontSize="xs" color="gray.500" mb="1">Before submit</Text>
-                    <img src={api.applicationScreenshotUrl(messageModal.id, "preview")} alt="Preview screenshot" style={{ maxWidth: "320px", borderRadius: "8px", border: "1px solid #e5e7eb" }} />
+                    <AuthorizedScreenshot applicationId={messageModal.id} kind="preview" alt="Preview screenshot" />
                   </Box>}
                   {messageModal.resultScreenshot && <Box>
                     <Text fontSize="xs" color="gray.500" mb="1">Result</Text>
-                    <img src={api.applicationScreenshotUrl(messageModal.id, "result")} alt="Result screenshot" style={{ maxWidth: "320px", borderRadius: "8px", border: "1px solid #e5e7eb" }} />
+                    <AuthorizedScreenshot applicationId={messageModal.id} kind="result" alt="Result screenshot" />
                   </Box>}
                 </Flex>
               </>}
