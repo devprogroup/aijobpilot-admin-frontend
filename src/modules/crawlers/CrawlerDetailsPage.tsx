@@ -17,7 +17,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { BotRunLogDialog } from "./components/BotRunLogDialog";
+import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { toaster } from "../../components/ui/toaster";
 
 const ChakraRouterLink = chakra(Link);
@@ -316,7 +316,7 @@ export function CrawlerDetailsPage() {
             Bot runs
           </Text>
           <Text mt="1" fontSize="xs" color="gray.400">
-            {crawler.botRuns?.length ?? 0} recorded runs
+            {crawler.crawlerRuns?.length ?? 0} recorded runs
           </Text>
         </Box>
         <Box overflowX="auto">
@@ -381,7 +381,7 @@ export function CrawlerDetailsPage() {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {!crawler.botRuns?.length && (
+              {!crawler.crawlerRuns?.length && (
                 <Table.Row>
                   <Table.Cell
                     colSpan={7}
@@ -394,7 +394,7 @@ export function CrawlerDetailsPage() {
                   </Table.Cell>
                 </Table.Row>
               )}
-              {crawler.botRuns?.map((run) => (
+              {crawler.crawlerRuns?.map((run) => (
                 <Table.Row key={run.id}>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {time(run.startedAt)}
@@ -419,7 +419,7 @@ export function CrawlerDetailsPage() {
           </Table.Root>
         </Box>
       </Box>
-      {logRunId !== null && <BotRunLogDialog crawlerId={crawlerId} runId={logRunId} onClose={() => setLogRunId(null)} />}
+      {logRunId !== null && <CrawlerRunLogDialog crawlerId={crawlerId} runId={logRunId} onClose={() => setLogRunId(null)} />}
     </>
   );
 }

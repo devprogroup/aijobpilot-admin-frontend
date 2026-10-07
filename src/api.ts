@@ -93,7 +93,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(filters),
     }),
-  botRunLog: (crawlerId: number, runId: string) =>
+  crawlerRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}`, {
@@ -110,7 +110,7 @@ export const api = {
   deleteCrawler: (id: number) =>
     request<void>(`/crawlers/${id}`, { method: "DELETE" }),
   uploadCrawledJobs: (crawlerId: number, jobs: unknown[]) =>
-    request<{ botRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
+    request<{ crawlerRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
       method: "POST",
       body: JSON.stringify({ jobs }),
     }),

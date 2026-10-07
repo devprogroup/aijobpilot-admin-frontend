@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { api } from "../../../api";
 import { StructuredLogViewer } from "../../../components/StructuredLogViewer";
 
-export function BotRunLogDialog({ crawlerId, runId, onClose }: {
+export function CrawlerRunLogDialog({ crawlerId, runId, onClose }: {
   crawlerId: number;
   runId: string;
   onClose: () => void;
@@ -18,7 +18,7 @@ export function BotRunLogDialog({ crawlerId, runId, onClose }: {
     let active = true;
     setLoading(true);
     setError("");
-    api.botRunLog(crawlerId, runId).then((result) => {
+    api.crawlerRunLog(crawlerId, runId).then((result) => {
       if (active) setContent(result.content);
     }).catch((error: unknown) => {
       if (active) setError(error instanceof Error ? error.message : "Unable to load log");

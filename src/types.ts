@@ -17,9 +17,9 @@ export type CrawlerParameterControlType = "input" | "textarea" | "single-select"
 export interface CrawlerTypeParameterOption { key:string; value:string }
 export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[] }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
-export interface BotRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
-export interface BotRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:BotRunCounts }
-export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; stopSignalData:string|null; crawlerType:{id:number;name:string}; latestRun:BotRun|null; botRuns?:BotRun[]; _count:{botRuns:number} }
+export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
+export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts }
+export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; stopSignalData:string|null; crawlerType:{id:number;name:string}; latestRun:CrawlerRun|null; crawlerRuns?:CrawlerRun[]; _count:{crawlerRuns:number} }
 export interface CrawledJobRow { id:number; createdAt:string; title:string; company:string; status:string; crawlerName:string; crawlerType:string }
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
