@@ -57,15 +57,17 @@ export interface ProviderBalance {
   updatedAt: string;
 }
 export type PaymentNetwork = "erc20" | "bep20" | "trc20";
-export interface AdminWallet {
+export interface AdminDepositAddress {
   id: number;
-  user: { id: number; name: string | null; email: string | null; credit: number };
   address: string;
   network: PaymentNetwork;
-  token: "USDT";
-  balance: number;
-  status: string;
+  usdtBalance: number;
+  nativeBalance: number;
+  balanceUpdatedAt: string | null;
+  activated: boolean;
+  lease: { userId: number; userName: string | null; userEmail: string | null; status: string; expiresAt: string } | null;
+  lockedUntil: string | null;
+  releasedAt: string | null;
   createdAt: string;
-  expiresAt: string;
 }
 export type PaymentReceivingAddresses = Record<PaymentNetwork, string>;

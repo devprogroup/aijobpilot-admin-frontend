@@ -17,7 +17,7 @@ import type {
   EmailTemplatePayload,
   AdminUser,
   ProviderBalance,
-  AdminWallet,
+  AdminDepositAddress,
   PaymentNetwork,
   PaymentReceivingAddresses,
 } from "./types";
@@ -101,12 +101,9 @@ export const api = {
   openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   paymentSummary: () => request<{ totalBalance: number; currency: "USDT" }>("/payments/summary"),
-  paymentWallets: (page: number) => request<{ wallets: AdminWallet[]; total: number; page: number; pageSize: number }>(`/payments?page=${page}`),
+  paymentDepositAddresses: (page: number) => request<{ addresses: AdminDepositAddress[]; total: number; page: number; pageSize: number }>(`/payments?page=${page}`),
   paymentReceivingAddresses: () => request<{ addresses: PaymentReceivingAddresses }>("/payments/receiving-addresses"),
   updatePaymentReceivingAddress: (network: PaymentNetwork, address: string) => request<{ network: PaymentNetwork; address: string }>(`/payments/receiving-addresses/${network}`, { method: "PUT", body: JSON.stringify({ address }) }),
-  transferPayment: (walletId: number) => request<{ walletId: number; network: PaymentNetwork; token: string; amount: number; txHash: string; destination: string }>(`/payments/${walletId}/transfer`, { method: "POST" }),
-  updatePaymentBalance: (walletId: number, balance: number) => request<{ balance: number; status: "confirmed"; userId: number }>(`/payments/${walletId}`, { method: "PATCH", body: JSON.stringify({ balance }) }),
-  syncPaymentBalance: (walletId: number) => request<{ walletId: number; balance: number }>(`/payments/${walletId}/sync`, { method: "POST" }),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
   crawledJobs: (
