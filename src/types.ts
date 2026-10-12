@@ -56,18 +56,15 @@ export interface ProviderBalance {
   error?: string;
   updatedAt: string;
 }
-export type PaymentNetwork = "erc20" | "bep20" | "trc20";
+export type PaymentNetwork = "erc20" | "bep20";
 export interface AdminDepositAddress {
   id: number;
   address: string;
-  network: PaymentNetwork;
   usdtBalance: number;
-  nativeBalance: number;
   balanceUpdatedAt: string | null;
   activated: boolean;
   lease: { userId: number; userName: string | null; userEmail: string | null; status: string; expiresAt: string } | null;
+  lastPayment: { amount: number; txHash: string; createdAt: string; fromAddress: string | null; network: PaymentNetwork } | null;
   lockedUntil: string | null;
-  releasedAt: string | null;
   createdAt: string;
 }
-export type PaymentReceivingAddresses = Record<PaymentNetwork, string>;

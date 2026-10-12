@@ -86,7 +86,7 @@ export function Sidebar({
   const usersActive = location.pathname.startsWith("/users");
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
-  const paymentsActive = location.pathname.startsWith("/payments");
+  const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
@@ -289,9 +289,9 @@ export function Sidebar({
               Users
             </Flex>
           </NavLink>
-          <NavLink to="/payments" onClick={onClose} style={{ textDecoration: "none" }}>
+          <NavLink to="/wallets" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={paymentsActive ? "white" : "transparent"} color={paymentsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={paymentsActive ? "sm" : "none"} _hover={paymentsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={Wallet} boxSize="5" /> Payments
+              <Icon as={Wallet} boxSize="5" /> Wallets
             </Flex>
           </NavLink>
           <NavLink to="/settings" onClick={onClose} style={{ textDecoration: "none" }}>

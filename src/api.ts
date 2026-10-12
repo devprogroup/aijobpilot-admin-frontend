@@ -19,7 +19,6 @@ import type {
   ProviderBalance,
   AdminDepositAddress,
   PaymentNetwork,
-  PaymentReceivingAddresses,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -101,9 +100,10 @@ export const api = {
   openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),
   paymentSummary: () => request<{ totalBalance: number; currency: "USDT" }>("/payments/summary"),
-  paymentDepositAddresses: (page: number) => request<{ addresses: AdminDepositAddress[]; total: number; page: number; pageSize: number }>(`/payments?page=${page}`),
-  paymentReceivingAddresses: () => request<{ addresses: PaymentReceivingAddresses }>("/payments/receiving-addresses"),
-  updatePaymentReceivingAddress: (network: PaymentNetwork, address: string) => request<{ network: PaymentNetwork; address: string }>(`/payments/receiving-addresses/${network}`, { method: "PUT", body: JSON.stringify({ address }) }),
+  paymentDepositAddresses: (page: number, search = "") => request<{ addresses: AdminDepositAddress[]; total: number; page: number; pageSize: number }>(`/payments?${new URLSearchParams({ page: String(page), ...(search ? { search } : {}) })}`),
+  addPaymentWallet: (address: string) => request<{ wallet: AdminDepositAddress }>("/payments", { method: "POST", body: JSON.stringify({ address }) }),
+  syncPaymentWalletBalance: (id: number) => request<{ wallet: AdminDepositAddress }>(`/payments/${id}/sync-balance`, { method: "POST" }),
+  deletePaymentWallet: (id: number) => request<void>(`/payments/${id}`, { method: "DELETE" }),
   crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
   crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
   crawledJobs: (

@@ -290,7 +290,7 @@ export function DashboardPage() {
           <Box><Text fontWeight="bold">USDT payment balance</Text><Text mt="1" fontSize="xs" color="gray.400">Across confirmed customer deposit addresses</Text></Box>
           <Text fontSize="2xl" fontWeight="bold">{paymentBalance === null ? "—" : `${paymentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`}</Text>
         </Flex>
-        <Link to="/payments" style={{ textDecoration: "none" }}><Button mt="3" size="sm" variant="outline">Manage payments</Button></Link>
+        <Link to="/wallets" style={{ textDecoration: "none" }}><Button mt="3" size="sm" variant="outline">Manage wallets</Button></Link>
       </Box>
 
       <Grid
