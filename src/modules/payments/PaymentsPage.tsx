@@ -6,12 +6,13 @@ import type { AdminDepositAddress, PaymentNetwork } from "../../types";
 
 const amount = (value: number) => `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`;
 function explorerUrl(network: PaymentNetwork, address: string): string {
-  if (network === "erc20") return `https://sepolia.otterscan.io/address/${encodeURIComponent(address)}`;
-  if (network === "bep20") return `https://testnet.bscscan.com/address/${encodeURIComponent(address)}`;
+  if (network === "erc20") return `https://etherscan.io/address/${encodeURIComponent(address)}`;
+  if (network === "bep20") return `https://bscscan.com/address/${encodeURIComponent(address)}`;
+  throw new Error(`Unsupported network: ${network}`)
 }
 function transactionUrl(network: PaymentNetwork, hash: string): string {
-  if (network === "erc20") return `https://sepolia.otterscan.io/tx/${encodeURIComponent(hash)}`;
-  if (network === "bep20") return `https://testnet.bscscan.com/tx/${encodeURIComponent(hash)}`;
+  if (network === "erc20") return `https://etherscan.io/tx/${encodeURIComponent(hash)}`;
+  if (network === "bep20") return `https://bscscan.com/tx/${encodeURIComponent(hash)}`;
 }
 function addressStatus(address: AdminDepositAddress): string {
   if (address.lease?.status === "pending") return "Reserved";
