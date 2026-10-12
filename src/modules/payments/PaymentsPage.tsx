@@ -17,7 +17,7 @@ function transactionUrl(network: PaymentNetwork, hash: string): string {
 function addressStatus(address: AdminDepositAddress): string {
   if (address.lease?.status === "pending") return "Reserved";
   if (address.lease?.status === "detected") return "Deposit detected";
-  if (address.lockedUntil && new Date(address.lockedUntil) > new Date()) return "Reserved";
+  if (address.reservedUntil && new Date(address.reservedUntil) > new Date()) return "Reserved";
   return "Available";
 }
 
