@@ -14,7 +14,6 @@ import { SettingsPage } from "./modules/settings/SettingsPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
 import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { MessagesPage } from "./modules/messages/MessagesPage";
-import { SupportInboxPage } from "./modules/messages/SupportInboxPage";
 import { LoginPage } from "./auth/LoginPage";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 
@@ -45,7 +44,7 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/support" element={<SupportInboxPage />} />
+        <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Box, Button, Field, Flex, Input, NativeSelect, Text, Textarea } from "@chakra-ui/react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import type { User } from "../../types";
+import { SupportInboxPage } from "./SupportInboxPage";
 
 type Recipient = "all" | "user";
 type Variant = "info" | "success" | "warning" | "error";
 
-export function MessagesPage() {
+function SendMessageTab() {
   const [users, setUsers] = useState<User[]>([]);
   const [recipient, setRecipient] = useState<Recipient>("user");
   const [userId, setUserId] = useState("");
@@ -115,4 +117,23 @@ export function MessagesPage() {
       </Flex>
     </Box>
   </>;
+}
+
+export function MessagesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "support" ? "support" : "send";
+
+  const selectTab = (tab: "send" | "support") => {
+    setSearchParams(tab === "support" ? { tab: "support" } : {}, { replace: true });
+  };
+
+  return (
+    <Box>
+      <Flex gap="2" mb="6" borderBottom="1px solid" borderColor="gray.200" role="tablist" aria-label="Message sections">
+        <Button role="tab" aria-selected={activeTab === "send"} onClick={() => selectTab("send")} variant="ghost" borderBottom="2px solid" borderColor={activeTab === "send" ? "green.600" : "transparent"} borderRadius="0" color={activeTab === "send" ? "green.700" : "gray.600"}>Send message</Button>
+        <Button role="tab" aria-selected={activeTab === "support"} onClick={() => selectTab("support")} variant="ghost" borderBottom="2px solid" borderColor={activeTab === "support" ? "green.600" : "transparent"} borderRadius="0" color={activeTab === "support" ? "green.700" : "gray.600"}>Support inbox</Button>
+      </Flex>
+      {activeTab === "support" ? <SupportInboxPage /> : <SendMessageTab />}
+    </Box>
+  );
 }
