@@ -19,6 +19,7 @@ import {
   ChevronDown,
   List,
   ListTree,
+  LifeBuoy,
   LogOut,
   Mail,
   Globe,
@@ -88,6 +89,8 @@ export function Sidebar({
   const settingsActive = location.pathname.startsWith("/settings");
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
+  const messagesActive = location.pathname.startsWith("/messages");
+  const supportActive = location.pathname.startsWith("/support");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -304,6 +307,17 @@ export function Sidebar({
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailTemplatesActive ? "white" : "transparent"} color={emailTemplatesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailTemplatesActive ? "sm" : "none"} _hover={emailTemplatesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Mail} boxSize="5" />
               Email templates
+            </Flex>
+          </NavLink>
+          <NavLink to="/messages" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={messagesActive ? "white" : "transparent"} color={messagesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={messagesActive ? "sm" : "none"} _hover={messagesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Mail} boxSize="5" />
+              Messages
+            </Flex>
+          </NavLink>
+          <NavLink to="/support" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={supportActive ? "white" : "transparent"} color={supportActive ? "#17211b" : "whiteAlpha.700"} boxShadow={supportActive ? "sm" : "none"} _hover={supportActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={LifeBuoy} boxSize="5" /> Support inbox
             </Flex>
           </NavLink>
         </VStack>

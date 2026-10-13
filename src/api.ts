@@ -53,6 +53,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 export const api = {
+  supportMessages: () => request<{ messages: SupportMessage[] }>("/support-messages"),
+  replyToSupportMessage: (id: number, content: string) =>
+    request<{ sent: boolean }>(`/support-messages/${id}/reply`, { method: "POST", body: JSON.stringify({ content }) }),
+  markSupportMessageRead: (id: number) =>
+    request<{ id: number; isRead: boolean }>(`/support-messages/${id}/read`, { method: "POST" }),
+  supportAttachment: async (id: number, index: number) => {
+    const token = getAdminToken();
+    const response = await fetch(`${base}/support-messages/${id}/attachments/${index}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!response.ok) throw new Error("Unable to load this attachment.");
+    return URL.createObjectURL(await response.blob());
+  },
   applications: (page: number, filters: ApplicationFilters) =>
     request<{ applications: AdminApplication[]; total: number; page: number; pageSize: number }>(`/applications?${new URLSearchParams({
       page: String(page),
@@ -163,6 +174,8 @@ export const api = {
   deleteCrawlerType: (id: number) =>
     request<void>(`/crawler-types/${id}`, { method: "DELETE" }),
   users: () => request<{ users: User[] }>("/users"),
+  sendUserMessage: (payload: { recipient: "all" | "user"; userId?: number; title: string; content: string; variant: "info" | "success" | "warning" | "error" }) =>
+    request<{ sent: number }>("/messages", { method: "POST", body: JSON.stringify(payload) }),
   user: (id: number) => request<UserDetails>(`/users/${id}`),
   userPayments: (id: number, page: number) => request<{
     payments: { id:number; amount:number; currency:string; description:string|null; status:string; invoiceUrl:string|null; createdAt:string }[];
@@ -205,3 +218,18 @@ export const api = {
   deleteEmailTemplate: (id: number) =>
     request<void>(`/email-templates/${id}`, { method: "DELETE" }),
 };
+
+export interface SupportMessage {
+  id: number;
+  userId: number;
+  adminUserId: number | null;
+  category: "payment" | "bug" | "feedback" | "other";
+  title: string;
+  content: string;
+  attachments: { storageKey: string; fileName: string; mimeType: string; size: number }[];
+  dateTime: string;
+  isRead: boolean;
+  replyId: number | null;
+  userName: string | null;
+  userEmail: string | null;
+}
