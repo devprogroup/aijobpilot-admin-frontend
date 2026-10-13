@@ -62,7 +62,6 @@ export interface AdminDepositAddress {
   address: string;
   usdtBalance: number;
   balanceUpdatedAt: string | null;
-  activated: boolean;
   lease: { userId: number; userName: string | null; userEmail: string | null; status: string; expiresAt: string } | null;
   lastPayment: { amount: number; txHash: string; createdAt: string; fromAddress: string | null; network: PaymentNetwork } | null;
   reservedUntil: string | null;
