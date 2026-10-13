@@ -178,7 +178,7 @@ export const api = {
     request<{ sent: number }>("/messages", { method: "POST", body: JSON.stringify(payload) }),
   user: (id: number) => request<UserDetails>(`/users/${id}`),
   userPayments: (id: number, page: number) => request<{
-    payments: { id:number; amount:number; currency:string; description:string|null; status:string; invoiceUrl:string|null; createdAt:string }[];
+    payments: { id: number; amount: number; network: "erc20" | "bep20" | null; txHash: string | null; status: string | null; createdAt: string }[];
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
   updateUser: (id: number, payload: { name?: string | null; credit?: number }) =>
