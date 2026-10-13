@@ -30,7 +30,7 @@ export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;
   createdAt: string; updatedAt: string; appliedAt: string | null;
-  previewScreenshot: string | null; resultScreenshot: string | null;
+  previewScreenshot: string | null; resultScreenshot: string | null; logFilePath: string | null;
   job?: { id: number; positionName: string | null; companyName: string | null; url: string; applicationSite: { id: number; typeName: string; displayText: string } | null } | null;
   user?: { id: number; name: string | null; username: string } | null;
   profile?: { id: number; name: string | null } | null;

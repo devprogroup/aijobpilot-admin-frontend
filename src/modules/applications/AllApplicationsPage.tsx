@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../api";
 import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
 
 const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "", label: "All statuses" },
@@ -47,6 +48,7 @@ export function AllApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [messageModal, setMessageModal] = useState<AdminApplication | null>(null);
+  const [logApplicationId, setLogApplicationId] = useState<number | null>(null);
 
   useEffect(() => {
     api.applicationSites().then((value) => setApplicationSites(value.applicationSites)).catch(() => undefined);
@@ -110,7 +112,10 @@ export function AllApplicationsPage() {
         <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "User", "Profile", "Created", "Applied"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
-            <Table.Cell p="4"><Text mb="2">#{application.id}</Text><StatusBadge status={application.status} /></Table.Cell>
+            <Table.Cell p="4">
+              <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
+              {application.logFilePath && <Text fontSize="xs" mt="2"><a href="#" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setLogApplicationId(application.id); }} style={{ color: "#15803d", textDecoration: "underline" }}>View log</a></Text>}
+            </Table.Cell>
             <Table.Cell p="4">
               <Text fontWeight="semibold">
                 {application.job?.url ? (
@@ -166,11 +171,13 @@ export function AllApplicationsPage() {
               </>}
             </Dialog.Body>
             <Dialog.Footer>
+              {messageModal.logFilePath && <Button variant="outline" onClick={() => { setLogApplicationId(messageModal.id); setMessageModal(null); }}>View log</Button>}
               <Button variant="outline" onClick={() => setMessageModal(null)}>Close</Button>
             </Dialog.Footer>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>
     </Dialog.Root>}
+    {logApplicationId !== null && <ApplicationLogDialog applicationId={logApplicationId} onClose={() => setLogApplicationId(null)} />}
   </>;
 }

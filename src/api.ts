@@ -75,6 +75,8 @@ export const api = {
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
     })}`),
+  applicationLog: (applicationId: number) =>
+    request<{ content: string }>(`/applications/${applicationId}/log`),
   applicationScreenshot: async (applicationId: number, key: "preview" | "result") => {
     const token = getAdminToken();
     const response = await fetch(`${base}/applications/${applicationId}/screenshots/${key}`, {
