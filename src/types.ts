@@ -26,6 +26,13 @@ export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:u
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
+export interface SystemMetrics {
+  cpu: { percent: number | null; cores: number };
+  memory: { usedBytes: number; totalBytes: number };
+  network: { receivedBytesPerSecond: number; sentBytesPerSecond: number } | null;
+  storage: { usedBytes: number; totalBytes: number };
+  sampledAt: string;
+}
 export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;

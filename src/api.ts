@@ -19,6 +19,7 @@ import type {
   ProviderBalance,
   AdminDepositAddress,
   PaymentNetwork,
+  SystemMetrics,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -109,6 +110,7 @@ export const api = {
   },
   serviceHealth: (serviceId: ServiceHealth["id"]) =>
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
+  systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   deepSeekBalance: () => request<ProviderBalance>("/provider-balances/deepseek"),
   openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { Bot, RefreshCw, Server, ShieldCheck, WalletCards } from "lucide-react";
+import { Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, WalletCards } from "lucide-react";
 import { api } from "../../api";
-import type { ProviderBalance, ServiceHealth } from "../../types";
+import type { ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { Link } from "react-router-dom";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -17,6 +17,75 @@ const serviceDefinitions = [
   { id: "crawler-backend", name: "Crawler Backend" },
   { id: "client-backend", name: "Client Backend" },
 ] as const;
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes.toFixed(0)} B`;
+  const units = ["KB", "MB", "GB", "TB", "PB"];
+  let value = bytes / 1024;
+  let unit = units[0];
+  for (let index = 1; value >= 1024 && index < units.length; index += 1) {
+    value /= 1024;
+    unit = units[index];
+  }
+  return `${value.toFixed(1)} ${unit}`;
+}
+
+function MetricCard({
+  title,
+  icon,
+  value,
+  detail,
+  percent,
+}: {
+  title: string;
+  icon: typeof Cpu;
+  value: string;
+  detail: string;
+  percent?: number | null;
+}) {
+  return (
+    <Box borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+      <Flex align="center" gap="3">
+        <Flex h="10" w="10" align="center" justify="center" borderRadius="xl" bg="green.50" color="green.700">
+          <Icon as={icon} boxSize="5" />
+        </Flex>
+        <Text fontSize="sm" fontWeight="semibold" color="gray.600">{title}</Text>
+      </Flex>
+      <Text mt="5" fontSize="2xl" fontWeight="bold" fontVariantNumeric="tabular-nums">{value}</Text>
+      <Text mt="1" fontSize="xs" color="gray.500">{detail}</Text>
+      {percent !== undefined && percent !== null && (
+        <Box mt="4" h="1.5" overflow="hidden" borderRadius="full" bg="gray.100" role="progressbar" aria-valuenow={Math.round(percent)} aria-valuemin={0} aria-valuemax={100} aria-label={`${title} usage`}>
+          <Box h="full" w={`${Math.max(0, Math.min(100, percent))}%`} borderRadius="full" bg="green.500" transition="width 300ms" />
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+function SystemMetricsSection({ metrics }: { metrics: SystemMetrics | null }) {
+  const memoryPercent = metrics ? metrics.memory.usedBytes / metrics.memory.totalBytes * 100 : null;
+  const storagePercent = metrics ? metrics.storage.usedBytes / metrics.storage.totalBytes * 100 : null;
+  const networkDetail = metrics?.network
+    ? `↓ ${formatBytes(metrics.network.receivedBytesPerSecond)}/s  ↑ ${formatBytes(metrics.network.sentBytesPerSecond)}/s`
+    : "Sampling network traffic";
+  return (
+    <Box mb="8">
+      <Flex mb="3" align="end" justify="space-between" gap="3">
+        <Box>
+          <Text fontWeight="bold">Resource usage</Text>
+          <Text mt="1" fontSize="xs" color="gray.400">Host running the admin backend · updates every 15 seconds</Text>
+        </Box>
+        {metrics && <Text fontSize="xs" color="gray.400">Updated {new Date(metrics.sampledAt).toLocaleTimeString()}</Text>}
+      </Flex>
+      <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", xl: "repeat(4, 1fr)" }} gap="4">
+        <MetricCard title="CPU" icon={Cpu} value={metrics?.cpu.percent == null ? "—" : `${metrics.cpu.percent.toFixed(1)}%`} detail={metrics ? `${metrics.cpu.cores} logical cores` : "Waiting for sample"} percent={metrics?.cpu.percent} />
+        <MetricCard title="Memory" icon={MemoryStick} value={metrics ? `${memoryPercent!.toFixed(1)}%` : "—"} detail={metrics ? `${formatBytes(metrics.memory.usedBytes)} of ${formatBytes(metrics.memory.totalBytes)}` : "Waiting for sample"} percent={memoryPercent} />
+        <MetricCard title="Network" icon={Network} value={metrics?.network ? `${formatBytes(metrics.network.receivedBytesPerSecond + metrics.network.sentBytesPerSecond)}/s` : "—"} detail={networkDetail} />
+        <MetricCard title="Storage" icon={HardDrive} value={metrics ? `${storagePercent!.toFixed(1)}%` : "—"} detail={metrics ? `${formatBytes(metrics.storage.usedBytes)} of ${formatBytes(metrics.storage.totalBytes)} · FILES_ROOT volume` : "Waiting for sample"} percent={storagePercent} />
+      </Grid>
+    </Box>
+  );
+}
 
 function BalanceCard({
   balance,
@@ -121,6 +190,7 @@ export function DashboardPage() {
   const [twoCaptchaBalance, setTwoCaptchaBalance] =
     useState<ProviderBalance | null>(null);
   const [paymentBalance, setPaymentBalance] = useState<number | null>(null);
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
 
   const loadServices = useCallback(async () => {
     await Promise.all(
@@ -188,12 +258,18 @@ export function DashboardPage() {
     catch { setPaymentBalance(null); }
   }, []);
 
+  const loadSystemMetrics = useCallback(async () => {
+    try { setSystemMetrics(await api.systemMetrics()); }
+    catch { setSystemMetrics(null); }
+  }, []);
+
   const refresh = useCallback(() => {
     void loadServices();
     void loadDeepSeekBalance();
     void loadTwoCaptchaBalance();
     void loadPaymentBalance();
-  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadTwoCaptchaBalance]);
+    void loadSystemMetrics();
+  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadSystemMetrics, loadTwoCaptchaBalance]);
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 15000);
@@ -250,6 +326,8 @@ export function DashboardPage() {
           Refresh
         </Button>
       </Flex>
+
+      <SystemMetricsSection metrics={systemMetrics} />
 
       <Box mb="8">
         <Text fontWeight="bold">Provider balances</Text>
