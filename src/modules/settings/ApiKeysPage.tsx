@@ -3,19 +3,6 @@ import { Box, Button, Dialog, Flex, Input, Portal, Table, Text, Textarea } from 
 import { api } from "../../api";
 import type { ManagedApiKey } from "../../types";
 
-const CREDENTIAL_LABELS: Record<string, string> = {
-  DEEPSEEK_API_KEY: "DeepSeek",
-  GEOAPIFY_API_KEY: "Geoapify",
-  LLM_API_KEY: "LLM provider",
-  OPENAI_ADMIN_KEY: "OpenAI admin",
-  OPENAI_API_KEY: "OpenAI",
-  RESEND_API_KEY: "Resend",
-  TWOCAPTCHA_API_KEY: "2Captcha",
-  TURNSTILE_SECRET_KEY: "Cloudflare Turnstile",
-  GOOGLE_OAUTH_CREDENTIALS: "Google OAuth",
-  OUTLOOK_OAUTH_CREDENTIALS: "Outlook OAuth",
-};
-
 const oauthCredentialKeys = new Set(["GOOGLE_OAUTH_CREDENTIALS", "OUTLOOK_OAUTH_CREDENTIALS"]);
 
 export function ApiKeysPage() {
@@ -83,7 +70,7 @@ export function ApiKeysPage() {
       setIsAdding(false);
       setDraft("");
       setNewKey("");
-      setMessage(`${CREDENTIAL_LABELS[key] ?? key} ${isAdding ? "added" : "updated"}.`);
+      setMessage(`${key} ${isAdding ? "added" : "updated"}.`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to update credential.");
     } finally {
@@ -99,7 +86,7 @@ export function ApiKeysPage() {
     try {
       await api.deleteApiKey(deletingKey);
       await load();
-      setMessage(`${CREDENTIAL_LABELS[deletingKey] ?? deletingKey} deleted.`);
+      setMessage(`${deletingKey} deleted.`);
       setDeletingKey(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to delete API key.");
@@ -148,8 +135,7 @@ export function ApiKeysPage() {
             ) : credentials.map((credential) => (
               <Table.Row key={credential.key} _hover={{ bg: "gray.50" }}>
                 <Table.Cell p="4">
-                  <Text fontWeight="semibold">{CREDENTIAL_LABELS[credential.key] ?? credential.key}</Text>
-                  <Text mt="1" fontSize="xs" color="gray.500" fontFamily="mono">{credential.key}</Text>
+                  <Text fontWeight="semibold" fontFamily="mono">{credential.key}</Text>
                 </Table.Cell>
                 <Table.Cell p="4" fontFamily="mono" color={credential.configured ? "gray.700" : "gray.400"}>
                   {credential.configured
@@ -178,7 +164,7 @@ export function ApiKeysPage() {
           <Dialog.Backdrop bg="blackAlpha.600" />
           <Dialog.Positioner>
             <Dialog.Content maxW={editingOAuthCredential ? "2xl" : "md"} borderRadius="2xl" p="6">
-              <Dialog.Title fontSize="lg" fontWeight="bold">{isAdding ? "Add API key" : `Update ${editingKey ? CREDENTIAL_LABELS[editingKey] ?? editingKey : "credential"}`}</Dialog.Title>
+              <Dialog.Title fontSize="lg" fontWeight="bold">{isAdding ? "Add API key" : `Update ${editingKey ?? "credential"}`}</Dialog.Title>
               <Dialog.Description mt="2" color="gray.500">
                 The saved value is masked in the table and cannot be retrieved from this page.
               </Dialog.Description>
