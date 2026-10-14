@@ -13,6 +13,7 @@ import type {
   ApplicationFilters,
   ServiceHealth,
   AppConfig,
+  ManagedApiKey,
   EmailTemplate,
   EmailTemplatePayload,
   AdminUser,
@@ -209,6 +210,19 @@ export const api = {
     }),
   deleteSetting: (key: string) =>
     request<void>(`/settings/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  apiKeys: () => request<{ apiKeys: ManagedApiKey[] }>("/api-keys"),
+  createApiKey: (key: string, value: string) =>
+    request<{ apiKey: ManagedApiKey }>("/api-keys", {
+      method: "POST",
+      body: JSON.stringify({ key, value }),
+    }),
+  updateApiKey: (key: string, value: string) =>
+    request<{ apiKey: ManagedApiKey }>(`/api-keys/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value }),
+    }),
+  deleteApiKey: (key: string) =>
+    request<{ apiKey: ManagedApiKey }>(`/api-keys/${encodeURIComponent(key)}`, { method: "DELETE" }),
   emailTemplates: () =>
     request<{ emailTemplates: EmailTemplate[] }>("/email-templates"),
   createEmailTemplate: (payload: EmailTemplatePayload) =>

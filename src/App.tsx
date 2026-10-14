@@ -11,6 +11,7 @@ import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { SettingsPage } from "./modules/settings/SettingsPage";
+import { ApiKeysPage } from "./modules/settings/ApiKeysPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
 import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { MessagesPage } from "./modules/messages/MessagesPage";
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/wallets" element={<PaymentsPage />} />
         <Route path="/payments" element={<Navigate to="/wallets" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/api-keys" element={<ApiKeysPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />

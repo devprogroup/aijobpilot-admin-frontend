@@ -57,6 +57,7 @@ export interface UserDetails {
   applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+export interface ManagedApiKey { key:string; configured:boolean; displayValue?:string|null; updatedAt?:string|null }
 export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; fromName:string; fromEmailId:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
