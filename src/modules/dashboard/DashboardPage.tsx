@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, Trash2, WalletCards } from "lucide-react";
+import { AlertTriangle, Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
-import type { ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
+import type { AppConfig, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { Link } from "react-router-dom";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -17,6 +17,52 @@ const serviceDefinitions = [
   { id: "crawler-backend", name: "Crawler Backend" },
   { id: "client-backend", name: "Client Backend" },
 ] as const;
+
+type SettlingStatus = {
+  periods: [string, string][];
+  multiplier: number | null;
+  active: boolean;
+  configured: boolean;
+};
+
+function isSettlingPeriodActive(periods: [string, string][], now = new Date()): boolean {
+  const secondsNow = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+  const seconds = (time: string) => {
+    const [hours, minutes, secondsPart] = time.split(":").map(Number);
+    return hours! * 3600 + minutes! * 60 + secondsPart!;
+  };
+  return periods.some(([from, to]) => {
+    const start = seconds(from);
+    const end = seconds(to);
+    return start <= end ? secondsNow >= start && secondsNow < end : secondsNow >= start || secondsNow < end;
+  });
+}
+
+function readSettlingStatus(settings: AppConfig[]): SettlingStatus {
+  const values = new Map<string, string>(settings.map(({ key, value }) => [key, value] as const));
+  let periods: [string, string][] = [];
+  let validPeriods = false;
+  try {
+    const parsed: unknown = JSON.parse(values.get("SETTLING_PERIODS") ?? "");
+    if (Array.isArray(parsed) && parsed.every((period) =>
+      Array.isArray(period) && period.length === 2 &&
+      [period[0], period[1]].every((time) => typeof time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(time)),
+    )) {
+      periods = parsed as [string, string][];
+      validPeriods = true;
+    }
+  } catch {
+    // The dashboard shows a configuration warning below.
+  }
+  const parsedMultiplier = Number(values.get("SETTLING_PERIOD_MULTIPLIER"));
+  const validMultiplier = Number.isFinite(parsedMultiplier) && parsedMultiplier > 0;
+  return {
+    periods,
+    multiplier: validMultiplier ? parsedMultiplier : null,
+    active: isSettlingPeriodActive(periods),
+    configured: validPeriods && validMultiplier,
+  };
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes.toFixed(0)} B`;
@@ -191,6 +237,7 @@ export function DashboardPage() {
     useState<ProviderBalance | null>(null);
   const [paymentBalance, setPaymentBalance] = useState<number | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
+  const [settlingStatus, setSettlingStatus] = useState<SettlingStatus | null>(null);
   const [cleanupRunning, setCleanupRunning] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
 
@@ -265,6 +312,11 @@ export function DashboardPage() {
     catch { setSystemMetrics(null); }
   }, []);
 
+  const loadSettlingStatus = useCallback(async () => {
+    try { setSettlingStatus(readSettlingStatus((await api.settings()).settings)); }
+    catch { setSettlingStatus(null); }
+  }, []);
+
   const runCleanup = async () => {
     setCleanupRunning(true);
     setCleanupMessage(null);
@@ -288,7 +340,8 @@ export function DashboardPage() {
     void loadTwoCaptchaBalance();
     void loadPaymentBalance();
     void loadSystemMetrics();
-  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadSystemMetrics, loadTwoCaptchaBalance]);
+    void loadSettlingStatus();
+  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadSettlingStatus, loadSystemMetrics, loadTwoCaptchaBalance]);
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 15000);
@@ -350,6 +403,26 @@ export function DashboardPage() {
           {cleanupMessage && <Text maxW="sm" textAlign="right" fontSize="xs" color={cleanupMessage.toLowerCase().includes("cleanup:") || cleanupMessage.toLowerCase().includes("failed") ? "red.600" : "gray.500"}>{cleanupMessage}</Text>}
         </Flex>
       </Flex>
+
+      {settlingStatus && (
+        <Box mb="6" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.200" : "blue.200"} bg={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.50" : "blue.50"} p="5">
+          <Flex align="start" gap="3">
+            <Icon as={AlertTriangle} mt="0.5" color={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.600" : "blue.600"} />
+            <Box>
+              <Text fontWeight="bold">
+                {settlingStatus.active ? "Settling period active" : settlingStatus.periods.length ? "Application settling periods" : "No settling periods configured"}
+              </Text>
+              <Text mt="1" fontSize="sm" color="gray.700">
+                {settlingStatus.periods.length
+                  ? `${settlingStatus.periods.map(([from, to]) => `${from}–${to} UTC`).join(", ")} · ${settlingStatus.multiplier ?? "?"}× application pricing`
+                  : "Applications are charged at their standard price until UTC windows are configured."}
+              </Text>
+              {!settlingStatus.configured && <Text mt="1" fontSize="xs" color="orange.800">Settling period settings are missing or invalid. Update them in App settings.</Text>}
+              {!settlingStatus.periods.length && <Link to="/settings" style={{ color: "#9a3412", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>Configure settling periods</Link>}
+            </Box>
+          </Flex>
+        </Box>
+      )}
 
       <SystemMetricsSection metrics={systemMetrics} />
 
