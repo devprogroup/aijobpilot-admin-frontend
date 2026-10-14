@@ -22,6 +22,8 @@ import type {
   PaymentNetwork,
   SystemMetrics,
   CleanupReport,
+  MaintenanceEntry,
+  MaintenancePayload,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -114,6 +116,10 @@ export const api = {
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   triggerCleanup: () => request<CleanupReport>("/maintenance/cleanup", { method: "POST" }),
+  maintenance: () => request<{ maintenance: MaintenanceEntry[] }>("/maintenance"),
+  createMaintenance: (payload: MaintenancePayload) => request<{ maintenanceEntry: MaintenanceEntry }>("/maintenance", { method: "POST", body: JSON.stringify(payload) }),
+  updateMaintenance: (id: number, payload: Partial<MaintenancePayload>) => request<{ maintenanceEntry: MaintenanceEntry }>(`/maintenance/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteMaintenance: (id: number) => request<void>(`/maintenance/${id}`, { method: "DELETE" }),
   deepSeekBalance: () => request<ProviderBalance>("/provider-balances/deepseek"),
   openAiBalance: () => request<ProviderBalance>("/provider-balances/openai"),
   twoCaptchaBalance: () => request<ProviderBalance>("/2captcha"),

@@ -3,6 +3,9 @@ import { Badge, Box } from "@chakra-ui/react";
 const PALETTE: Record<string, string> = {
   running: "blue",
   queued: "orange",
+  scheduled: "blue",
+  cooling: "orange",
+  "in-progress": "blue",
   applying: "blue",
   applied: "green",
   idle: "gray",

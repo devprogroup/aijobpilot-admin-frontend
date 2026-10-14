@@ -15,6 +15,7 @@ import { ApiKeysPage } from "./modules/settings/ApiKeysPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
 import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { MessagesPage } from "./modules/messages/MessagesPage";
+import { MaintenancePage } from "./modules/maintenance/MaintenancePage";
 import { LoginPage } from "./auth/LoginPage";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/api-keys" element={<ApiKeysPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -13,6 +13,7 @@ function explorerUrl(network: PaymentNetwork, address: string): string {
 function transactionUrl(network: PaymentNetwork, hash: string): string {
   if (network === "erc20") return `https://etherscan.io/tx/${encodeURIComponent(hash)}`;
   if (network === "bep20") return `https://bscscan.com/tx/${encodeURIComponent(hash)}`;
+  throw new Error(`Unsupported network: ${network}`);
 }
 function addressStatus(address: AdminDepositAddress): string {
   if (address.lease?.status === "pending") return "Reserved";

@@ -74,10 +74,10 @@ function SendMessageTab() {
           </NativeSelect.Root>
         </Field.Root>
 
-        {recipient === "user" && <Field.Root>
+        {recipient === "user" && <Field.Root required>
           <Field.Label>User</Field.Label>
           <NativeSelect.Root disabled={loadingUsers || users.length === 0}>
-            <NativeSelect.Field value={userId} onChange={(event) => setUserId(event.target.value)} required>
+            <NativeSelect.Field value={userId} onChange={(event) => setUserId(event.target.value)}>
               {users.map((user) => <option key={user.id} value={user.id}>{user.name ? `${user.name} · ` : ""}{user.email || user.username}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />

@@ -16,6 +16,7 @@ import {
   BarChart3,
   Boxes,
   Briefcase,
+  CalendarClock,
   ChevronDown,
   List,
   ListTree,
@@ -91,6 +92,7 @@ export function Sidebar({
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
   const messagesActive = location.pathname.startsWith("/messages");
+  const maintenanceActive = location.pathname.startsWith("/maintenance");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -182,6 +184,12 @@ export function Sidebar({
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={dashboardActive ? "white" : "transparent"} color={dashboardActive ? "#17211b" : "whiteAlpha.700"} boxShadow={dashboardActive ? "sm" : "none"} _hover={dashboardActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Activity} boxSize="5" />
               Dashboard
+            </Flex>
+          </NavLink>
+          <NavLink to="/maintenance" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={maintenanceActive ? "white" : "transparent"} color={maintenanceActive ? "#17211b" : "whiteAlpha.700"} boxShadow={maintenanceActive ? "sm" : "none"} _hover={maintenanceActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={CalendarClock} boxSize="5" />
+              Maintenance
             </Flex>
           </NavLink>
           <Collapsible.Root
