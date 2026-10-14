@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, WalletCards } from "lucide-react";
+import { Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
 import type { ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { Link } from "react-router-dom";
@@ -191,6 +191,8 @@ export function DashboardPage() {
     useState<ProviderBalance | null>(null);
   const [paymentBalance, setPaymentBalance] = useState<number | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
 
   const loadServices = useCallback(async () => {
     await Promise.all(
@@ -263,6 +265,23 @@ export function DashboardPage() {
     catch { setSystemMetrics(null); }
   }, []);
 
+  const runCleanup = async () => {
+    setCleanupRunning(true);
+    setCleanupMessage(null);
+    try {
+      const report = await api.triggerCleanup();
+      const expiredJobs = report.jobs?.removed ?? 0;
+      const tempFolders = report.files?.removedTempDateFolders ?? 0;
+      const logFolders = report.files?.removedLogDateFolders ?? 0;
+      const summary = `Cleanup removed ${expiredJobs} jobs, ${tempFolders} temp folders, and ${logFolders} log folders.`;
+      setCleanupMessage(report.errors.length ? `${summary} ${report.errors.join(" ")}` : summary);
+    } catch (error) {
+      setCleanupMessage(error instanceof Error ? error.message : "Cleanup failed.");
+    } finally {
+      setCleanupRunning(false);
+    }
+  };
+
   const refresh = useCallback(() => {
     void loadServices();
     void loadDeepSeekBalance();
@@ -317,14 +336,19 @@ export function DashboardPage() {
               : "Checking service availability"}
           </Text>
         </Box>
-        <Button variant="outline" bg="white" onClick={refresh}>
-          {refreshing ? (
-            <Spinner size="sm" />
-          ) : (
-            <Icon as={RefreshCw} boxSize="4" />
-          )}
-          Refresh
-        </Button>
+        <Flex direction="column" align="end" gap="2">
+          <Flex align="center" gap="2">
+            <Button variant="outline" bg="white" onClick={runCleanup} disabled={cleanupRunning}>
+              {cleanupRunning ? <Spinner size="sm" /> : <Icon as={Trash2} boxSize="4" />}
+              Run cleanup
+            </Button>
+            <Button variant="outline" bg="white" onClick={refresh}>
+              {refreshing ? <Spinner size="sm" /> : <Icon as={RefreshCw} boxSize="4" />}
+              Refresh
+            </Button>
+          </Flex>
+          {cleanupMessage && <Text maxW="sm" textAlign="right" fontSize="xs" color={cleanupMessage.toLowerCase().includes("cleanup:") || cleanupMessage.toLowerCase().includes("failed") ? "red.600" : "gray.500"}>{cleanupMessage}</Text>}
+        </Flex>
       </Flex>
 
       <SystemMetricsSection metrics={systemMetrics} />

@@ -33,6 +33,11 @@ export interface SystemMetrics {
   storage: { usedBytes: number; totalBytes: number };
   sampledAt: string;
 }
+export interface CleanupReport {
+  jobs: { removed: number; retentionDays: number } | null;
+  files: { removedTempDateFolders: number; removedLogDateFolders: number; logRetentionDays: number } | null;
+  errors: string[];
+}
 export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;
