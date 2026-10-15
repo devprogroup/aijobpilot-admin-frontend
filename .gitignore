@@ -1,6 +1,5 @@
 node_modules/
 dist/
 *.tsbuildinfo
-config.bat
 .env
 package-lock.json
