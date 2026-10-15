@@ -38,21 +38,23 @@ export interface CleanupReport {
   files: { removedTempDateFolders: number; removedLogDateFolders: number; logRetentionDays: number } | null;
   errors: string[];
 }
-export type MaintenanceService = "client" | "ats-engine" | "crawler";
-export type MaintenanceStatus = "scheduled" | "cooling" | "in-progress" | "finished";
+export type MaintenanceService = "client" | "client-service" | "ats-engine" | "crawler" | "application-worker";
+export type MaintenanceStatus = "scheduled" | "cooling" | "ready" | "started" | "finished";
 export interface MaintenanceEntry {
   id: number;
   label: string;
-  scheduledTime: string;
-  startTime: string | null;
-  endTime: string | null;
+  scheduledAt: string;
+  expectedDuration: number;
+  startedAt: string | null;
+  finishedAt: string | null;
   description: string | null;
   services: MaintenanceService[];
+  readyServices: Array<"client-service" | "ats-engine" | "crawler" | "application-worker">;
   status: MaintenanceStatus;
   createdAt: string;
   updatedAt: string;
 }
-export type MaintenancePayload = Omit<MaintenanceEntry, "id" | "createdAt" | "updatedAt">;
+export type MaintenancePayload = Pick<MaintenanceEntry, "label" | "scheduledAt" | "expectedDuration" | "description" | "services">;
 export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;

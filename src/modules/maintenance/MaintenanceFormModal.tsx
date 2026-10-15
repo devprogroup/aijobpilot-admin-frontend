@@ -2,32 +2,24 @@ import { useState } from "react";
 import {
   Box,
   Button,
-  Checkbox,
   Dialog,
   Field,
   Flex,
   Input,
-  NativeSelect,
   Portal,
   Textarea,
 } from "@chakra-ui/react";
 import { X } from "lucide-react";
 import { api } from "../../api";
-import type { MaintenanceEntry, MaintenancePayload, MaintenanceService, MaintenanceStatus } from "../../types";
+import type { MaintenanceEntry, MaintenancePayload, MaintenanceService } from "../../types";
 
-const services: MaintenanceService[] = ["client", "ats-engine", "crawler"];
-const statuses: MaintenanceStatus[] = ["scheduled", "cooling", "in-progress", "finished"];
+const services: MaintenanceService[] = ["client-service", "ats-engine", "crawler", "application-worker"];
 
-function toLocalInput(value: string | null | undefined): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-
-function toIso(value: string): string | null {
-  return value ? new Date(value).toISOString() : null;
+function serviceLabel(service: MaintenanceService): string {
+  if (service === "client" || service === "client-service") return "Client service";
+  if (service === "ats-engine") return "ATS engine";
+  if (service === "application-worker") return "Application worker";
+  return "Crawler";
 }
 
 export function MaintenanceFormModal({
@@ -40,12 +32,15 @@ export function MaintenanceFormModal({
   onSaved: () => void;
 }) {
   const [label, setLabel] = useState(entry?.label ?? "");
-  const [scheduledTime, setScheduledTime] = useState(toLocalInput(entry?.scheduledTime));
-  const [startTime, setStartTime] = useState(toLocalInput(entry?.startTime));
-  const [endTime, setEndTime] = useState(toLocalInput(entry?.endTime));
+  const [scheduledAt, setScheduledAt] = useState(() => {
+    if (!entry) return "";
+    const date = new Date(entry.scheduledAt);
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 16);
+  });
+  const [expectedDuration, setExpectedDuration] = useState(entry?.expectedDuration ?? 60);
   const [description, setDescription] = useState(entry?.description ?? "");
-  const [selectedServices, setSelectedServices] = useState<MaintenanceService[]>(entry?.services ?? []);
-  const [status, setStatus] = useState<MaintenanceStatus>(entry?.status ?? "scheduled");
+  const [selectedServices, setSelectedServices] = useState<MaintenanceService[]>(entry?.services.map((service) => service === "client" ? "client-service" : service) ?? []);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -59,20 +54,17 @@ export function MaintenanceFormModal({
     event.preventDefault();
     setError("");
     if (!label.trim()) return setError("Label is required.");
-    if (!scheduledTime) return setError("Scheduled time is required.");
-    if (!selectedServices.length) return setError("Select at least one service.");
-    if (startTime && endTime && new Date(endTime) < new Date(startTime)) {
-      return setError("End time must be after start time.");
+    if (!scheduledAt) return setError("Scheduled time is required.");
+    if (!Number.isInteger(expectedDuration) || expectedDuration < 1 || expectedDuration > 43200) {
+      return setError("Expected duration must be between 1 minute and 30 days.");
     }
-
+    if (!selectedServices.length) return setError("Select at least one service.");
     const payload: MaintenancePayload = {
       label: label.trim(),
-      scheduledTime: new Date(scheduledTime).toISOString(),
-      startTime: toIso(startTime),
-      endTime: toIso(endTime),
+      scheduledAt: new Date(scheduledAt).toISOString(),
+      expectedDuration,
       description: description.trim() || null,
       services: selectedServices,
-      status,
     };
     setSaving(true);
     try {
@@ -102,20 +94,14 @@ export function MaintenanceFormModal({
                   <Field.Label>Label</Field.Label>
                   <Input value={label} onChange={(event) => setLabel(event.target.value)} maxLength={255} required />
                 </Field.Root>
-                <Box display="grid" gridTemplateColumns={{ base: "1fr", sm: "repeat(3, 1fr)" }} gap="3">
-                  <Field.Root required>
-                    <Field.Label>Scheduled time</Field.Label>
-                    <Input type="datetime-local" value={scheduledTime} onChange={(event) => setScheduledTime(event.target.value)} required />
-                  </Field.Root>
-                  <Field.Root>
-                    <Field.Label>Start time</Field.Label>
-                    <Input type="datetime-local" value={startTime} onChange={(event) => setStartTime(event.target.value)} />
-                  </Field.Root>
-                  <Field.Root>
-                    <Field.Label>End time</Field.Label>
-                    <Input type="datetime-local" value={endTime} onChange={(event) => setEndTime(event.target.value)} />
-                  </Field.Root>
-                </Box>
+                <Field.Root required>
+                  <Field.Label>Scheduled time</Field.Label>
+                  <Input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} required />
+                </Field.Root>
+                <Field.Root required>
+                  <Field.Label>Expected duration (minutes)</Field.Label>
+                  <Input type="number" min={1} max={43200} step={1} value={expectedDuration} onChange={(event) => setExpectedDuration(Number(event.target.value))} required />
+                </Field.Root>
                 <Field.Root>
                   <Field.Label>Description</Field.Label>
                   <Textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={10000} rows={3} />
@@ -124,22 +110,25 @@ export function MaintenanceFormModal({
                   <Field.Label>Services</Field.Label>
                   <Flex gap="5" flexWrap="wrap">
                     {services.map((service) => (
-                      <Checkbox.Root key={service} checked={selectedServices.includes(service)} onCheckedChange={(details) => toggleService(service, details.checked === true)}>
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control />
-                        <Checkbox.Label>{service}</Checkbox.Label>
-                      </Checkbox.Root>
+                      <Box
+                        as="label"
+                        key={service}
+                        display="inline-flex"
+                        alignItems="center"
+                        gap="2"
+                        cursor="pointer"
+                        userSelect="none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedServices.includes(service)}
+                          onChange={(event) => toggleService(service, event.target.checked)}
+                          style={{ accentColor: "#38a169", width: 16, height: 16, cursor: "pointer" }}
+                        />
+                        <span>{serviceLabel(service)}</span>
+                      </Box>
                     ))}
                   </Flex>
-                </Field.Root>
-                <Field.Root>
-                  <Field.Label>Status</Field.Label>
-                  <NativeSelect.Root>
-                    <NativeSelect.Field value={status} onChange={(event) => setStatus(event.target.value as MaintenanceStatus)}>
-                      {statuses.map((value) => <option key={value} value={value}>{value}</option>)}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
                 </Field.Root>
                 {error && <Box borderRadius="xl" bg="red.50" p="3" fontSize="sm" color="red.700">{error}</Box>}
                 <Flex justify="flex-end" gap="3" pt="2">
