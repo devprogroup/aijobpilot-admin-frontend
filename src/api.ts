@@ -13,10 +13,16 @@ import type {
   ApplicationFilters,
   ServiceHealth,
   AppConfig,
+  BonusPlan,
+  BonusPlanPayload,
   ManagedApiKey,
   EmailTemplate,
   EmailTemplatePayload,
+  LegalDocument,
+  LegalDocumentId,
+  ManagedFaq,
   AdminUser,
+  AdminUserRole,
   ProviderBalance,
   AdminDepositAddress,
   PaymentNetwork,
@@ -108,10 +114,16 @@ export const api = {
     return result;
   },
   me: () => request<{ user: AdminUser }>("/auth/me"),
+  forgotAdminPassword: (email: string) => request<{ message: string }>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+  resetAdminPassword: (token: string, password: string) => request<{ success: boolean }>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) }),
+  changeAdminPassword: (currentPassword: string, newPassword: string) => request<{ success: boolean }>("/auth/change-password", { method: "PUT", body: JSON.stringify({ currentPassword, newPassword }) }),
   logout: async () => {
     try { await request<void>("/auth/logout", { method: "POST" }); }
     finally { setAdminToken(null); }
   },
+  adminUsers: () => request<{ adminUsers: AdminUser[] }>("/admin-users"),
+  createAdminUser: (payload: { email: string; name: string | null; role: AdminUserRole; password: string }) => request<{ adminUser: AdminUser }>("/admin-users", { method: "POST", body: JSON.stringify(payload) }),
+  setAdminUserStatus: (id: number, status: "active" | "inactive") => request<{ adminUser: AdminUser }>(`/admin-users/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   serviceHealth: (serviceId: ServiceHealth["id"]) =>
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
@@ -218,6 +230,13 @@ export const api = {
     }),
   deleteSetting: (key: string) =>
     request<void>(`/settings/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  bonusPlans: () => request<{ bonusPlans: BonusPlan[] }>("/bonus-plans"),
+  createBonusPlan: (payload: BonusPlanPayload) =>
+    request<{ bonusPlan: BonusPlan }>("/bonus-plans", { method: "POST", body: JSON.stringify(payload) }),
+  updateBonusPlan: (id: number, payload: BonusPlanPayload) =>
+    request<{ bonusPlan: BonusPlan }>(`/bonus-plans/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteBonusPlan: (id: number) =>
+    request<{ deleted: boolean }>(`/bonus-plans/${id}`, { method: "DELETE" }),
   apiKeys: () => request<{ apiKeys: ManagedApiKey[] }>("/api-keys"),
   createApiKey: (key: string, value: string) =>
     request<{ apiKey: ManagedApiKey }>("/api-keys", {
@@ -233,6 +252,22 @@ export const api = {
     request<{ apiKey: ManagedApiKey }>(`/api-keys/${encodeURIComponent(key)}`, { method: "DELETE" }),
   emailTemplates: () =>
     request<{ emailTemplates: EmailTemplate[] }>("/email-templates"),
+  legalDocuments: () =>
+    request<{ documents: LegalDocument[] }>("/legal-content"),
+  updateLegalDocument: (id: LegalDocumentId, content: string) =>
+    request<{ document: LegalDocument }>(`/legal-content/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    }),
+  faqs: () => request<{ faqs: ManagedFaq[] }>("/faqs"),
+  createFaq: (payload: Omit<ManagedFaq, "id" | "dateTime">) =>
+    request<{ faq: ManagedFaq }>("/faqs", { method: "POST", body: JSON.stringify(payload) }),
+  updateFaq: (id: number, payload: Omit<ManagedFaq, "id" | "dateTime">) =>
+    request<{ faq: ManagedFaq }>(`/faqs/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteFaq: (id: number) => request<{ deleted: boolean }>(`/faqs/${id}`, { method: "DELETE" }),
+  helpContent: (scope: "public" | "private") => request<{ content: string; updatedAt: string | null }>(`/help-content?scope=${scope}`),
+  updateHelpContent: (scope: "public" | "private", content: string) =>
+    request<{ content: string; updatedAt: string }>("/help-content", { method: "PUT", body: JSON.stringify({ scope, content }) }),
   createEmailTemplate: (payload: EmailTemplatePayload) =>
     request<{ emailTemplate: EmailTemplate }>("/email-templates", {
       method: "POST",

@@ -10,20 +10,36 @@ import { CrawledJobsPage } from "./modules/crawlers/CrawledJobsPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
-import { SettingsPage } from "./modules/settings/SettingsPage";
+import { ConstantsPage } from "./modules/settings/ConstantsPage";
+import { BonusPlansPage } from "./modules/settings/BonusPlansPage";
 import { ApiKeysPage } from "./modules/settings/ApiKeysPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
+import { ContentManagementPage } from "./modules/contents/ContentManagementPage";
 import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { MessagesPage } from "./modules/messages/MessagesPage";
 import { MaintenancePage } from "./modules/maintenance/MaintenancePage";
 import { LoginPage } from "./auth/LoginPage";
+import { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
+import { SetAdminPasswordPage } from "./auth/SetAdminPasswordPage";
+import { ChangePasswordPage } from "./auth/ChangePasswordPage";
+import { SuperAdminRoute } from "./auth/SuperAdminRoute";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
+import { AdminUsersPage } from "./modules/admin-users/AdminUsersPage";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<SetAdminPasswordPage />} />
       <Route element={<ProtectedLayout />}>
+        <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route element={<SuperAdminRoute />}>
+          <Route path="/users/admins" element={<AdminUsersPage />} />
+          <Route path="/admin-users" element={<Navigate to="/users/admins" replace />} />
+          <Route path="/wallets" element={<PaymentsPage />} />
+          <Route path="/payments" element={<Navigate to="/wallets" replace />} />
+        </Route>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/crawlers/fleets" element={<CrawlerFleetPage />} />
         <Route
@@ -39,13 +55,17 @@ export default function App() {
         <Route path="/applications/statistics" element={<ApplicationStatisticsPage />} />
         <Route path="/applications" element={<Navigate to="/applications/sites" replace />} />
         <Route path="/application-sites" element={<Navigate to="/applications/sites" replace />} />
-        <Route path="/users" element={<UsersPage />} />
+        <Route path="/users" element={<Navigate to="/users/clients" replace />} />
+        <Route path="/users/clients" element={<UsersPage />} />
+        <Route path="/users/clients/:userId" element={<UserDetailsPage />} />
         <Route path="/users/:userId" element={<UserDetailsPage />} />
-        <Route path="/wallets" element={<PaymentsPage />} />
-        <Route path="/payments" element={<Navigate to="/wallets" replace />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<Navigate to="/settings/constants" replace />} />
+        <Route path="/settings/constants" element={<ConstantsPage />} />
+        <Route path="/settings/bonus-plans" element={<BonusPlansPage />} />
         <Route path="/api-keys" element={<ApiKeysPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
+        <Route path="/contents" element={<ContentManagementPage />} />
+        <Route path="/legal-content" element={<Navigate to="/contents" replace />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />

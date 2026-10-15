@@ -12,7 +12,8 @@ import {
 import { api } from "../../api";
 import type { AppConfig } from "../../types";
 
-export function SettingsPage() {
+/** Settings > Constants: application-wide app_config values. */
+export function ConstantsPage() {
   const [settings, setSettings] = useState<AppConfig[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [key, setKey] = useState("");
@@ -74,10 +75,10 @@ export function SettingsPage() {
     <>
       <Box as="header" mb="8">
         <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">
-          Configuration
+          Settings
         </Text>
-        <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">App settings</Text>
-        <Text mt="2" fontSize="sm" color="gray.500">Manage application-wide configuration values.</Text>
+        <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Constants</Text>
+        <Text mt="2" fontSize="sm" color="gray.500">Manage application-wide configuration values, such as application pricing and the signup bonus.</Text>
       </Box>
 
       {(error || message) && (

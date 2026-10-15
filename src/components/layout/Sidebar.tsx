@@ -24,9 +24,13 @@ import {
   Mail,
   Globe,
   KeyRound,
+  FileText,
+  Gift,
+  SlidersHorizontal,
   PanelLeftClose,
   Sparkles,
   Settings,
+  Shield,
   Users,
   Wallet,
 } from "lucide-react";
@@ -85,12 +89,16 @@ export function Sidebar({
   const crawlerActive = location.pathname.startsWith("/crawlers/");
   const applicationsActive = location.pathname.startsWith("/applications");
   const [applicationsOpen, setApplicationsOpen] = useState(applicationsActive);
-  const usersActive = location.pathname.startsWith("/users");
+  const usersActive = location.pathname.startsWith("/users") || location.pathname.startsWith("/admin-users");
+  const [usersOpen, setUsersOpen] = useState(usersActive);
+  const changePasswordActive = location.pathname === "/change-password";
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
+  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
   const apiKeysActive = location.pathname.startsWith("/api-keys");
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
+  const legalContentActive = location.pathname.startsWith("/contents") || location.pathname.startsWith("/legal-content");
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
@@ -102,6 +110,14 @@ export function Sidebar({
   useEffect(() => {
     if (applicationsActive) setApplicationsOpen(true);
   }, [applicationsActive]);
+
+  useEffect(() => {
+    if (usersActive) setUsersOpen(true);
+  }, [usersActive]);
+
+  useEffect(() => {
+    if (settingsActive) setSettingsOpen(true);
+  }, [settingsActive]);
 
   return (
     <>
@@ -274,43 +290,41 @@ export function Sidebar({
             </Collapsible.Content>
           </Collapsible.Root>
 
-          <NavLink
-            to="/users"
-            onClick={onClose}
-            style={{ textDecoration: "none" }}
-          >
-            <Flex
-              align="center"
-              gap="3"
-              borderRadius="xl"
-              px="4"
-              py="3"
-              fontSize="sm"
-              fontWeight="semibold"
-              bg={usersActive ? "white" : "transparent"}
-              color={usersActive ? "#17211b" : "whiteAlpha.700"}
-              boxShadow={usersActive ? "sm" : "none"}
-              _hover={
-                usersActive
-                  ? undefined
-                  : { bg: "whiteAlpha.200", color: "white" }
-              }
-            >
-              <Icon as={Users} boxSize="5" />
-              Users
-            </Flex>
-          </NavLink>
-          <NavLink to="/wallets" onClick={onClose} style={{ textDecoration: "none" }}>
+          <Collapsible.Root open={usersOpen} onOpenChange={(details) => setUsersOpen(details.open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={usersActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Users} boxSize="5" />
+                <Text>Users</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={usersOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/users/clients" icon={Users} onClick={onClose}>Clients</ChildLink>
+                {user?.role === "super_admin" && <ChildLink to="/users/admins" icon={Shield} onClick={onClose}>Admins</ChildLink>}
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>
+          {user?.role === "super_admin" && <NavLink to="/wallets" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={paymentsActive ? "white" : "transparent"} color={paymentsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={paymentsActive ? "sm" : "none"} _hover={paymentsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Wallet} boxSize="5" /> Wallets
             </Flex>
-          </NavLink>
-          <NavLink to="/settings" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={settingsActive ? "white" : "transparent"} color={settingsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={settingsActive ? "sm" : "none"} _hover={settingsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={Settings} boxSize="5" />
-              Settings
-            </Flex>
-          </NavLink>
+          </NavLink>}
+          <Collapsible.Root open={settingsOpen} onOpenChange={(details) => setSettingsOpen(details.open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={settingsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Settings} boxSize="5" />
+                <Text>Settings</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={settingsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/settings/constants" icon={SlidersHorizontal} onClick={onClose}>Constants</ChildLink>
+                <ChildLink to="/settings/bonus-plans" icon={Gift} onClick={onClose}>Bonus plans</ChildLink>
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>
           <NavLink to="/api-keys" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={apiKeysActive ? "white" : "transparent"} color={apiKeysActive ? "#17211b" : "whiteAlpha.700"} boxShadow={apiKeysActive ? "sm" : "none"} _hover={apiKeysActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={KeyRound} boxSize="5" />
@@ -321,6 +335,12 @@ export function Sidebar({
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailTemplatesActive ? "white" : "transparent"} color={emailTemplatesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailTemplatesActive ? "sm" : "none"} _hover={emailTemplatesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Mail} boxSize="5" />
               Email templates
+            </Flex>
+          </NavLink>
+          <NavLink to="/contents" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={legalContentActive ? "white" : "transparent"} color={legalContentActive ? "#17211b" : "whiteAlpha.700"} boxShadow={legalContentActive ? "sm" : "none"} _hover={legalContentActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={FileText} boxSize="5" />
+              Contents
             </Flex>
           </NavLink>
           <NavLink to="/messages" onClick={onClose} style={{ textDecoration: "none" }}>
@@ -360,6 +380,11 @@ export function Sidebar({
           <Text fontSize="xs" lineHeight="5" color="whiteAlpha.500">
             Crawler network is connected and reporting.
           </Text>
+          <NavLink to="/change-password" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex mt="3" align="center" justify="center" gap="2" borderRadius="lg" px="3" py="2" fontSize="sm" fontWeight="semibold" bg={changePasswordActive ? "whiteAlpha.200" : "transparent"} color="whiteAlpha.800" _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={KeyRound} boxSize="4" /> Change password
+            </Flex>
+          </NavLink>
           <Button mt="3" size="sm" w="full" variant="ghost" color="whiteAlpha.700" _hover={{ bg: "whiteAlpha.200", color: "white" }} onClick={() => void logout()}>
             <Icon as={LogOut} boxSize="4" /> Sign out
           </Button>

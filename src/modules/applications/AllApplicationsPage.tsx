@@ -134,7 +134,7 @@ export function AllApplicationsPage() {
               {application.job?.url && <Text fontSize="xs"><a href={application.job.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>View posting</a></Text>}
             </Table.Cell>
             <Table.Cell p="4">{application.job?.applicationSite?.displayText || "—"}</Table.Cell>
-            <Table.Cell p="4">{application.user ? <Link to={`/users/${application.user.id}`} onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>{application.user.name || application.user.username}</Link> : "—"}</Table.Cell>
+            <Table.Cell p="4">{application.user ? <Link to={`/users/clients/${application.user.id}`} onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>{application.user.name || application.user.username}</Link> : "—"}</Table.Cell>
             <Table.Cell p="4">{application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : "—")}</Table.Cell>
             <Table.Cell p="4">{new Date(application.createdAt).toLocaleString()}</Table.Cell>
             <Table.Cell p="4">{application.appliedAt ? new Date(application.appliedAt).toLocaleString() : "—"}</Table.Cell>

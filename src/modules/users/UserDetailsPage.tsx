@@ -36,7 +36,7 @@ export function UserDetailsPage() {
     finally { setSaving(false); }
   };
   return <Box>
-    <Link to="/users">← Back to users</Link>
+    <Link to="/users/clients">← Back to clients</Link>
     <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Flex gap="2"><Button variant="outline" disabled={!details || loading || saving} onClick={() => setEditingName(true)}>Edit name</Button><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button></Flex></Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
     {loading && <Text role="status">Loading user details...</Text>}

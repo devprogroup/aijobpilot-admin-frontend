@@ -74,11 +74,19 @@ export interface UserDetails {
   applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+/** A confirmed top-up of at least minTopup USDT is credited at amount x bonusRate. */
+export interface BonusPlan { id:number; minTopup:number; bonusRate:number; active:boolean; createdAt:string; updatedAt:string }
+export type BonusPlanPayload = Pick<BonusPlan, "minTopup" | "bonusRate" | "active">
 export interface ManagedApiKey { key:string; configured:boolean; displayValue?:string|null; updatedAt?:string|null }
 export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; fromName:string; fromEmailId:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
-export interface AdminUser { id:number; email:string; name:string|null; role:string }
+export type LegalDocumentId = "privacy" | "terms";
+export interface LegalDocument { id: LegalDocumentId; title: string; content: string; updatedAt: string }
+export type FaqScope = "public" | "private" | null;
+export interface ManagedFaq { id: number; question: string; answer: string; scope: FaqScope; sortOrder: number; isActive: boolean; dateTime: string }
+export type AdminUserRole = "super_admin" | "support" | "technical";
+export interface AdminUser { id:number; email:string; name:string|null; role:AdminUserRole; status:"active"|"inactive"; createdAt:string }
 export interface ProviderBalance {
   provider: "deepseek" | "openai" | "2captcha";
   amount: number | null;

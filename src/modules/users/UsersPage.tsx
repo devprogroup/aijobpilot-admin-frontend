@@ -97,10 +97,10 @@ export function UsersPage() {
           fontWeight="bold"
           letterSpacing="tight"
         >
-          Users
+          Clients
         </Text>
         <Text mt="2" fontSize="sm" color="gray.500">
-          Manage access and review account activity.
+          Manage client accounts and review their account activity.
         </Text>
       </Box>
 
@@ -244,7 +244,7 @@ export function UsersPage() {
                         {u.username}
                       </Text>
                     )}
-                    <Link to={`/users/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
+                    <Link to={`/users/clients/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
                     <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>
                     <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setNameUser(u)}>Edit name</Button>
                   </Table.Cell>

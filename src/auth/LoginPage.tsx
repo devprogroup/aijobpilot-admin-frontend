@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Box, Button, Center, Flex, Input, Text } from "@chakra-ui/react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 export function LoginPage() {
@@ -36,6 +36,7 @@ export function LoginPage() {
       {error && <Box mb="4" borderRadius="lg" bg="red.50" p="3" color="red.700" fontSize="sm">{error}</Box>}
       <Box><Text mb="1" fontSize="sm" fontWeight="semibold">Email</Text><Input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></Box>
       <Box mt="4"><Text mb="1" fontSize="sm" fontWeight="semibold">Password</Text><Input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></Box>
+      <Flex mt="3" justify="flex-end"><Link to="/forgot-password" style={{ color: "#25804d", fontSize: 14 }}>Forgot password?</Link></Flex>
       <Button type="submit" loading={loading} mt="6" w="full" bg="green.600" color="white" _hover={{ bg: "green.700" }}>Sign in</Button>
     </Box>
   </Center>;

@@ -4,6 +4,7 @@ import { AlertTriangle, Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Se
 import { api } from "../../api";
 import type { AppConfig, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -221,6 +222,8 @@ function BalanceLoadingCard({
 }
 
 export function DashboardPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const [services, setServices] = useState<ServiceHealth[]>([]);
   const [serviceLoading, setServiceLoading] = useState<Record<string, boolean>>(
     Object.fromEntries(serviceDefinitions.map(({ id }) => [id, true])),
@@ -303,9 +306,10 @@ export function DashboardPage() {
   }, []);
 
   const loadPaymentBalance = useCallback(async () => {
+    if (!isSuperAdmin) { setPaymentBalance(null); return; }
     try { setPaymentBalance((await api.paymentSummary()).totalBalance); }
     catch { setPaymentBalance(null); }
-  }, []);
+  }, [isSuperAdmin]);
 
   const loadSystemMetrics = useCallback(async () => {
     try { setSystemMetrics(await api.systemMetrics()); }
@@ -460,13 +464,13 @@ export function DashboardPage() {
         </Grid>
       </Box>
 
-      <Box mb="8" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
+      {isSuperAdmin && <Box mb="8" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
         <Flex align="center" justify="space-between" gap="4">
           <Box><Text fontWeight="bold">USDT payment balance</Text><Text mt="1" fontSize="xs" color="gray.400">Across confirmed customer deposit addresses</Text></Box>
           <Text fontSize="2xl" fontWeight="bold">{paymentBalance === null ? "—" : `${paymentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`}</Text>
         </Flex>
         <Link to="/wallets" style={{ textDecoration: "none" }}><Button mt="3" size="sm" variant="outline">Manage wallets</Button></Link>
-      </Box>
+      </Box>}
 
       <Grid
         templateColumns={{
