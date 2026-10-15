@@ -7,6 +7,11 @@ import type { ApplicationStatus } from "../../types";
 const APPLIED_HUE = "#24845b";
 const FAILED_HUE = "#cf4646";
 const STATUS_ORDER: ApplicationStatus[] = ["queued", "applying", "applied", "failed"];
+const RUNNING_MODES = [
+  ["headless", "Headless"],
+  ["headed", "Headed"],
+  ["chrome-extension", "Chrome extension"],
+] as const;
 
 export function ApplicationStatisticsPage() {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof api.failedApplicationStats>> | null>(null);
@@ -59,6 +64,20 @@ export function ApplicationStatisticsPage() {
         );
       })}
     </Flex>
+
+    <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" mb="5">
+      <Text fontWeight="bold" mb="4">Currently running by mode</Text>
+      <Flex gap="5" wrap="wrap">
+        {RUNNING_MODES.map(([mode, label]) => (
+          <Box key={mode} minW="44" borderRadius="xl" bg="gray.50" p="4">
+            <Text fontSize="sm" color="gray.500" mb="2">{label}</Text>
+            <Text fontSize="4xl" fontWeight="bold" lineHeight="1" color="#0b0b0b">
+              {loading ? "—" : (stats?.runningByMode[mode] ?? 0).toLocaleString()}
+            </Text>
+          </Box>
+        ))}
+      </Flex>
+    </Box>
 
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" mb="5">
       <Text fontWeight="bold" mb="1">Applied vs failed by site</Text>
