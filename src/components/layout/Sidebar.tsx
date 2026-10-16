@@ -26,9 +26,11 @@ import {
   KeyRound,
   FileText,
   Gift,
+  HelpCircle,
   SlidersHorizontal,
   PanelLeftClose,
   Sparkles,
+  MessagesSquare,
   Settings,
   Shield,
   Users,
@@ -91,14 +93,14 @@ export function Sidebar({
   const [applicationsOpen, setApplicationsOpen] = useState(applicationsActive);
   const usersActive = location.pathname.startsWith("/users") || location.pathname.startsWith("/admin-users");
   const [usersOpen, setUsersOpen] = useState(usersActive);
-  const changePasswordActive = location.pathname === "/change-password";
   const dashboardActive = location.pathname.startsWith("/dashboard");
   const settingsActive = location.pathname.startsWith("/settings");
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
   const apiKeysActive = location.pathname.startsWith("/api-keys");
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
-  const legalContentActive = location.pathname.startsWith("/contents") || location.pathname.startsWith("/legal-content");
+  const contentsActive = location.pathname.startsWith("/contents") || location.pathname.startsWith("/legal-content");
+  const [contentsOpen, setContentsOpen] = useState(contentsActive);
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
@@ -118,6 +120,10 @@ export function Sidebar({
   useEffect(() => {
     if (settingsActive) setSettingsOpen(true);
   }, [settingsActive]);
+
+  useEffect(() => {
+    if (contentsActive) setContentsOpen(true);
+  }, [contentsActive]);
 
   return (
     <>
@@ -195,7 +201,7 @@ export function Sidebar({
           </IconButton>
         </Flex>
 
-        <VStack align="stretch" gap="2">
+        <VStack align="stretch" gap="2" flex="1" minH="0" overflowY="auto">
           <NavLink to="/dashboard" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={dashboardActive ? "white" : "transparent"} color={dashboardActive ? "#17211b" : "whiteAlpha.700"} boxShadow={dashboardActive ? "sm" : "none"} _hover={dashboardActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Activity} boxSize="5" />
@@ -337,12 +343,22 @@ export function Sidebar({
               Email templates
             </Flex>
           </NavLink>
-          <NavLink to="/contents" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={legalContentActive ? "white" : "transparent"} color={legalContentActive ? "#17211b" : "whiteAlpha.700"} boxShadow={legalContentActive ? "sm" : "none"} _hover={legalContentActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={FileText} boxSize="5" />
-              Contents
-            </Flex>
-          </NavLink>
+          <Collapsible.Root open={contentsOpen} onOpenChange={(details) => setContentsOpen(details.open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={contentsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={FileText} boxSize="5" />
+                <Text>Contents</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={contentsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/contents/legal" icon={FileText} onClick={onClose}>Legal</ChildLink>
+                <ChildLink to="/contents/faqs" icon={HelpCircle} onClick={onClose}>FAQ</ChildLink>
+                <ChildLink to="/contents/help" icon={MessagesSquare} onClick={onClose}>Help</ChildLink>
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>
           <NavLink to="/messages" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={messagesActive ? "white" : "transparent"} color={messagesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={messagesActive ? "sm" : "none"} _hover={messagesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Mail} boxSize="5" />
@@ -357,37 +373,31 @@ export function Sidebar({
           border="1px solid"
           borderColor="whiteAlpha.200"
           bg="whiteAlpha.100"
-          p="4"
+          p="3"
         >
-          <Text mb="3" fontSize="xs" color="whiteAlpha.700" overflow="hidden" textOverflow="ellipsis">{user?.email}</Text>
-          <Flex
-            align="center"
-            gap="2"
-            mb="2"
-            fontSize="xs"
-            fontWeight="semibold"
-          >
-            <Box
-              position="relative"
-              h="2"
-              w="2"
-              borderRadius="full"
-              bg="green.400"
-              className="live-dot"
-            />
-            System online
-          </Flex>
-          <Text fontSize="xs" lineHeight="5" color="whiteAlpha.500">
-            Crawler network is connected and reporting.
-          </Text>
-          <NavLink to="/change-password" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex mt="3" align="center" justify="center" gap="2" borderRadius="lg" px="3" py="2" fontSize="sm" fontWeight="semibold" bg={changePasswordActive ? "whiteAlpha.200" : "transparent"} color="whiteAlpha.800" _hover={{ bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={KeyRound} boxSize="4" /> Change password
+          <NavLink to="/account" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="1" py="1.5" bg={location.pathname.startsWith("/account") ? "whiteAlpha.100" : "transparent"} _hover={{ bg: "whiteAlpha.200" }} transition="background .15s, color .15s">
+              <Flex h="10" w="10" flexShrink="0" align="center" justify="center" borderRadius="xl" bg="#b7e4c7" color="#19382b" fontSize="sm" fontWeight="bold" textTransform="uppercase">
+                {user?.name?.trim().charAt(0) || user?.email.charAt(0) || "A"}
+              </Flex>
+              <Box minW="0" flex="1">
+                <Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" fontSize="sm" fontWeight="semibold" color="white">
+                  {user?.name || user?.email || "Admin account"}
+                </Text>
+                <Flex mt="1" align="center" gap="1.5">
+                  <Box h="1.5" w="1.5" flexShrink="0" borderRadius="full" bg={user?.status === "active" ? "green.300" : "orange.300"} />
+                  <Text fontSize="xs" color="whiteAlpha.600" textTransform="capitalize">
+                    {user?.role.replace("_", " ") || "Admin"}
+                  </Text>
+                </Flex>
+              </Box>
             </Flex>
           </NavLink>
-          <Button mt="3" size="sm" w="full" variant="ghost" color="whiteAlpha.700" _hover={{ bg: "whiteAlpha.200", color: "white" }} onClick={() => void logout()}>
-            <Icon as={LogOut} boxSize="4" /> Sign out
-          </Button>
+          <Box mt="2" pt="2" borderTop="1px solid" borderColor="whiteAlpha.200">
+            <Button size="sm" w="full" justifyContent="flex-start" px="3" variant="ghost" color="whiteAlpha.700" _hover={{ bg: "red.500/15", color: "red.100" }} onClick={() => void logout()}>
+              <Icon as={LogOut} boxSize="4" /> Sign out
+            </Button>
+          </Box>
         </Box>
       </Box>
     </>

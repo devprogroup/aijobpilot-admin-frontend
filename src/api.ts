@@ -1,4 +1,5 @@
 import type {
+  PromoCode,
   ApplicationSite,
   ApplicationSitePayload,
   Crawler,
@@ -124,6 +125,9 @@ export const api = {
   adminUsers: () => request<{ adminUsers: AdminUser[] }>("/admin-users"),
   createAdminUser: (payload: { email: string; name: string | null; role: AdminUserRole; password: string }) => request<{ adminUser: AdminUser }>("/admin-users", { method: "POST", body: JSON.stringify(payload) }),
   setAdminUserStatus: (id: number, status: "active" | "inactive") => request<{ adminUser: AdminUser }>(`/admin-users/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  setAdminUserPromocodeBalance: (id: number, promocodeBalance: number) => request<{ adminUser: AdminUser }>(`/admin-users/${id}/promocode-balance`, { method: "PATCH", body: JSON.stringify({ promocodeBalance }) }),
+  promoCodes: () => request<{ promoCodes: PromoCode[]; balance: number | null; expireDays: number; freeCredit: number }>("/promo-codes"),
+  generatePromoCodes: (count: number) => request<{ promoCodes: PromoCode[]; balance: number | null; deletedExpired: number }>("/promo-codes", { method: "POST", body: JSON.stringify({ count }) }),
   serviceHealth: (serviceId: ServiceHealth["id"]) =>
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),

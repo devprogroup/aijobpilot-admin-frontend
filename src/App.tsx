@@ -18,10 +18,10 @@ import { ContentManagementPage } from "./modules/contents/ContentManagementPage"
 import { PaymentsPage } from "./modules/payments/PaymentsPage";
 import { MessagesPage } from "./modules/messages/MessagesPage";
 import { MaintenancePage } from "./modules/maintenance/MaintenancePage";
+import { AccountPage } from "./modules/account/AccountPage";
 import { LoginPage } from "./auth/LoginPage";
 import { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
 import { SetAdminPasswordPage } from "./auth/SetAdminPasswordPage";
-import { ChangePasswordPage } from "./auth/ChangePasswordPage";
 import { SuperAdminRoute } from "./auth/SuperAdminRoute";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 import { AdminUsersPage } from "./modules/admin-users/AdminUsersPage";
@@ -33,7 +33,8 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<SetAdminPasswordPage />} />
       <Route element={<ProtectedLayout />}>
-        <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route path="/change-password" element={<Navigate to="/account" replace />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route element={<SuperAdminRoute />}>
           <Route path="/users/admins" element={<AdminUsersPage />} />
           <Route path="/admin-users" element={<Navigate to="/users/admins" replace />} />
@@ -64,10 +65,12 @@ export default function App() {
         <Route path="/settings/bonus-plans" element={<BonusPlansPage />} />
         <Route path="/api-keys" element={<ApiKeysPage />} />
         <Route path="/email-templates" element={<EmailTemplatesPage />} />
-        <Route path="/contents" element={<ContentManagementPage />} />
-        <Route path="/legal-content" element={<Navigate to="/contents" replace />} />
+        <Route path="/contents" element={<Navigate to="/contents/legal" replace />} />
+        <Route path="/contents/:section" element={<ContentManagementPage />} />
+        <Route path="/legal-content" element={<Navigate to="/contents/legal" replace />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/promo-codes" element={<Navigate to="/account" replace />} />
         <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

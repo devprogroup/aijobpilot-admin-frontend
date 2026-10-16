@@ -86,7 +86,18 @@ export interface LegalDocument { id: LegalDocumentId; title: string; content: st
 export type FaqScope = "public" | "private" | null;
 export interface ManagedFaq { id: number; question: string; answer: string; scope: FaqScope; sortOrder: number; isActive: boolean; dateTime: string }
 export type AdminUserRole = "super_admin" | "support" | "technical";
-export interface AdminUser { id:number; email:string; name:string|null; role:AdminUserRole; status:"active"|"inactive"; createdAt:string }
+export interface AdminUser { id:number; email:string; name:string|null; role:AdminUserRole; status:"active"|"inactive"; promocodeBalance:number; createdAt:string }
+export interface PromoCode {
+  id: number;
+  code: string;
+  createdAt: string;
+  createdBy: number;
+  createdByEmail: string | null;
+  usedBy: number | null;
+  usedAt: string | null;
+  expiresAt: string;
+  status: "active" | "used" | "expired";
+}
 export interface ProviderBalance {
   provider: "deepseek" | "openai" | "2captcha";
   amount: number | null;

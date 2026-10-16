@@ -51,6 +51,20 @@ export function AdminUsersPage() {
     finally { setBusyId(null); }
   };
 
+  const updatePromocodeBalance = async (admin: AdminUser) => {
+    const input = window.prompt(`Promo code balance for ${admin.email}`, String(admin.promocodeBalance ?? 0));
+    if (input === null) return;
+    const promocodeBalance = Number(input.trim());
+    if (!Number.isInteger(promocodeBalance) || promocodeBalance < 0) { setError("Enter a whole number of 0 or more."); return; }
+    setError(""); setMessage(""); setBusyId(admin.id);
+    try {
+      const result = await api.setAdminUserPromocodeBalance(admin.id, promocodeBalance);
+      setAdmins((current) => current.map((entry) => entry.id === admin.id ? result.adminUser : entry));
+      setMessage(`${admin.email} promo code balance set to ${promocodeBalance}.`);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to update promo code balance."); }
+    finally { setBusyId(null); }
+  };
+
   return <>
     <Flex mb="6" align={{ base: "start", md: "end" }} justify="space-between" gap="4" flexDir={{ base: "column", md: "row" }}>
       <Box><Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Access control</Text><Text as="h1" m="0" fontSize="3xl" fontWeight="bold">Admin users</Text><Text mt="2" maxW="720px" fontSize="sm" color="gray.500">Create admin accounts, provide an initial password, assign roles, and manage access.</Text></Box>
@@ -72,8 +86,8 @@ export function AdminUsersPage() {
       <Flex px="5" py="4" borderBottom="1px solid" borderColor="gray.100" justify="space-between" align="center"><Text fontWeight="semibold">Admin accounts</Text><Text fontSize="sm" color="gray.500">{admins.length} total</Text></Flex>
       {loading ? <Text p="8" textAlign="center" color="gray.500">Loading admin accounts…</Text> : admins.length === 0 ? <Text p="8" textAlign="center" color="gray.500">No admin accounts found.</Text> : admins.map((admin) => (
         <Flex key={admin.id} align={{ base: "start", md: "center" }} justify="space-between" gap="4" p="5" borderBottom="1px solid" borderColor="gray.100" flexDir={{ base: "column", md: "row" }}>
-          <Box minW="0"><Text fontWeight="semibold">{admin.name || admin.email}{admin.id === currentAdmin?.id ? " (you)" : ""}</Text>{admin.name && <Text fontSize="sm" color="gray.500">{admin.email}</Text>}<Flex mt="2" gap="3" align="center" flexWrap="wrap"><Text fontSize="xs" color="gray.500">{roleLabels[admin.role]}</Text><Text fontSize="xs" fontWeight="semibold" color={admin.status === "active" ? "green.700" : "orange.700"}>{admin.status === "active" ? "Active" : "Inactive"}</Text><Text fontSize="xs" color="gray.400">Added {new Date(admin.createdAt).toLocaleDateString()}</Text></Flex></Box>
-          <Flex gap="2" flexWrap="wrap"><Button size="sm" variant="outline" colorPalette={admin.status === "active" ? "red" : "green"} disabled={admin.id === currentAdmin?.id} loading={busyId === admin.id} onClick={() => void updateStatus(admin)}>{admin.status === "active" ? "Deactivate" : "Activate"}</Button></Flex>
+          <Box minW="0"><Text fontWeight="semibold">{admin.name || admin.email}{admin.id === currentAdmin?.id ? " (you)" : ""}</Text>{admin.name && <Text fontSize="sm" color="gray.500">{admin.email}</Text>}<Flex mt="2" gap="3" align="center" flexWrap="wrap"><Text fontSize="xs" color="gray.500">{roleLabels[admin.role]}</Text><Text fontSize="xs" fontWeight="semibold" color={admin.status === "active" ? "green.700" : "orange.700"}>{admin.status === "active" ? "Active" : "Inactive"}</Text><Text fontSize="xs" color="gray.500">Promo code balance: {admin.role === "super_admin" ? "Unlimited" : admin.promocodeBalance ?? 0}</Text><Text fontSize="xs" color="gray.400">Added {new Date(admin.createdAt).toLocaleDateString()}</Text></Flex></Box>
+          <Flex gap="2" flexWrap="wrap">{admin.role !== "super_admin" && <Button size="sm" variant="outline" loading={busyId === admin.id} onClick={() => void updatePromocodeBalance(admin)}>Set promo balance</Button>}<Button size="sm" variant="outline" colorPalette={admin.status === "active" ? "red" : "green"} disabled={admin.id === currentAdmin?.id} loading={busyId === admin.id} onClick={() => void updateStatus(admin)}>{admin.status === "active" ? "Deactivate" : "Activate"}</Button></Flex>
         </Flex>
       ))}
     </Box>
