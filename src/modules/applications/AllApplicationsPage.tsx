@@ -33,12 +33,12 @@ function openScreenshot(applicationId: number, kind: "preview" | "result") {
 function ApplicationFileLinks({ application, onViewLog }: { application: AdminApplication; onViewLog: () => void }) {
   const links = [
     application.logFilePath && { label: "View log", onClick: onViewLog },
-    application.previewScreenshot && { label: "Before submit", onClick: () => openScreenshot(application.id, "preview") },
-    application.resultScreenshot && { label: "Result", onClick: () => openScreenshot(application.id, "result") },
+    application.previewScreenshot && { label: "Before submit screenshot", onClick: () => openScreenshot(application.id, "preview") },
+    application.resultScreenshot && { label: "Result screenshot", onClick: () => openScreenshot(application.id, "result") },
   ].filter((link): link is { label: string; onClick: () => void } => Boolean(link));
-  if (!links.length) return null;
+  if (!links.length) return <Text color="gray.400">—</Text>;
   return (
-    <Flex fontSize="xs" mt="2" gap="2" wrap="wrap">
+    <Flex direction="column" align="flex-start" fontSize="sm" gap="1">
       {links.map((link) => (
         <a key={link.label} href="#" style={linkStyle} onClick={(event) => { event.preventDefault(); event.stopPropagation(); link.onClick(); }}>{link.label}</a>
       ))}
@@ -141,12 +141,11 @@ export function AllApplicationsPage() {
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
       <Box overflowX="auto"><Table.Root size="sm" minW="1200px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "User", "Profile", "Created", "Applied"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+        <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
-          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
+          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={8} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4">
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
-              <ApplicationFileLinks application={application} onViewLog={() => setLogApplicationId(application.id)} />
             </Table.Cell>
             <Table.Cell p="4">
               <Text fontWeight="semibold">
@@ -170,6 +169,7 @@ export function AllApplicationsPage() {
             <Table.Cell p="4">{application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : "—")}</Table.Cell>
             <Table.Cell p="4">{new Date(application.createdAt).toLocaleString()}</Table.Cell>
             <Table.Cell p="4">{application.appliedAt ? new Date(application.appliedAt).toLocaleString() : "—"}</Table.Cell>
+            <Table.Cell p="4" whiteSpace="nowrap"><ApplicationFileLinks application={application} onViewLog={() => setLogApplicationId(application.id)} /></Table.Cell>
           </Table.Row>)}
         </Table.Body>
       </Table.Root></Box>
