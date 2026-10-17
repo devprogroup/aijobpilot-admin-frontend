@@ -11,8 +11,12 @@ export interface ApplicationSite {
   submitDelayMs: number;
   pageTimeout: number;
   config: Record<string, unknown>;
+  /** Cooldown in seconds between picks for sites that block back-to-back applications (null/0 = none). */
+  sleepPeriod?: number | null;
+  /** Nothing is picked for this site before this time (set to now + sleepPeriod on each pick). */
+  wakeUpAt?: string | null;
 }
-export type ApplicationSitePayload = Omit<ApplicationSite, "id">;
+export type ApplicationSitePayload = Omit<ApplicationSite, "id" | "sleepPeriod" | "wakeUpAt">;
 export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select";
 export interface CrawlerTypeParameterOption { key:string; value:string }
 export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[] }
