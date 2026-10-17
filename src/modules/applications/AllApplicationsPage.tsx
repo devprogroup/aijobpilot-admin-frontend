@@ -14,6 +14,38 @@ const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "failed", label: "Failed" },
 ];
 
+const linkStyle = { color: "#15803d", textDecoration: "underline" } as const;
+
+// Screenshots need the admin token, so a plain link can't open them. Open the tab synchronously
+// (so popup blockers allow it), then point it at the downloaded image once it arrives.
+function openScreenshot(applicationId: number, kind: "preview" | "result") {
+  const tab = window.open("", "_blank");
+  if (tab) tab.document.title = `Application #${applicationId} ${kind === "preview" ? "before submit" : "result"} screenshot`;
+  void api.applicationScreenshot(applicationId, kind).then((url) => {
+    if (tab && !tab.closed) tab.location.href = url;
+    else window.open(url, "_blank");
+  }).catch((error: unknown) => {
+    tab?.close();
+    window.alert(error instanceof Error ? error.message : "Unable to load application screenshot.");
+  });
+}
+
+function ApplicationFileLinks({ application, onViewLog }: { application: AdminApplication; onViewLog: () => void }) {
+  const links = [
+    application.logFilePath && { label: "View log", onClick: onViewLog },
+    application.previewScreenshot && { label: "Before submit", onClick: () => openScreenshot(application.id, "preview") },
+    application.resultScreenshot && { label: "Result", onClick: () => openScreenshot(application.id, "result") },
+  ].filter((link): link is { label: string; onClick: () => void } => Boolean(link));
+  if (!links.length) return null;
+  return (
+    <Flex fontSize="xs" mt="2" gap="2" wrap="wrap">
+      {links.map((link) => (
+        <a key={link.label} href="#" style={linkStyle} onClick={(event) => { event.preventDefault(); event.stopPropagation(); link.onClick(); }}>{link.label}</a>
+      ))}
+    </Flex>
+  );
+}
+
 function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: number; kind: "preview" | "result"; alt: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
@@ -114,7 +146,7 @@ export function AllApplicationsPage() {
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4">
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
-              {application.logFilePath && <Text fontSize="xs" mt="2"><a href="#" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setLogApplicationId(application.id); }} style={{ color: "#15803d", textDecoration: "underline" }}>View log</a></Text>}
+              <ApplicationFileLinks application={application} onViewLog={() => setLogApplicationId(application.id)} />
             </Table.Cell>
             <Table.Cell p="4">
               <Text fontWeight="semibold">
@@ -162,10 +194,12 @@ export function AllApplicationsPage() {
                   {messageModal.previewScreenshot && <Box>
                     <Text fontSize="xs" color="gray.500" mb="1">Before submit</Text>
                     <AuthorizedScreenshot applicationId={messageModal.id} kind="preview" alt="Preview screenshot" />
+                    <Text fontSize="xs" mt="1"><a href="#" style={linkStyle} onClick={(event) => { event.preventDefault(); openScreenshot(messageModal.id, "preview"); }}>Open full size</a></Text>
                   </Box>}
                   {messageModal.resultScreenshot && <Box>
                     <Text fontSize="xs" color="gray.500" mb="1">Result</Text>
                     <AuthorizedScreenshot applicationId={messageModal.id} kind="result" alt="Result screenshot" />
+                    <Text fontSize="xs" mt="1"><a href="#" style={linkStyle} onClick={(event) => { event.preventDefault(); openScreenshot(messageModal.id, "result"); }}>Open full size</a></Text>
                   </Box>}
                 </Flex>
               </>}
