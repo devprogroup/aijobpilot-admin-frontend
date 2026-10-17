@@ -99,7 +99,7 @@ export function Sidebar({
   const apiKeysActive = location.pathname.startsWith("/api-keys");
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const emailTemplatesActive = location.pathname.startsWith("/email-templates");
-  const contentsActive = location.pathname.startsWith("/contents") || location.pathname.startsWith("/legal-content");
+  const contentsActive = location.pathname.startsWith("/contents");
   const [contentsOpen, setContentsOpen] = useState(contentsActive);
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");

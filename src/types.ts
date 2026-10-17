@@ -81,8 +81,6 @@ export interface ManagedApiKey { key:string; configured:boolean; displayValue?:s
 export interface EmailTemplateParameter { name:string; default?:string }
 export interface EmailTemplate { id:number; name:string; fromName:string; fromEmailId:string; title:string; body:string; parameters:EmailTemplateParameter[] }
 export type EmailTemplatePayload = Omit<EmailTemplate, "id">
-export type LegalDocumentId = "privacy" | "terms";
-export interface LegalDocument { id: LegalDocumentId; title: string; content: string; updatedAt: string }
 export type FaqScope = "public" | "private" | null;
 export interface ManagedFaq { id: number; question: string; answer: string; scope: FaqScope; sortOrder: number; isActive: boolean; dateTime: string }
 export type AdminUserRole = "super_admin" | "support" | "technical";

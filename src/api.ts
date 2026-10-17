@@ -19,8 +19,6 @@ import type {
   ManagedApiKey,
   EmailTemplate,
   EmailTemplatePayload,
-  LegalDocument,
-  LegalDocumentId,
   ManagedFaq,
   AdminUser,
   AdminUserRole,
@@ -256,13 +254,6 @@ export const api = {
     request<{ apiKey: ManagedApiKey }>(`/api-keys/${encodeURIComponent(key)}`, { method: "DELETE" }),
   emailTemplates: () =>
     request<{ emailTemplates: EmailTemplate[] }>("/email-templates"),
-  legalDocuments: () =>
-    request<{ documents: LegalDocument[] }>("/legal-content"),
-  updateLegalDocument: (id: LegalDocumentId, content: string) =>
-    request<{ document: LegalDocument }>(`/legal-content/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ content }),
-    }),
   faqs: () => request<{ faqs: ManagedFaq[] }>("/faqs"),
   createFaq: (payload: Omit<ManagedFaq, "id" | "dateTime">) =>
     request<{ faq: ManagedFaq }>("/faqs", { method: "POST", body: JSON.stringify(payload) }),
