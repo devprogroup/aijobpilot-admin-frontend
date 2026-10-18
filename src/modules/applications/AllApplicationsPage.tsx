@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Button, Dialog, Flex, Input, NativeSelect, Portal, Table, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
+import { PagePicker } from "../../components/PagePicker";
 import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
@@ -173,7 +174,7 @@ export function AllApplicationsPage() {
           </Table.Row>)}
         </Table.Body>
       </Table.Root></Box>
-      <Flex p="4" justify="space-between" align="center"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2"><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage((value) => value + 1)}>Next</Button></Flex></Flex>
+      <Flex p="4" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2" align="center"><PagePicker page={page} totalPages={pages} onChange={setPage} disabled={loading || !!error} /><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage((value) => value + 1)}>Next</Button></Flex></Flex>
     </Box>
     {messageModal && <Dialog.Root open scrollBehavior="inside" onOpenChange={({ open }) => { if (!open) setMessageModal(null); }}>
       <Portal>

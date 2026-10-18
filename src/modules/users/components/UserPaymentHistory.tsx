@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { api } from "../../../api";
+import { PagePicker } from "../../../components/PagePicker";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 
 function transactionLink(network: "erc20" | "bep20" | null, hash: string | null): string | null {
@@ -39,6 +40,6 @@ export function UserPaymentHistory({ userId }: { userId: number }) {
         })}
       </Table.Body>
     </Table.Root></Box>
-    <Flex mt="4" justify="space-between" align="center"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2"><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage(page + 1)}>Next</Button></Flex></Flex>
+    <Flex mt="4" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2" align="center"><PagePicker page={page} totalPages={pages} onChange={setPage} disabled={loading || !!error} /><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage(page + 1)}>Next</Button></Flex></Flex>
   </Box>;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { api } from "../../api";
+import { PagePicker } from "../../components/PagePicker";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { UploadCrawledJobsModal } from "./components/UploadCrawledJobsModal";
@@ -133,7 +134,7 @@ export function CrawledJobsPage() {
           </Table.Row>)}
         </Table.Body>
       </Table.Root></Box>
-      <Flex p="4" justify="space-between" align="center"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2"><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage((value) => value + 1)}>Next</Button></Flex></Flex>
+      <Flex p="4" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm">Page {page} of {pages}</Text><Flex gap="2" align="center"><PagePicker page={page} totalPages={pages} onChange={setPage} disabled={loading || !!error} /><Button size="sm" variant="outline" disabled={loading || !!error || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || !!error || page >= pages} onClick={() => setPage((value) => value + 1)}>Next</Button></Flex></Flex>
     </Box>
   </>;
 }

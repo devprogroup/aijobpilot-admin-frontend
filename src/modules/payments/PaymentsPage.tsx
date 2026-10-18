@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Box, Button, Dialog, Field, Flex, Input, Portal, Spinner, Table, Text } from "@chakra-ui/react";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { api } from "../../api";
+import { PagePicker } from "../../components/PagePicker";
 import type { AdminDepositAddress, PaymentNetwork } from "../../types";
 
 const amount = (value: number) => `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`;
@@ -110,7 +111,7 @@ export function PaymentsPage() {
           </Table.Row>)}
         </Table.Body>
       </Table.Root>
-      <Flex px="4" py="3" borderTop="1px solid" borderColor="gray.100" justify="space-between" align="center"><Text fontSize="sm" color="gray.500">{total} wallet{total === 1 ? "" : "s"}</Text><Flex align="center" gap="3"><Text fontSize="sm">Page {page} of {pages}</Text><Button size="sm" variant="outline" disabled={loading || page <= 1} onClick={() => setPage(value => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || page >= pages} onClick={() => setPage(value => value + 1)}>Next</Button></Flex></Flex>
+      <Flex px="4" py="3" borderTop="1px solid" borderColor="gray.100" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm" color="gray.500">{total} wallet{total === 1 ? "" : "s"}</Text><Flex align="center" gap="2"><Text fontSize="sm">Page {page} of {pages}</Text><PagePicker page={page} totalPages={pages} onChange={setPage} disabled={loading} /><Button size="sm" variant="outline" disabled={loading || page <= 1} onClick={() => setPage(value => value - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || page >= pages} onClick={() => setPage(value => value + 1)}>Next</Button></Flex></Flex>
     </Box>
 
     <Dialog.Root open={walletDialog !== null} onOpenChange={({ open }) => !walletSaving && !open && setWalletDialog(null)}>

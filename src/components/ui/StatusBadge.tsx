@@ -13,6 +13,8 @@ const PALETTE: Record<string, string> = {
   inactive: "gray",
   suspended: "red",
   finished: "green",
+  successful: "green",
+  "not run": "gray",
   credited: "green",
   detected: "orange",
   pending: "orange",

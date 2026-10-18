@@ -12,6 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { KeyRound, Search, Users } from "lucide-react";
 import { api } from "../../api";
+import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
 import { UserStats } from "./components/UserStats";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
@@ -281,7 +282,7 @@ export function UsersPage() {
           </Table.Root>
         </Box>
       </Box>
-      <Flex mt="4" justify="space-between" align="center"><Text fontSize="sm">{shown.length} users · Page {currentPage} of {pages}</Text><Flex gap="2"><Button size="sm" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex></Flex>
+      <Flex mt="4" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm">{shown.length} users · Page {currentPage} of {pages}</Text><Flex gap="2" align="center"><PagePicker page={currentPage} totalPages={pages} onChange={setPage} disabled={loading} /><Button size="sm" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex></Flex>
       {selected && <UserDetailsDialog user={selected} onClose={() => setSelected(null)} onSaved={(user) => {
         setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
         setSelected(null);

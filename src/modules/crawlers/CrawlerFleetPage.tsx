@@ -11,7 +11,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Play, Plus, RefreshCw, Search } from "lucide-react";
+import { Play, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler } from "../../types";
@@ -43,6 +43,7 @@ export function CrawlerFleetPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [deletingCrawlerId, setDeletingCrawlerId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -123,6 +124,22 @@ export function CrawlerFleetPage() {
       setError(
         error instanceof Error ? error.message : "Unable to queue crawler",
       );
+    }
+  };
+
+  const remove = async (crawler: Crawler) => {
+    if (crawler.status === "running" || deletingCrawlerId !== null) return;
+    if (!window.confirm(`Delete crawler "${crawler.name}"? This cannot be undone.`)) return;
+
+    setError("");
+    setDeletingCrawlerId(crawler.id);
+    try {
+      await api.deleteCrawler(crawler.id);
+      setItems((current) => current.filter((item) => item.id !== crawler.id));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete crawler");
+    } finally {
+      setDeletingCrawlerId(null);
     }
   };
 
@@ -250,7 +267,7 @@ export function CrawlerFleetPage() {
           </InputGroup>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="900px" size="sm">
+          <Table.Root minW="1000px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
                 <Table.ColumnHeader
@@ -296,6 +313,15 @@ export function CrawlerFleetPage() {
                   px="5"
                   py="3"
                 >
+                  Last run result
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Stop signal data
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -315,7 +341,7 @@ export function CrawlerFleetPage() {
                   py="3"
                   textAlign="right"
                 >
-                  Run
+                  Actions
                 </Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
@@ -323,7 +349,7 @@ export function CrawlerFleetPage() {
               {!loading && shown.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={7}
+                    colSpan={8}
                     px="5"
                     py="10"
                     textAlign="center"
@@ -354,6 +380,15 @@ export function CrawlerFleetPage() {
                   <Table.Cell px="5" py="4" color="gray.500">
                     {time(crawler.latestRun?.startedAt ?? null)}
                   </Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    <StatusBadge
+                      status={crawler.latestRun
+                        ? crawler.latestRun.status === "finished"
+                          ? "successful"
+                          : crawler.latestRun.status
+                        : "not run"}
+                    />
+                  </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {crawler.stopSignalData ?? "—"}
                   </Table.Cell>
@@ -371,17 +406,31 @@ export function CrawlerFleetPage() {
                     </Switch.Root>
                   </Table.Cell>
                   <Table.Cell px="5" py="4" textAlign="right">
-                    <Button
-                      size="xs"
-                      disabled={!(crawler.status === "idle" && crawler.active)}
-                      onClick={() => queue(crawler)}
-                      bg="gray.900"
-                      color="white"
-                      _hover={{ bg: "gray.700" }}
-                    >
-                      <Icon as={Play} boxSize="3.5" />
-                      Run
-                    </Button>
+                    <Flex justify="flex-end" gap="2">
+                      <Button
+                        size="xs"
+                        disabled={!(crawler.status === "idle" && crawler.active) || deletingCrawlerId !== null}
+                        onClick={() => queue(crawler)}
+                        bg="gray.900"
+                        color="white"
+                        _hover={{ bg: "gray.700" }}
+                      >
+                        <Icon as={Play} boxSize="3.5" />
+                        Run
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        colorPalette="red"
+                        disabled={crawler.status === "running" || deletingCrawlerId !== null}
+                        loading={deletingCrawlerId === crawler.id}
+                        onClick={() => void remove(crawler)}
+                        aria-label={`Delete ${crawler.name}`}
+                      >
+                        <Icon as={Trash2} boxSize="3.5" />
+                        Delete
+                      </Button>
+                    </Flex>
                   </Table.Cell>
                 </Table.Row>
               ))}
