@@ -122,8 +122,11 @@ export const api = {
   },
   adminUsers: () => request<{ adminUsers: AdminUser[] }>("/admin-users"),
   createAdminUser: (payload: { email: string; name: string | null; role: AdminUserRole; password: string }) => request<{ adminUser: AdminUser }>("/admin-users", { method: "POST", body: JSON.stringify(payload) }),
+  updateAdminUser: (id: number, payload: Partial<{ email: string; name: string | null; role: AdminUserRole }>) => request<{ adminUser: AdminUser }>(`/admin-users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   setAdminUserStatus: (id: number, status: "active" | "inactive") => request<{ adminUser: AdminUser }>(`/admin-users/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   setAdminUserPromocodeBalance: (id: number, promocodeBalance: number) => request<{ adminUser: AdminUser }>(`/admin-users/${id}/promocode-balance`, { method: "PATCH", body: JSON.stringify({ promocodeBalance }) }),
+  updateAdminUserPassword: (id: number, password: string) => request<{ ok: true }>(`/admin-users/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) }),
+  deleteAdminUser: (id: number) => request<{ ok: true }>(`/admin-users/${id}`, { method: "DELETE" }),
   promoCodes: () => request<{ promoCodes: PromoCode[]; balance: number | null; expireDays: number; freeCredit: number }>("/promo-codes"),
   generatePromoCodes: (count: number) => request<{ promoCodes: PromoCode[]; balance: number | null; deletedExpired: number }>("/promo-codes", { method: "POST", body: JSON.stringify({ count }) }),
   serviceHealth: (serviceId: ServiceHealth["id"]) =>

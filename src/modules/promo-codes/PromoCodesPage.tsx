@@ -16,7 +16,7 @@ function formatDate(value: string | null): string {
   return value ? new Date(value).toLocaleString() : "—";
 }
 
-export function PromoCodesPage({ embedded = false }: { embedded?: boolean }) {
+export function PromoCodesPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
   const [codes, setCodes] = useState<PromoCode[]>([]);
@@ -82,7 +82,7 @@ export function PromoCodesPage({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <>
-      {!embedded && <Box as="header" mb="8">
+      <Box as="header" mb="8">
         <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Growth</Text>
         <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Promo codes</Text>
         <Text mt="2" fontSize="sm" color="gray.500">
@@ -90,10 +90,9 @@ export function PromoCodesPage({ embedded = false }: { embedded?: boolean }) {
           {freeCredit !== null && <> and gives a new user {freeCredit} credit</>}
           {expireDays !== null && <>; unused codes expire after {expireDays} day{expireDays === 1 ? "" : "s"}</>}.
         </Text>
-      </Box>}
+      </Box>
       {error && <Box mb="5" borderRadius="xl" bg="red.50" p="4" fontSize="sm" color="red.700" role="alert">{error}</Box>}
       <Flex as="form" onSubmit={(event: FormEvent) => void generate(event)} mb="6" align="end" gap="4" flexWrap="wrap" border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" p="5">
-        {embedded && <Text as="h2" w="full" m="0" fontSize="lg" fontWeight="bold">Promo code management</Text>}
         <Box>
           <Text fontSize="xs" textTransform="uppercase" color="gray.400" fontWeight="bold">Promo code balance</Text>
           <Text fontSize="2xl" fontWeight="bold">{isSuperAdmin ? "Unlimited" : balance}</Text>

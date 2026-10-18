@@ -89,18 +89,20 @@ export function Sidebar({
 }) {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const hasPlatformAccess = user?.role === "technical" || user?.role === "super_admin";
   const crawlerActive = location.pathname.startsWith("/crawlers/");
   const applicationsActive = location.pathname.startsWith("/applications");
   const [applicationsOpen, setApplicationsOpen] = useState(applicationsActive);
   const usersActive = location.pathname.startsWith("/users") || location.pathname.startsWith("/admin-users");
   const [usersOpen, setUsersOpen] = useState(usersActive);
   const dashboardActive = location.pathname.startsWith("/dashboard");
-  const settingsActive = location.pathname.startsWith("/settings");
-  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
-  const apiKeysActive = location.pathname.startsWith("/api-keys");
-  const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
-  const emailTemplatesActive = location.pathname.startsWith("/email-templates");
   const contentsActive = location.pathname.startsWith("/contents");
+  const settingsActive = location.pathname.startsWith("/settings") ||
+    location.pathname.startsWith("/api-keys") ||
+    location.pathname.startsWith("/email-templates") ||
+    contentsActive;
+  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
+  const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
   const [contentsOpen, setContentsOpen] = useState(contentsActive);
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
@@ -204,24 +206,33 @@ export function Sidebar({
         </Flex>
 
         <VStack align="stretch" gap="2" flex="1" minH="0" overflowY="auto">
+          {user?.role === "support" ? (
+            <NavLink to="/promo-codes" onClick={onClose} style={{ textDecoration: "none" }}>
+              <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={location.pathname.startsWith("/promo-codes") ? "white" : "transparent"} color={location.pathname.startsWith("/promo-codes") ? "#17211b" : "whiteAlpha.700"} boxShadow={location.pathname.startsWith("/promo-codes") ? "sm" : "none"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Gift} boxSize="5" />
+                Promo codes
+              </Flex>
+            </NavLink>
+          ) : <>
           <NavLink to="/dashboard" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={dashboardActive ? "white" : "transparent"} color={dashboardActive ? "#17211b" : "whiteAlpha.700"} boxShadow={dashboardActive ? "sm" : "none"} _hover={dashboardActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Activity} boxSize="5" />
               Dashboard
             </Flex>
           </NavLink>
-          <NavLink to="/maintenance" onClick={onClose} style={{ textDecoration: "none" }}>
+          {hasPlatformAccess && <NavLink to="/maintenance" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={maintenanceActive ? "white" : "transparent"} color={maintenanceActive ? "#17211b" : "whiteAlpha.700"} boxShadow={maintenanceActive ? "sm" : "none"} _hover={maintenanceActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={CalendarClock} boxSize="5" />
               Maintenance
             </Flex>
-          </NavLink>
+          </NavLink>}
           {(user?.role === "technical" || user?.role === "super_admin") && <NavLink to="/logs" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={logsActive ? "white" : "transparent"} color={logsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={logsActive ? "sm" : "none"} _hover={logsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={ScrollText} boxSize="5" />
               Service logs
             </Flex>
           </NavLink>}
+          {hasPlatformAccess && <>
           <Collapsible.Root
             open={crawlersOpen}
             onOpenChange={(details) => setCrawlersOpen(details.open)}
@@ -303,6 +314,7 @@ export function Sidebar({
               </VStack>
             </Collapsible.Content>
           </Collapsible.Root>
+          </>}
 
           <Collapsible.Root open={usersOpen} onOpenChange={(details) => setUsersOpen(details.open)}>
             <Collapsible.Trigger asChild>
@@ -324,7 +336,7 @@ export function Sidebar({
               <Icon as={Wallet} boxSize="5" /> Wallets
             </Flex>
           </NavLink>}
-          <Collapsible.Root open={settingsOpen} onOpenChange={(details) => setSettingsOpen(details.open)}>
+          {hasPlatformAccess && <Collapsible.Root open={settingsOpen} onOpenChange={(details) => setSettingsOpen(details.open)}>
             <Collapsible.Trigger asChild>
               <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={settingsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
                 <Icon as={Settings} boxSize="5" />
@@ -336,43 +348,34 @@ export function Sidebar({
               <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
                 <ChildLink to="/settings/constants" icon={SlidersHorizontal} onClick={onClose}>Constants</ChildLink>
                 <ChildLink to="/settings/bonus-plans" icon={Gift} onClick={onClose}>Bonus plans</ChildLink>
+                <ChildLink to="/api-keys" icon={KeyRound} onClick={onClose}>Credentials</ChildLink>
+                <ChildLink to="/email-templates" icon={Mail} onClick={onClose}>Email templates</ChildLink>
+                <Collapsible.Root open={contentsOpen} onOpenChange={(details) => setContentsOpen(details.open)}>
+                  <Collapsible.Trigger asChild>
+                    <chakra.button type="button" w="full" display="flex" alignItems="center" gap="2.5" borderRadius="lg" px="3" py="2.5" fontSize="sm" fontWeight="medium" color={contentsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                      <Icon as={FileText} boxSize="4" />
+                      <Text>Contents</Text>
+                      <Icon as={ChevronDown} boxSize="4" ml="auto" transform={contentsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+                    </chakra.button>
+                  </Collapsible.Trigger>
+                  <Collapsible.Content>
+                    <VStack align="stretch" gap="1" ml="4" pl="2" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                      <ChildLink to="/contents/legal" icon={FileText} onClick={onClose}>Legal</ChildLink>
+                      <ChildLink to="/contents/faqs" icon={HelpCircle} onClick={onClose}>FAQ</ChildLink>
+                      <ChildLink to="/contents/help" icon={MessagesSquare} onClick={onClose}>Help</ChildLink>
+                    </VStack>
+                  </Collapsible.Content>
+                </Collapsible.Root>
               </VStack>
             </Collapsible.Content>
-          </Collapsible.Root>
-          <NavLink to="/api-keys" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={apiKeysActive ? "white" : "transparent"} color={apiKeysActive ? "#17211b" : "whiteAlpha.700"} boxShadow={apiKeysActive ? "sm" : "none"} _hover={apiKeysActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={KeyRound} boxSize="5" />
-              Credentials
-            </Flex>
-          </NavLink>
-          <NavLink to="/email-templates" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailTemplatesActive ? "white" : "transparent"} color={emailTemplatesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailTemplatesActive ? "sm" : "none"} _hover={emailTemplatesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={Mail} boxSize="5" />
-              Email templates
-            </Flex>
-          </NavLink>
-          <Collapsible.Root open={contentsOpen} onOpenChange={(details) => setContentsOpen(details.open)}>
-            <Collapsible.Trigger asChild>
-              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={contentsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
-                <Icon as={FileText} boxSize="5" />
-                <Text>Contents</Text>
-                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={contentsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
-              </chakra.button>
-            </Collapsible.Trigger>
-            <Collapsible.Content>
-              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
-                <ChildLink to="/contents/legal" icon={FileText} onClick={onClose}>Legal</ChildLink>
-                <ChildLink to="/contents/faqs" icon={HelpCircle} onClick={onClose}>FAQ</ChildLink>
-                <ChildLink to="/contents/help" icon={MessagesSquare} onClick={onClose}>Help</ChildLink>
-              </VStack>
-            </Collapsible.Content>
-          </Collapsible.Root>
+          </Collapsible.Root>}
           <NavLink to="/messages" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={messagesActive ? "white" : "transparent"} color={messagesActive ? "#17211b" : "whiteAlpha.700"} boxShadow={messagesActive ? "sm" : "none"} _hover={messagesActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Mail} boxSize="5" />
               Messages
             </Flex>
           </NavLink>
+          </>}
         </VStack>
 
         <Box
@@ -383,7 +386,7 @@ export function Sidebar({
           bg="whiteAlpha.100"
           p="3"
         >
-          <NavLink to="/account" onClick={onClose} style={{ textDecoration: "none" }}>
+          <NavLink to={user?.role === "support" ? "/promo-codes" : "/account"} onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="1" py="1.5" bg={location.pathname.startsWith("/account") ? "whiteAlpha.100" : "transparent"} _hover={{ bg: "whiteAlpha.200" }} transition="background .15s, color .15s">
               <Flex h="10" w="10" flexShrink="0" align="center" justify="center" borderRadius="xl" bg="#b7e4c7" color="#19382b" fontSize="sm" fontWeight="bold" textTransform="uppercase">
                 {user?.name?.trim().charAt(0) || user?.email.charAt(0) || "A"}

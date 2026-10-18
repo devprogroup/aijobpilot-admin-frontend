@@ -1,7 +1,7 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useAuth } from "../../auth/AuthContext";
 import { ChangePasswordPage } from "../../auth/ChangePasswordPage";
-import { PromoCodesPage } from "../promo-codes/PromoCodesPage";
+import { Navigate } from "react-router-dom";
 
 const roleLabels = {
   super_admin: "Super admin",
@@ -12,12 +12,14 @@ const roleLabels = {
 export function AccountPage() {
   const { user } = useAuth();
 
+  if (user?.role === "support") return <Navigate to="/promo-codes" replace />;
+
   return (
     <>
       <Box mb="6">
         <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Admin workspace</Text>
         <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Account</Text>
-        <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Manage your admin account and promo codes.</Text>
+        <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Manage your admin account.</Text>
       </Box>
 
       <Flex mb="6" align={{ base: "start", md: "center" }} justify="space-between" gap="4" flexWrap="wrap" border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" p="5">
@@ -31,7 +33,6 @@ export function AccountPage() {
         </Box>
       </Flex>
 
-      <PromoCodesPage embedded />
       <Box mt="10">
         <ChangePasswordPage embedded />
       </Box>
