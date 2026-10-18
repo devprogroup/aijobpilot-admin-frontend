@@ -17,6 +17,7 @@ const serviceDefinitions = [
   { id: "ats-engine", name: "ATS Engine" },
   { id: "crawler-backend", name: "Crawler Backend" },
   { id: "client-backend", name: "Client Backend" },
+  { id: "application-backend", name: "Application Backend" },
 ] as const;
 
 type SettlingStatus = {
