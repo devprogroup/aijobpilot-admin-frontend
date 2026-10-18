@@ -32,6 +32,7 @@ import {
   Sparkles,
   MessagesSquare,
   Settings,
+  ScrollText,
   Shield,
   Users,
   Wallet,
@@ -103,6 +104,7 @@ export function Sidebar({
   const [contentsOpen, setContentsOpen] = useState(contentsActive);
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
+  const logsActive = location.pathname.startsWith("/logs");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -214,6 +216,12 @@ export function Sidebar({
               Maintenance
             </Flex>
           </NavLink>
+          {(user?.role === "technical" || user?.role === "super_admin") && <NavLink to="/logs" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={logsActive ? "white" : "transparent"} color={logsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={logsActive ? "sm" : "none"} _hover={logsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={ScrollText} boxSize="5" />
+              Service logs
+            </Flex>
+          </NavLink>}
           <Collapsible.Root
             open={crawlersOpen}
             onOpenChange={(details) => setCrawlersOpen(details.open)}

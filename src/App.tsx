@@ -25,6 +25,7 @@ import { SetAdminPasswordPage } from "./auth/SetAdminPasswordPage";
 import { SuperAdminRoute } from "./auth/SuperAdminRoute";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 import { AdminUsersPage } from "./modules/admin-users/AdminUsersPage";
+import { ServiceLogsPage } from "./modules/logs/ServiceLogsPage";
 
 export default function App() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/legal-content" element={<Navigate to="/contents/legal" replace />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/logs" element={<ServiceLogsPage />} />
         <Route path="/promo-codes" element={<Navigate to="/account" replace />} />
         <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
       </Route>

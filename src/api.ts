@@ -128,6 +128,9 @@ export const api = {
   generatePromoCodes: (count: number) => request<{ promoCodes: PromoCode[]; balance: number | null; deletedExpired: number }>("/promo-codes", { method: "POST", body: JSON.stringify({ count }) }),
   serviceHealth: (serviceId: ServiceHealth["id"]) =>
     request<ServiceHealth>(`/service-health/${encodeURIComponent(serviceId)}`),
+  serviceLogs: () => request<{ services: { id: string; name: string; dates: string[] }[] }>("/service-logs"),
+  serviceLog: (serviceId: string, date: string) =>
+    request<{ content: string; truncated: boolean }>(`/service-logs/${encodeURIComponent(serviceId)}/${encodeURIComponent(date)}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   triggerCleanup: () => request<CleanupReport>("/maintenance/cleanup", { method: "POST" }),
   maintenance: () => request<{ maintenance: MaintenanceEntry[] }>("/maintenance"),
