@@ -28,7 +28,7 @@ import { PlatformAdminRoute } from "./auth/PlatformAdminRoute";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 import { AdminUsersPage } from "./modules/admin-users/AdminUsersPage";
 import { ServiceLogsPage } from "./modules/logs/ServiceLogsPage";
-import { InboundEmailsPage } from "./modules/inbound-emails/InboundEmailsPage";
+import { EmailsPage } from "./modules/inbound-emails/InboundEmailsPage";
 
 export default function App() {
   return (
@@ -74,7 +74,7 @@ export default function App() {
           <Route path="/users/:userId" element={<UserDetailsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/logs" element={<ServiceLogsPage />} />
-          <Route path="/inbound-emails" element={<InboundEmailsPage />} />
+          <Route path="/emails" element={<EmailsPage />} />
           <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
         </Route>
       </Route>

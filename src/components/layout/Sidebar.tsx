@@ -108,7 +108,7 @@ export function Sidebar({
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
   const logsActive = location.pathname.startsWith("/logs");
-  const inboundEmailsActive = location.pathname.startsWith("/inbound-emails");
+  const emailsActive = location.pathname.startsWith("/emails");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
 
   useEffect(() => {
@@ -234,10 +234,10 @@ export function Sidebar({
               Service logs
             </Flex>
           </NavLink>}
-          {hasPlatformAccess && <NavLink to="/inbound-emails" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={inboundEmailsActive ? "white" : "transparent"} color={inboundEmailsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={inboundEmailsActive ? "sm" : "none"} _hover={inboundEmailsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+          {hasPlatformAccess && <NavLink to="/emails" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailsActive ? "white" : "transparent"} color={emailsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailsActive ? "sm" : "none"} _hover={emailsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={Inbox} boxSize="5" />
-              Inbound emails
+              Emails
             </Flex>
           </NavLink>}
           {hasPlatformAccess && <>

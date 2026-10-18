@@ -88,12 +88,9 @@ export type FaqScope = "public" | "private" | null;
 export interface ManagedFaq { id: number; question: string; answer: string; scope: FaqScope; sortOrder: number; isActive: boolean; dateTime: string }
 export type AdminUserRole = "super_admin" | "support" | "technical";
 export interface AdminUser { id:number; email:string; name:string|null; role:AdminUserRole; status:"active"|"inactive"; promocodeBalance:number; createdAt:string }
-export type InboundEmailStatusFilter = "all" | "available" | "consumed" | "expired";
-export interface InboundEmailSummary {
+export type EmailStatusFilter = "all" | "available" | "consumed" | "expired";
+export interface AdminEmailSummary {
   id: number;
-  profileId: number;
-  profileName: string | null;
-  profileEmail: string | null;
   fromAddress: string;
   toAddress: string;
   subject: string;
@@ -101,7 +98,7 @@ export interface InboundEmailSummary {
   consumedAt: string | null;
   expiresAt: string;
 }
-export interface InboundEmail extends InboundEmailSummary {
+export interface AdminEmail extends AdminEmailSummary {
   messageId: string;
   bodyText: string | null;
   bodyHtml: string | null;
