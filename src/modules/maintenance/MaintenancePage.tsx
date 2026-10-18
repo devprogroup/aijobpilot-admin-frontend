@@ -120,7 +120,6 @@ export function MaintenancePage() {
                   </Table.Cell>
                   <Table.Cell px="4" py="4" whiteSpace="nowrap">
                     <StatusBadge status={entry.status} />
-                    {entry.status === "cooling" && <Text mt="1" fontSize="xs" color="gray.500">Ready {(entry.readyServices ?? []).length}/{entry.services.length}</Text>}
                   </Table.Cell>
                   <Table.Cell px="4" py="4">
                     <Flex justify="flex-end" gap="1">

@@ -43,7 +43,7 @@ export interface CleanupReport {
   errors: string[];
 }
 export type MaintenanceService = "client" | "client-service" | "ats-engine" | "crawler" | "application-worker";
-export type MaintenanceStatus = "scheduled" | "cooling" | "ready" | "started" | "finished";
+export type MaintenanceStatus = "scheduled" | "ready" | "started" | "finished";
 export interface MaintenanceEntry {
   id: number;
   label: string;
@@ -53,7 +53,6 @@ export interface MaintenanceEntry {
   finishedAt: string | null;
   description: string | null;
   services: MaintenanceService[];
-  readyServices: Array<"client-service" | "ats-engine" | "crawler" | "application-worker">;
   status: MaintenanceStatus;
   createdAt: string;
   updatedAt: string;

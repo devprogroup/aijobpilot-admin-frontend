@@ -4,7 +4,6 @@ const PALETTE: Record<string, string> = {
   running: "blue",
   queued: "orange",
   scheduled: "blue",
-  cooling: "orange",
   ready: "green",
   started: "blue",
   applying: "blue",
