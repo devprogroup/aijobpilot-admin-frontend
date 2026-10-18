@@ -29,6 +29,9 @@ import type {
   CleanupReport,
   MaintenanceEntry,
   MaintenancePayload,
+  InboundEmail,
+  InboundEmailStatusFilter,
+  InboundEmailSummary,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -134,6 +137,9 @@ export const api = {
   serviceLogs: () => request<{ services: { id: string; name: string; dates: string[] }[] }>("/service-logs"),
   serviceLog: (serviceId: string, date: string) =>
     request<{ content: string; truncated: boolean }>(`/service-logs/${encodeURIComponent(serviceId)}/${encodeURIComponent(date)}`),
+  inboundEmails: (page: number, search: string, status: InboundEmailStatusFilter) =>
+    request<{ emails: InboundEmailSummary[]; total: number; page: number; pageSize: number }>(`/inbound-emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
+  inboundEmail: (id: number) => request<{ email: InboundEmail }>(`/inbound-emails/${id}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   triggerCleanup: () => request<CleanupReport>("/maintenance/cleanup", { method: "POST" }),
   maintenance: () => request<{ maintenance: MaintenanceEntry[] }>("/maintenance"),
