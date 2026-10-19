@@ -63,7 +63,9 @@ export default function App() {
           <Route path="/settings/constants" element={<ConstantsPage />} />
           <Route path="/settings/bonus-plans" element={<BonusPlansPage />} />
           <Route path="/api-keys" element={<ApiKeysPage />} />
-          <Route path="/email-templates" element={<EmailTemplatesPage />} />
+          <Route path="/emails/admin" element={<EmailTemplatesPage />} />
+          <Route path="/emails/inbound" element={<EmailsPage />} />
+          <Route path="/email-templates" element={<Navigate to="/emails/admin" replace />} />
           <Route path="/contents" element={<Navigate to="/contents/legal" replace />} />
           <Route path="/contents/:section" element={<ContentManagementPage />} />
           <Route path="/legal-content" element={<Navigate to="/contents/legal" replace />} />
@@ -74,7 +76,7 @@ export default function App() {
           <Route path="/users/:userId" element={<UserDetailsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/logs" element={<ServiceLogsPage />} />
-          <Route path="/emails" element={<EmailsPage />} />
+          <Route path="/emails" element={<Navigate to="/emails/inbound" replace />} />
           <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
         </Route>
       </Route>

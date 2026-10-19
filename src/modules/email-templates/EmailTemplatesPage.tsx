@@ -82,8 +82,8 @@ export function EmailTemplatesPage() {
       <Flex as="header" mb="8" align={{ base: "start", md: "end" }} justify="space-between" gap="4" flexDir={{ base: "column", md: "row" }}>
         <Box>
           <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Messaging</Text>
-          <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Email templates</Text>
-          <Text mt="2" fontSize="sm" color="gray.500">Manage subjects, HTML bodies, and replacement parameters used by system emails.</Text>
+          <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Admin emails</Text>
+          <Text mt="2" fontSize="sm" color="gray.500">Manage templates, subjects, HTML bodies, and replacement parameters used by system emails.</Text>
         </Box>
         <Button bg="green.600" color="white" _hover={{ bg: "green.700" }} onClick={() => openForm()}>Add template</Button>
       </Flex>

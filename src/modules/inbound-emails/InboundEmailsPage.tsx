@@ -77,7 +77,7 @@ export function EmailsPage() {
   return <>
     <Box mb="6">
       <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Operations</Text>
-      <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Emails</Text>
+      <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Inbound emails</Text>
       <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Read messages delivered to any address at aijobpilot.co through Cloudflare Email Routing.</Text>
     </Box>
 

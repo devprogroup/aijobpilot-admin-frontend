@@ -100,7 +100,6 @@ export function Sidebar({
   const contentsActive = location.pathname.startsWith("/contents");
   const settingsActive = location.pathname.startsWith("/settings") ||
     location.pathname.startsWith("/api-keys") ||
-    location.pathname.startsWith("/email-templates") ||
     contentsActive;
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
@@ -108,12 +107,17 @@ export function Sidebar({
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
   const logsActive = location.pathname.startsWith("/logs");
-  const emailsActive = location.pathname.startsWith("/emails");
+  const emailsActive = location.pathname.startsWith("/emails") || location.pathname.startsWith("/email-templates");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
+  const [emailsOpen, setEmailsOpen] = useState(emailsActive);
 
   useEffect(() => {
     if (crawlerActive) setCrawlersOpen(true);
   }, [crawlerActive]);
+
+  useEffect(() => {
+    if (emailsActive) setEmailsOpen(true);
+  }, [emailsActive]);
 
   useEffect(() => {
     if (applicationsActive) setApplicationsOpen(true);
@@ -234,12 +238,21 @@ export function Sidebar({
               Service logs
             </Flex>
           </NavLink>}
-          {hasPlatformAccess && <NavLink to="/emails" onClick={onClose} style={{ textDecoration: "none" }}>
-            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={emailsActive ? "white" : "transparent"} color={emailsActive ? "#17211b" : "whiteAlpha.700"} boxShadow={emailsActive ? "sm" : "none"} _hover={emailsActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
-              <Icon as={Inbox} boxSize="5" />
-              Emails
-            </Flex>
-          </NavLink>}
+          {hasPlatformAccess && <Collapsible.Root open={emailsOpen} onOpenChange={(details) => setEmailsOpen(details.open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={emailsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Inbox} boxSize="5" />
+                <Text>Emails</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={emailsOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/emails/admin" icon={Mail} onClick={onClose}>Admin Emails</ChildLink>
+                <ChildLink to="/emails/inbound" icon={Inbox} onClick={onClose}>Inbound Emails</ChildLink>
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>}
           {hasPlatformAccess && <>
           <Collapsible.Root
             open={crawlersOpen}
@@ -357,7 +370,6 @@ export function Sidebar({
                 <ChildLink to="/settings/constants" icon={SlidersHorizontal} onClick={onClose}>Constants</ChildLink>
                 <ChildLink to="/settings/bonus-plans" icon={Gift} onClick={onClose}>Bonus plans</ChildLink>
                 <ChildLink to="/api-keys" icon={KeyRound} onClick={onClose}>Credentials</ChildLink>
-                <ChildLink to="/email-templates" icon={Mail} onClick={onClose}>Email templates</ChildLink>
                 <Collapsible.Root open={contentsOpen} onOpenChange={(details) => setContentsOpen(details.open)}>
                   <Collapsible.Trigger asChild>
                     <chakra.button type="button" w="full" display="flex" alignItems="center" gap="2.5" borderRadius="lg" px="3" py="2.5" fontSize="sm" fontWeight="medium" color={contentsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
