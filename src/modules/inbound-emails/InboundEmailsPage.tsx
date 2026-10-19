@@ -78,7 +78,7 @@ export function InboundEmailsPage() {
     <Box mb="6">
       <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Operations</Text>
       <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Inbound emails</Text>
-      <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Read OTP and account messages forwarded to profile addresses ending in @in.aijobpilot.co.</Text>
+      <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Browse all messages stored in the inbound_emails table, including messages delivered to staging addresses.</Text>
     </Box>
 
     {error && <Box mb="4" role="alert" borderRadius="xl" bg="red.50" p="4" color="red.700" fontSize="sm">{error}</Box>}
