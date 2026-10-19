@@ -100,6 +100,7 @@ export function Sidebar({
   const contentsActive = location.pathname.startsWith("/contents");
   const settingsActive = location.pathname.startsWith("/settings") ||
     location.pathname.startsWith("/api-keys") ||
+    location.pathname.startsWith("/email-templates") ||
     contentsActive;
   const [settingsOpen, setSettingsOpen] = useState(settingsActive);
   const paymentsActive = location.pathname.startsWith("/wallets") || location.pathname.startsWith("/payments");
@@ -107,7 +108,7 @@ export function Sidebar({
   const messagesActive = location.pathname.startsWith("/messages");
   const maintenanceActive = location.pathname.startsWith("/maintenance");
   const logsActive = location.pathname.startsWith("/logs");
-  const emailsActive = location.pathname.startsWith("/emails") || location.pathname.startsWith("/email-templates");
+  const emailsActive = location.pathname.startsWith("/emails");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
   const [emailsOpen, setEmailsOpen] = useState(emailsActive);
 
@@ -370,6 +371,7 @@ export function Sidebar({
                 <ChildLink to="/settings/constants" icon={SlidersHorizontal} onClick={onClose}>Constants</ChildLink>
                 <ChildLink to="/settings/bonus-plans" icon={Gift} onClick={onClose}>Bonus plans</ChildLink>
                 <ChildLink to="/api-keys" icon={KeyRound} onClick={onClose}>Credentials</ChildLink>
+                <ChildLink to="/email-templates" icon={Mail} onClick={onClose}>Email templates</ChildLink>
                 <Collapsible.Root open={contentsOpen} onOpenChange={(details) => setContentsOpen(details.open)}>
                   <Collapsible.Trigger asChild>
                     <chakra.button type="button" w="full" display="flex" alignItems="center" gap="2.5" borderRadius="lg" px="3" py="2.5" fontSize="sm" fontWeight="medium" color={contentsActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>

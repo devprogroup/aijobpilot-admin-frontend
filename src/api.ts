@@ -32,6 +32,8 @@ import type {
   AdminEmail,
   EmailStatusFilter,
   AdminEmailSummary,
+  InboundEmail,
+  InboundEmailSummary,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -140,6 +142,9 @@ export const api = {
   emails: (page: number, search: string, status: EmailStatusFilter) =>
     request<{ emails: AdminEmailSummary[]; total: number; page: number; pageSize: number }>(`/emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
   email: (id: number) => request<{ email: AdminEmail }>(`/emails/${id}`),
+  inboundEmails: (page: number, search: string, status: EmailStatusFilter) =>
+    request<{ emails: InboundEmailSummary[]; total: number; page: number; pageSize: number }>(`/inbound-emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
+  inboundEmail: (id: number) => request<{ email: InboundEmail }>(`/inbound-emails/${id}`),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   triggerCleanup: () => request<CleanupReport>("/maintenance/cleanup", { method: "POST" }),
   maintenance: () => request<{ maintenance: MaintenanceEntry[] }>("/maintenance"),

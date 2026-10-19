@@ -28,7 +28,8 @@ import { PlatformAdminRoute } from "./auth/PlatformAdminRoute";
 import { ProtectedLayout } from "./auth/ProtectedLayout";
 import { AdminUsersPage } from "./modules/admin-users/AdminUsersPage";
 import { ServiceLogsPage } from "./modules/logs/ServiceLogsPage";
-import { EmailsPage } from "./modules/inbound-emails/InboundEmailsPage";
+import { AdminEmailsPage } from "./modules/admin-emails/AdminEmailsPage";
+import { InboundEmailsPage } from "./modules/inbound-emails/InboundEmailsPage";
 
 export default function App() {
   return (
@@ -63,9 +64,9 @@ export default function App() {
           <Route path="/settings/constants" element={<ConstantsPage />} />
           <Route path="/settings/bonus-plans" element={<BonusPlansPage />} />
           <Route path="/api-keys" element={<ApiKeysPage />} />
-          <Route path="/emails/admin" element={<EmailTemplatesPage />} />
-          <Route path="/emails/inbound" element={<EmailsPage />} />
-          <Route path="/email-templates" element={<Navigate to="/emails/admin" replace />} />
+          <Route path="/emails/admin" element={<AdminEmailsPage />} />
+          <Route path="/emails/inbound" element={<InboundEmailsPage />} />
+          <Route path="/email-templates" element={<EmailTemplatesPage />} />
           <Route path="/contents" element={<Navigate to="/contents/legal" replace />} />
           <Route path="/contents/:section" element={<ContentManagementPage />} />
           <Route path="/legal-content" element={<Navigate to="/contents/legal" replace />} />
@@ -76,7 +77,7 @@ export default function App() {
           <Route path="/users/:userId" element={<UserDetailsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/logs" element={<ServiceLogsPage />} />
-          <Route path="/emails" element={<Navigate to="/emails/inbound" replace />} />
+          <Route path="/emails" element={<Navigate to="/emails/admin" replace />} />
           <Route path="/support" element={<Navigate to="/messages?tab=support" replace />} />
         </Route>
       </Route>

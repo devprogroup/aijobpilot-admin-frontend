@@ -103,6 +103,14 @@ export interface AdminEmail extends AdminEmailSummary {
   bodyText: string | null;
   bodyHtml: string | null;
 }
+export interface InboundEmailSummary extends AdminEmailSummary {
+  profileId: number;
+  messageId: string;
+}
+export interface InboundEmail extends InboundEmailSummary {
+  bodyText: string | null;
+  bodyHtml: string | null;
+}
 export interface PromoCode {
   id: number;
   code: string;
