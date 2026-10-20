@@ -6,6 +6,13 @@ import { PagePicker } from "../../components/PagePicker";
 import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
+import { useAuth } from "../../auth/AuthContext";
+
+/** Today as YYYY-MM-DD in the admin's own time zone: the default date filter. */
+function today(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
 
 const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "", label: "All statuses" },
@@ -66,12 +73,18 @@ function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: num
 }
 
 export function AllApplicationsPage() {
+  const { user: currentAdmin } = useAuth();
+  // The API allows the same roles (PATCH /api/applications/:id/source).
+  const canSetSource = currentAdmin?.role === "super_admin" || currentAdmin?.role === "technical";
+  const [sourceBusyId, setSourceBusyId] = useState<number | null>(null);
+  const [sourceError, setSourceError] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof api.applications>> | null>(null);
   const [applicationSites, setApplicationSites] = useState<ApplicationSite[]>([]);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  // Today's applications by default.
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState(today);
   const [status, setStatus] = useState<ApplicationStatus | "">("");
   const [applicationSiteId, setApplicationSiteId] = useState("");
   const [userId, setUserId] = useState("");
@@ -107,6 +120,20 @@ export function AllApplicationsPage() {
     return () => { active = false; };
   }, [page, query, from, to, status, applicationSiteId, userId, profileId, revision]);
 
+  const setSource = async (application: AdminApplication, source: AdminApplication["source"]) => {
+    if (source === application.source) return;
+    setSourceError(""); setSourceBusyId(application.id);
+    try {
+      await api.setApplicationSource(application.id, source);
+      setResult((current) => current && {
+        ...current,
+        applications: current.applications.map((entry) => entry.id === application.id ? { ...entry, source } : entry),
+      });
+    } catch (reason) {
+      setSourceError(reason instanceof Error ? reason.message : "Unable to change the application source.");
+    } finally { setSourceBusyId(null); }
+  };
+
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
   const applyFilters = () => { setQuery(search.trim()); setPage(1); setRevision((value) => value + 1); };
   const clearFilters = () => {
@@ -139,12 +166,13 @@ export function AllApplicationsPage() {
       <Input aria-label="Filter by profile ID" placeholder="Profile ID" value={profileId} onChange={(event) => { setProfileId(event.target.value.replace(/\D/g, "")); setPage(1); }} bg="white" w="32" />
     </Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
+    {sourceError && <Text role="alert" color="red.600" mb="4">{sourceError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
       <Box overflowX="auto"><Table.Root size="sm" minW="1200px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+        <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
-          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={8} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
+          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4">
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
             </Table.Cell>
@@ -166,6 +194,16 @@ export function AllApplicationsPage() {
               {application.job?.url && <Text fontSize="xs"><a href={application.job.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>View posting</a></Text>}
             </Table.Cell>
             <Table.Cell p="4">{application.job?.applicationSite?.displayText || "—"}</Table.Cell>
+            {/* Clicks stay here: the row itself opens the message dialog. */}
+            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
+              <NativeSelect.Root size="sm" minW="28" disabled={!canSetSource || sourceBusyId === application.id}>
+                <NativeSelect.Field aria-label={`Source of application #${application.id}`} value={application.source} onChange={(event) => void setSource(application, event.target.value as AdminApplication["source"])}>
+                  <option value="auto">Auto</option>
+                  <option value="manual">Manual</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Table.Cell>
             <Table.Cell p="4">{application.user ? <Link to={`/users/clients/${application.user.id}`} onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>{application.user.name || application.user.username}</Link> : "—"}</Table.Cell>
             <Table.Cell p="4">{application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : "—")}</Table.Cell>
             <Table.Cell p="4">{new Date(application.createdAt).toLocaleString()}</Table.Cell>
