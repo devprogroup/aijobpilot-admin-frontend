@@ -227,6 +227,13 @@ export function Sidebar({
               Dashboard
             </Flex>
           </NavLink>
+          {/* Every admin role uses promo codes (support admins get only this link, above). */}
+          <NavLink to="/promo-codes" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={location.pathname.startsWith("/promo-codes") ? "white" : "transparent"} color={location.pathname.startsWith("/promo-codes") ? "#17211b" : "whiteAlpha.700"} boxShadow={location.pathname.startsWith("/promo-codes") ? "sm" : "none"} _hover={location.pathname.startsWith("/promo-codes") ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
+              <Icon as={Gift} boxSize="5" />
+              Promo codes
+            </Flex>
+          </NavLink>
           {hasPlatformAccess && <NavLink to="/maintenance" onClick={onClose} style={{ textDecoration: "none" }}>
             <Flex align="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" bg={maintenanceActive ? "white" : "transparent"} color={maintenanceActive ? "#17211b" : "whiteAlpha.700"} boxShadow={maintenanceActive ? "sm" : "none"} _hover={maintenanceActive ? undefined : { bg: "whiteAlpha.200", color: "white" }}>
               <Icon as={CalendarClock} boxSize="5" />
