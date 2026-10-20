@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Dialog, Field, Flex, IconButton, Input, NativeSelect, Portal, Table, Text } from "@chakra-ui/react";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { api } from "../../api";
 import type { AdminUser, AdminUserRole } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
 import { AdminUserPasswordDialog } from "./AdminUserPasswordDialog";
+import { AddAdminUserDialog } from "./AddAdminUserDialog";
 
 const roleLabels: Record<AdminUserRole, string> = { super_admin: "Super admin", support: "Support", technical: "Technical" };
 
@@ -14,6 +15,7 @@ export function AdminUsersPage() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const visibleAdmins = admins.filter((admin) => admin.role !== "super_admin");
   const [passwordAdmin, setPasswordAdmin] = useState<AdminUser | null>(null);
+  const [adding, setAdding] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [balanceDrafts, setBalanceDrafts] = useState<Record<number, string>>({});
@@ -89,6 +91,13 @@ export function AdminUsersPage() {
   };
 
   return <>
+    {adding && <AddAdminUserDialog onClose={() => setAdding(false)} onCreated={(admin) => {
+      setAdding(false);
+      setAdmins((current) => [admin, ...current.filter((entry) => entry.id !== admin.id)]);
+      setBalanceDrafts((current) => ({ ...current, [admin.id]: String(admin.promocodeBalance ?? 0) }));
+      setError("");
+      setMessage(`Admin account created for ${admin.email}.`);
+    }} />}
     {passwordAdmin && <AdminUserPasswordDialog admin={passwordAdmin} onClose={() => setPasswordAdmin(null)} onSaved={() => { setPasswordAdmin(null); setMessage(`Password updated for ${passwordAdmin.email}; existing sessions have been signed out.`); }} />}
     {balanceAdmin && <Dialog.Root open onOpenChange={({ open }) => { if (!open && busyId !== balanceAdmin.id) { setBalanceDrafts((current) => ({ ...current, [balanceAdmin.id]: String(balanceAdmin.promocodeBalance ?? 0) })); setBalanceAdmin(null); } }}>
       <Portal><Dialog.Backdrop /><Dialog.Positioner><Dialog.Content p="6" mx="4" maxW="sm" borderRadius="2xl">
@@ -100,6 +109,7 @@ export function AdminUsersPage() {
     </Dialog.Root>}
     <Flex mb="6" align={{ base: "start", md: "end" }} justify="space-between" gap="4" flexDir={{ base: "column", md: "row" }}>
       <Box><Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Access control</Text><Text as="h1" m="0" fontSize="3xl" fontWeight="bold">Admin users</Text><Text mt="2" maxW="720px" fontSize="sm" color="gray.500">Manage admin details, roles, account status, and promo code balances.</Text></Box>
+      {isSuperAdmin && <Button colorPalette="green" onClick={() => { setError(""); setMessage(""); setAdding(true); }}><Plus size={16} />Add</Button>}
     </Flex>
     {(error || message) && <Box mb="5" borderRadius="xl" bg={error ? "red.50" : "green.50"} p="4" fontSize="sm" color={error ? "red.700" : "green.700"} role={error ? "alert" : "status"}>{error || message}</Box>}
     <Box overflow="hidden" border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white">
