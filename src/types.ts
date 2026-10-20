@@ -28,7 +28,7 @@ export interface CrawledJobRow { id:number; createdAt:string; title:string; comp
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
-export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; _count?:{profiles?:number;applications?:number} }
+export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface SystemMetrics {
   cpu: { percent: number | null; cores: number };
@@ -61,6 +61,8 @@ export type MaintenancePayload = Pick<MaintenanceEntry, "label" | "scheduledAt" 
 export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;
+  /** "auto" = picked by the bot, "manual" = queued by the user. */
+  source: "auto" | "manual";
   createdAt: string; updatedAt: string; appliedAt: string | null;
   previewScreenshot: string | null; resultScreenshot: string | null; logFilePath: string | null;
   job?: { id: number; positionName: string | null; companyName: string | null; url: string; applicationSite: { id: number; typeName: string; displayText: string } | null } | null;

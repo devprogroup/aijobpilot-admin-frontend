@@ -51,7 +51,8 @@ export function UsersPage() {
           (x.name || "").toLowerCase().includes(query.toLowerCase()) ||
           (x.username || "").toLowerCase().includes(query.toLowerCase()) ||
           (x.email || "").toLowerCase().includes(query.toLowerCase()) ||
-          String(x.id).includes(query.trim())),
+          String(x.id).includes(query.trim()) ||
+          (query.trim() !== "" && (x.profileIds ?? []).some((id) => String(id).includes(query.trim())))),
       ),
     [users, query, statusFilter],
   );
@@ -157,7 +158,7 @@ export function UsersPage() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(1); }}
               aria-label="Search users by name, username, email or ID"
-              placeholder="Search users"
+              placeholder="Search users, user ID or profile ID"
               bg="gray.100"
               border="none"
               fontSize="sm"
@@ -240,6 +241,7 @@ export function UsersPage() {
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
                     <Text fontWeight="semibold">{u.name || u.username || "—"}</Text>
+                    <Text fontSize="xs" color="gray.500" fontFamily="mono">ID {u.id}</Text>
                     {u.name && (
                       <Text fontSize="xs" color="gray.400">
                         {u.username}
@@ -267,7 +269,12 @@ export function UsersPage() {
                     {u.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
-                    {u._count?.profiles ?? 0}
+                    <Text>{u._count?.profiles ?? 0}</Text>
+                    {(u.profileIds?.length ?? 0) > 0 && (
+                      <Text fontSize="xs" color="gray.500" fontFamily="mono" title="Profile IDs (not deleted)">
+                        {u.profileIds!.map((id) => `#${id}`).join(", ")}
+                      </Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     {u._count?.applications ?? 0}
