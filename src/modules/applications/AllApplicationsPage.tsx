@@ -72,7 +72,8 @@ export function AllApplicationsPage() {
   // The API allows the same roles (PATCH /api/applications/:id/source).
   const canSetSource = currentAdmin?.role === "super_admin" || currentAdmin?.role === "technical";
   const [sourceBusyId, setSourceBusyId] = useState<number | null>(null);
-  const [sourceError, setSourceError] = useState("");
+  const [retryBusyId, setRetryBusyId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof api.applications>> | null>(null);
   const [applicationSites, setApplicationSites] = useState<ApplicationSite[]>([]);
   const [search, setSearch] = useState("");
@@ -117,7 +118,7 @@ export function AllApplicationsPage() {
 
   const setSource = async (application: AdminApplication, source: AdminApplication["source"]) => {
     if (source === application.source) return;
-    setSourceError(""); setSourceBusyId(application.id);
+    setActionError(""); setSourceBusyId(application.id);
     try {
       await api.setApplicationSource(application.id, source);
       setResult((current) => current && {
@@ -125,8 +126,23 @@ export function AllApplicationsPage() {
         applications: current.applications.map((entry) => entry.id === application.id ? { ...entry, source } : entry),
       });
     } catch (reason) {
-      setSourceError(reason instanceof Error ? reason.message : "Unable to change the application source.");
+      setActionError(reason instanceof Error ? reason.message : "Unable to change the application source.");
     } finally { setSourceBusyId(null); }
+  };
+
+  const retry = async (application: AdminApplication) => {
+    setActionError(""); setRetryBusyId(application.id);
+    try {
+      await api.retryApplication(application.id);
+      setResult((current) => current && {
+        ...current,
+        applications: current.applications.map((entry) => entry.id === application.id
+          ? { ...entry, status: "queued", message: null, previewScreenshot: null, resultScreenshot: null }
+          : entry),
+      });
+    } catch (reason) {
+      setActionError(reason instanceof Error ? reason.message : "Unable to retry the application.");
+    } finally { setRetryBusyId(null); }
   };
 
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
@@ -161,7 +177,7 @@ export function AllApplicationsPage() {
       <Input aria-label="Filter by profile ID" placeholder="Profile ID" value={profileId} onChange={(event) => { setProfileId(event.target.value.replace(/\D/g, "")); setPage(1); }} bg="white" w="32" />
     </Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
-    {sourceError && <Text role="alert" color="red.600" mb="4">{sourceError}</Text>}
+    {actionError && <Text role="alert" color="red.600" mb="4">{actionError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
       <Box overflowX="auto"><Table.Root size="sm" minW="1200px">
@@ -170,6 +186,13 @@ export function AllApplicationsPage() {
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4">
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
+              {application.status === "failed" && canSetSource && (
+                <Button mt="2" size="xs" variant="outline" colorPalette="green" display="block"
+                  loading={retryBusyId === application.id} disabled={retryBusyId !== null}
+                  onClick={(event) => { event.stopPropagation(); void retry(application); }}>
+                  Retry
+                </Button>
+              )}
             </Table.Cell>
             <Table.Cell p="4">
               <Text fontWeight="semibold">

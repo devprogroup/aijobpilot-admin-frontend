@@ -19,8 +19,12 @@ import { UserDetailsDialog } from "./components/UserDetailsDialog";
 import { UserPasswordDialog } from "./components/UserPasswordDialog";
 import { UserNameDialog } from "./components/UserNameDialog";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 
 export function UsersPage() {
+  // Technical admins can view clients; only super admins change them (the API enforces it).
+  const { user: currentAdmin } = useAuth();
+  const canEditClients = currentAdmin?.role === "super_admin";
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -248,8 +252,8 @@ export function UsersPage() {
                       </Text>
                     )}
                     <Link to={`/users/clients/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
-                    <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>
-                    <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setNameUser(u)}>Edit name</Button>
+                    {canEditClients && <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>}
+                    {canEditClients && <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setNameUser(u)}>Edit name</Button>}
                   </Table.Cell>
                   <Table.Cell
                     px="5"
@@ -261,7 +265,7 @@ export function UsersPage() {
                     {u.email && <Text fontSize="xs">{u.emailVerified ? "Verified" : "Unverified"}</Text>}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
-                    <NativeSelect.Root size="sm" disabled={pending !== null}><NativeSelect.Field aria-label={`Status for ${u.username}`} value={u.status} onChange={(event) => void change(u, event.target.value as User["status"])}>
+                    <NativeSelect.Root size="sm" disabled={!canEditClients || pending !== null}><NativeSelect.Field aria-label={`Status for ${u.username}`} value={u.status} onChange={(event) => void change(u, event.target.value as User["status"])}>
                       <option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
                     </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
                   </Table.Cell>
@@ -282,7 +286,7 @@ export function UsersPage() {
                   <Table.Cell px="5" py="4" color="gray.500">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4"><Button size="sm" variant="outline" disabled={pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button></Table.Cell>
+                  <Table.Cell px="5" py="4"><Button size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button></Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>

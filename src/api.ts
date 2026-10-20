@@ -90,6 +90,8 @@ export const api = {
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
     })}`),
+  retryApplication: (applicationId: number) =>
+    request<{ id: number; status: "queued" }>(`/applications/${applicationId}/retry`, { method: "POST" }),
   setApplicationSource: (applicationId: number, source: AdminApplication["source"]) =>
     request<{ id: number; source: AdminApplication["source"] }>(`/applications/${applicationId}/source`, { method: "PATCH", body: JSON.stringify({ source }) }),
   applicationLog: (applicationId: number) =>
