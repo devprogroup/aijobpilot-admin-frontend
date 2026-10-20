@@ -58,7 +58,7 @@ export interface MaintenanceEntry {
   updatedAt: string;
 }
 export type MaintenancePayload = Pick<MaintenanceEntry, "label" | "scheduledAt" | "expectedDuration" | "description" | "services">;
-export type ApplicationStatus = "queued" | "applying" | "applied" | "failed";
+  export type ApplicationStatus = "queued" | "applying" | "applied" | "failed" | "closed" | "shortlisted" | "declined";
 export interface AdminApplication {
   id: number; status: ApplicationStatus; message: string | null;
   /** "auto" = picked by the bot, "manual" = queued by the user. */

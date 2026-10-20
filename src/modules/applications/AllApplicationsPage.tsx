@@ -15,6 +15,9 @@ const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "applying", label: "Applying" },
   { value: "applied", label: "Applied" },
   { value: "failed", label: "Failed" },
+  { value: "closed", label: "Closed" },
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "declined", label: "Declined" },
 ];
 
 const linkStyle = { color: "#15803d", textDecoration: "underline" } as const;
@@ -69,9 +72,10 @@ function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: num
 
 export function AllApplicationsPage() {
   const { user: currentAdmin } = useAuth();
-  // The API allows the same roles (PATCH /api/applications/:id/source).
+  // The applications API allows technical and super admins to change source and status.
   const canSetSource = currentAdmin?.role === "super_admin" || currentAdmin?.role === "technical";
   const [sourceBusyId, setSourceBusyId] = useState<number | null>(null);
+  const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
   const [retryBusyId, setRetryBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof api.applications>> | null>(null);
@@ -130,6 +134,22 @@ export function AllApplicationsPage() {
     } finally { setSourceBusyId(null); }
   };
 
+  const setStatus = async (application: AdminApplication, status: ApplicationStatus) => {
+    if (status === application.status) return;
+    setActionError(""); setStatusBusyId(application.id);
+    try {
+      await api.setApplicationStatus(application.id, status);
+      setResult((current) => current && {
+        ...current,
+        applications: current.applications.map((entry) => entry.id === application.id ? { ...entry, status } : entry),
+      });
+      setMessageModal((current) => current?.id === application.id ? { ...current, status } : current);
+      setRevision((value) => value + 1);
+    } catch (reason) {
+      setActionError(reason instanceof Error ? reason.message : "Unable to change the application status.");
+    } finally { setStatusBusyId(null); }
+  };
+
   const retry = async (application: AdminApplication) => {
     setActionError(""); setRetryBusyId(application.id);
     try {
@@ -184,8 +204,14 @@ export function AllApplicationsPage() {
         <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
-            <Table.Cell p="4">
+            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
+              {canSetSource && <NativeSelect.Root mt="2" size="sm" minW="32" disabled={statusBusyId !== null}>
+                <NativeSelect.Field aria-label={`Status of application #${application.id}`} value={application.status} onChange={(event) => void setStatus(application, event.target.value as ApplicationStatus)}>
+                  {STATUS_OPTIONS.filter((option) => option.value !== "").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>}
               {application.status === "failed" && canSetSource && (
                 <Button mt="2" size="xs" variant="outline" colorPalette="green" display="block"
                   loading={retryBusyId === application.id} disabled={retryBusyId !== null}

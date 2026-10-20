@@ -12,6 +12,7 @@ import type {
   UserDetails,
   AdminApplication,
   ApplicationFilters,
+  ApplicationStatus,
   ServiceHealth,
   AppConfig,
   BonusPlan,
@@ -92,6 +93,8 @@ export const api = {
     })}`),
   retryApplication: (applicationId: number) =>
     request<{ id: number; status: "queued" }>(`/applications/${applicationId}/retry`, { method: "POST" }),
+  setApplicationStatus: (applicationId: number, status: ApplicationStatus) =>
+    request<{ id: number; status: ApplicationStatus }>(`/applications/${applicationId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   setApplicationSource: (applicationId: number, source: AdminApplication["source"]) =>
     request<{ id: number; source: AdminApplication["source"] }>(`/applications/${applicationId}/source`, { method: "PATCH", body: JSON.stringify({ source }) }),
   applicationLog: (applicationId: number) =>
