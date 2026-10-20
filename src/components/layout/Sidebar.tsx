@@ -356,7 +356,7 @@ export function Sidebar({
             <Collapsible.Content>
               <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
                 <ChildLink to="/users/clients" icon={Users} onClick={onClose}>Clients</ChildLink>
-                {user?.role === "super_admin" && <ChildLink to="/users/admins" icon={Shield} onClick={onClose}>Admins</ChildLink>}
+                {hasPlatformAccess && <ChildLink to="/users/admins" icon={Shield} onClick={onClose}>Admins</ChildLink>}
               </VStack>
             </Collapsible.Content>
           </Collapsible.Root>
