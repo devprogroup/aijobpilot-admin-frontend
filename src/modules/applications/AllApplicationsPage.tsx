@@ -7,12 +7,7 @@ import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../..
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
 import { useAuth } from "../../auth/AuthContext";
-
-/** Today as YYYY-MM-DD in the admin's own time zone: the default date filter. */
-function today(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
+import { todayDateInput } from "../../services/date-filter";
 
 const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "", label: "All statuses" },
@@ -83,8 +78,8 @@ export function AllApplicationsPage() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   // Today's applications by default.
-  const [from, setFrom] = useState(today);
-  const [to, setTo] = useState(today);
+  const [from, setFrom] = useState(todayDateInput);
+  const [to, setTo] = useState(todayDateInput);
   const [status, setStatus] = useState<ApplicationStatus | "">("");
   const [applicationSiteId, setApplicationSiteId] = useState("");
   const [userId, setUserId] = useState("");
