@@ -134,7 +134,7 @@ export function AllApplicationsPage() {
     } finally { setSourceBusyId(null); }
   };
 
-  const setStatus = async (application: AdminApplication, status: ApplicationStatus) => {
+  const changeStatus = async (application: AdminApplication, status: ApplicationStatus) => {
     if (status === application.status) return;
     setActionError(""); setStatusBusyId(application.id);
     try {
@@ -207,7 +207,7 @@ export function AllApplicationsPage() {
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
               <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
               {canSetSource && <NativeSelect.Root mt="2" size="sm" minW="32" disabled={statusBusyId !== null}>
-                <NativeSelect.Field aria-label={`Status of application #${application.id}`} value={application.status} onChange={(event) => void setStatus(application, event.target.value as ApplicationStatus)}>
+                <NativeSelect.Field aria-label={`Status of application #${application.id}`} value={application.status} onChange={(event) => void changeStatus(application, event.target.value as ApplicationStatus)}>
                   {STATUS_OPTIONS.filter((option) => option.value !== "").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
