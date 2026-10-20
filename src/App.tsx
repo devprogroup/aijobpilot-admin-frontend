@@ -42,9 +42,10 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/promo-codes" element={<PromoCodesPage />} />
         <Route element={<PlatformAdminRoute />}>
+          {/* Technical admins manage admin users too; the API blocks anything touching super admins. */}
+          <Route path="/users/admins" element={<AdminUsersPage />} />
+          <Route path="/admin-users" element={<Navigate to="/users/admins" replace />} />
           <Route element={<SuperAdminRoute />}>
-            <Route path="/users/admins" element={<AdminUsersPage />} />
-            <Route path="/admin-users" element={<Navigate to="/users/admins" replace />} />
             <Route path="/wallets" element={<PaymentsPage />} />
             <Route path="/payments" element={<Navigate to="/wallets" replace />} />
           </Route>

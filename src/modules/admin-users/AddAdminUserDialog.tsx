@@ -3,15 +3,18 @@ import { Button, Dialog, Field, Flex, Input, NativeSelect, Portal, Text } from "
 import { api } from "../../api";
 import type { AdminUser, AdminUserRole } from "../../types";
 
-/** Super admins add support/technical admins here (POST /api/admin-users). Super admins themselves
- * aren't listed or managed on this page, so they aren't offered as a role. */
-export function AddAdminUserDialog({ onClose, onCreated }: {
+/** Adds an admin (POST /api/admin-users): super admins create support or technical admins,
+ * technical admins support admins only. Super admins aren't managed on this page, so they aren't
+ * offered as a role. */
+export function AddAdminUserDialog({ onClose, onCreated, roles = ["support", "technical"] }: {
   onClose: () => void;
   onCreated: (admin: AdminUser) => void;
+  /** Roles the signed-in admin may give: technical admins create support admins only. */
+  roles?: Array<Exclude<AdminUserRole, "super_admin">>;
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<AdminUserRole>("support");
+  const [role, setRole] = useState<AdminUserRole>(roles[0] ?? "support");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -39,7 +42,7 @@ export function AddAdminUserDialog({ onClose, onCreated }: {
       <Flex direction="column" gap="4">
         <Field.Root required><Field.Label>Email</Field.Label><Input autoFocus type="email" maxLength={255} autoComplete="off" value={email} onChange={(event) => setEmail(event.target.value)} /></Field.Root>
         <Field.Root><Field.Label>Name</Field.Label><Input maxLength={255} autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} placeholder="Optional" /></Field.Root>
-        <Field.Root required><Field.Label>Role</Field.Label><NativeSelect.Root><NativeSelect.Field value={role} onChange={(event) => setRole(event.target.value as AdminUserRole)}><option value="support">Support</option><option value="technical">Technical</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>
+        <Field.Root required><Field.Label>Role</Field.Label><NativeSelect.Root disabled={roles.length < 2}><NativeSelect.Field value={role} onChange={(event) => setRole(event.target.value as AdminUserRole)}>{roles.map((option) => <option key={option} value={option}>{option === "support" ? "Support" : "Technical"}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>
         <Field.Root required><Field.Label>Password</Field.Label><Input type="password" minLength={12} maxLength={128} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /><Field.HelperText>12–128 characters.</Field.HelperText></Field.Root>
         <Field.Root required><Field.Label>Confirm password</Field.Label><Input type="password" minLength={12} maxLength={128} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></Field.Root>
       </Flex>

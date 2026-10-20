@@ -11,9 +11,12 @@ const roleLabels: Record<AdminUserRole, string> = { super_admin: "Super admin", 
 
 export function AdminUsersPage() {
   const { user: currentAdmin } = useAuth();
-  const isSuperAdmin = currentAdmin?.role === "super_admin";
+  // Super admins manage support and technical admins; technical admins manage support admins only
+  // (the API enforces it and lists only support admins for them).
+  const canManageAdmins = currentAdmin?.role === "super_admin" || currentAdmin?.role === "technical";
+  const isTechnicalAdmin = currentAdmin?.role === "technical";
   const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const visibleAdmins = admins.filter((admin) => admin.role !== "super_admin");
+  const visibleAdmins = admins.filter((admin) => admin.role !== "super_admin" && (!isTechnicalAdmin || admin.role === "support"));
   const [passwordAdmin, setPasswordAdmin] = useState<AdminUser | null>(null);
   const [adding, setAdding] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -91,7 +94,7 @@ export function AdminUsersPage() {
   };
 
   return <>
-    {adding && <AddAdminUserDialog onClose={() => setAdding(false)} onCreated={(admin) => {
+    {adding && <AddAdminUserDialog roles={isTechnicalAdmin ? ["support"] : ["support", "technical"]} onClose={() => setAdding(false)} onCreated={(admin) => {
       setAdding(false);
       setAdmins((current) => [admin, ...current.filter((entry) => entry.id !== admin.id)]);
       setBalanceDrafts((current) => ({ ...current, [admin.id]: String(admin.promocodeBalance ?? 0) }));
@@ -109,7 +112,7 @@ export function AdminUsersPage() {
     </Dialog.Root>}
     <Flex mb="6" align={{ base: "start", md: "end" }} justify="space-between" gap="4" flexDir={{ base: "column", md: "row" }}>
       <Box><Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Access control</Text><Text as="h1" m="0" fontSize="3xl" fontWeight="bold">Admin users</Text><Text mt="2" maxW="720px" fontSize="sm" color="gray.500">Manage admin details, roles, account status, and promo code balances.</Text></Box>
-      {isSuperAdmin && <Button colorPalette="green" onClick={() => { setError(""); setMessage(""); setAdding(true); }}><Plus size={16} />Add</Button>}
+      {canManageAdmins && <Button colorPalette="green" onClick={() => { setError(""); setMessage(""); setAdding(true); }}><Plus size={16} />Add</Button>}
     </Flex>
     {(error || message) && <Box mb="5" borderRadius="xl" bg={error ? "red.50" : "green.50"} p="4" fontSize="sm" color={error ? "red.700" : "green.700"} role={error ? "alert" : "status"}>{error || message}</Box>}
     <Box overflow="hidden" border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white">
@@ -121,11 +124,11 @@ export function AdminUsersPage() {
         <Table.Body>{visibleAdmins.map((admin) => <Table.Row key={admin.id}>
           <Table.Cell fontWeight="medium">{admin.name || "—"}{admin.id === currentAdmin?.id ? " (you)" : ""}</Table.Cell>
           <Table.Cell>{admin.email}</Table.Cell>
-          <Table.Cell><NativeSelect.Root size="sm" disabled={!isSuperAdmin || busyId === admin.id || admin.id === currentAdmin?.id} minW="36"><NativeSelect.Field aria-label={`Role for ${admin.email}`} value={admin.role} onChange={(event) => void updateRole(admin, event.target.value as AdminUserRole)}><option value="support">Support</option><option value="technical">Technical</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.Cell>
-          <Table.Cell>{admin.role === "super_admin" ? <Text color="gray.500">Unlimited</Text> : <Flex align="center" gap="1"><Text minW="6">{admin.promocodeBalance ?? 0}</Text><IconButton aria-label={`Edit promo code balance for ${admin.email}`} size="xs" variant="ghost" disabled={!isSuperAdmin || busyId === admin.id} onClick={() => { setBalanceDrafts((current) => ({ ...current, [admin.id]: String(admin.promocodeBalance ?? 0) })); setBalanceAdmin(admin); }}><Pencil size={14} /></IconButton></Flex>}</Table.Cell>
-          <Table.Cell><NativeSelect.Root size="sm" disabled={!isSuperAdmin || busyId === admin.id || admin.id === currentAdmin?.id} minW="28"><NativeSelect.Field aria-label={`Status for ${admin.email}`} value={admin.status} onChange={(event) => void updateStatus(admin, event.target.value as "active" | "inactive")}><option value="active">Active</option><option value="inactive">Inactive</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.Cell>
+          <Table.Cell><NativeSelect.Root size="sm" disabled={!canManageAdmins || isTechnicalAdmin || busyId === admin.id || admin.id === currentAdmin?.id} minW="36"><NativeSelect.Field aria-label={`Role for ${admin.email}`} value={admin.role} onChange={(event) => void updateRole(admin, event.target.value as AdminUserRole)}><option value="support">Support</option><option value="technical">Technical</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.Cell>
+          <Table.Cell>{admin.role === "super_admin" ? <Text color="gray.500">Unlimited</Text> : <Flex align="center" gap="1"><Text minW="6">{admin.promocodeBalance ?? 0}</Text><IconButton aria-label={`Edit promo code balance for ${admin.email}`} size="xs" variant="ghost" disabled={!canManageAdmins || busyId === admin.id} onClick={() => { setBalanceDrafts((current) => ({ ...current, [admin.id]: String(admin.promocodeBalance ?? 0) })); setBalanceAdmin(admin); }}><Pencil size={14} /></IconButton></Flex>}</Table.Cell>
+          <Table.Cell><NativeSelect.Root size="sm" disabled={!canManageAdmins || busyId === admin.id || admin.id === currentAdmin?.id} minW="28"><NativeSelect.Field aria-label={`Status for ${admin.email}`} value={admin.status} onChange={(event) => void updateStatus(admin, event.target.value as "active" | "inactive")}><option value="active">Active</option><option value="inactive">Inactive</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.Cell>
           <Table.Cell whiteSpace="nowrap">{new Date(admin.createdAt).toLocaleDateString()}</Table.Cell>
-          <Table.Cell><Flex gap="2"><Button size="xs" variant="outline" disabled={!isSuperAdmin || busyId === admin.id || admin.id === currentAdmin?.id} onClick={() => setPasswordAdmin(admin)}>Update password</Button><Button size="xs" variant="outline" colorPalette="red" disabled={!isSuperAdmin || busyId === admin.id || admin.id === currentAdmin?.id} loading={busyId === admin.id} onClick={() => void deleteAdmin(admin)}>Delete</Button></Flex></Table.Cell>
+          <Table.Cell><Flex gap="2"><Button size="xs" variant="outline" disabled={!canManageAdmins || busyId === admin.id || admin.id === currentAdmin?.id} onClick={() => setPasswordAdmin(admin)}>Update password</Button><Button size="xs" variant="outline" colorPalette="red" disabled={!canManageAdmins || busyId === admin.id || admin.id === currentAdmin?.id} loading={busyId === admin.id} onClick={() => void deleteAdmin(admin)}>Delete</Button></Flex></Table.Cell>
         </Table.Row>)}</Table.Body>
       </Table.Root></Box>}
     </Box>
