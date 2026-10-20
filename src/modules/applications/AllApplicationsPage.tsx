@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
-import { StatusBadge } from "../../components/ui/StatusBadge";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
 import { useAuth } from "../../auth/AuthContext";
 import { todayDateInput } from "../../services/date-filter";
@@ -200,25 +199,29 @@ export function AllApplicationsPage() {
     {actionError && <Text role="alert" color="red.600" mb="4">{actionError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
-      <Box overflowX="auto"><Table.Root size="sm" minW="1200px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Job / company", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+      <Box overflowX="auto"><Table.Root size="sm" minW="1400px">
+        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Retry", "Job / company", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
-          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
+          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={11} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
-              <Text mb="2">#{application.id}</Text><StatusBadge status={application.status} />
-              {canSetSource && <NativeSelect.Root mt="2" size="sm" minW="32" disabled={statusBusyId !== null}>
+              <Text>#{application.id}</Text>
+            </Table.Cell>
+            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
+              {canSetSource ? <NativeSelect.Root size="sm" minW="32" disabled={statusBusyId !== null}>
                 <NativeSelect.Field aria-label={`Status of application #${application.id}`} value={application.status} onChange={(event) => void changeStatus(application, event.target.value as ApplicationStatus)}>
                   {STATUS_OPTIONS.filter((option) => option.value !== "").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
-              </NativeSelect.Root>}
-              {application.status === "failed" && canSetSource && (
-                <Button mt="2" size="xs" variant="outline" colorPalette="green" display="block"
+              </NativeSelect.Root> : <Text textTransform="capitalize">{application.status}</Text>}
+            </Table.Cell>
+            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
+              {application.status === "failed" && canSetSource ? (
+                <Button size="xs" variant="outline" colorPalette="green"
                   loading={retryBusyId === application.id} disabled={retryBusyId !== null}
                   onClick={(event) => { event.stopPropagation(); void retry(application); }}>
                   Retry
                 </Button>
-              )}
+              ) : <Text color="gray.400">—</Text>}
             </Table.Cell>
             <Table.Cell p="4">
               <Text fontWeight="semibold">
@@ -235,7 +238,6 @@ export function AllApplicationsPage() {
                 ) : application.job?.positionName || "Job unavailable"}
               </Text>
               <Text fontSize="xs" color="gray.500">{application.job?.companyName || "—"}</Text>
-              {application.job?.url && <Text fontSize="xs"><a href={application.job.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>View posting</a></Text>}
             </Table.Cell>
             <Table.Cell p="4">{application.job?.applicationSite?.displayText || "—"}</Table.Cell>
             {/* Clicks stay here: the row itself opens the message dialog. */}
@@ -266,7 +268,7 @@ export function AllApplicationsPage() {
             <Dialog.Header><Dialog.Title>Application #{messageModal.id} details</Dialog.Title></Dialog.Header>
             <Dialog.Body>
               <Text fontSize="sm" fontWeight="semibold" mb="2">Status</Text>
-              <Box mb="5"><StatusBadge status={messageModal.status} /></Box>
+              <Text mb="5" textTransform="capitalize">{messageModal.status}</Text>
               <Text fontSize="sm" fontWeight="semibold" mb="2">Message</Text>
               <Box mb="5" p="3" bg="gray.50" borderRadius="lg" maxH="48" overflowY="auto" whiteSpace="pre-wrap" overflowWrap="anywhere" fontSize="sm">
                 {messageModal.message || "No message recorded."}
