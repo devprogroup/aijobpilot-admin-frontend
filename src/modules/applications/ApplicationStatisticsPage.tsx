@@ -3,6 +3,7 @@ import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { api } from "../../api";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { ApplicationStatus } from "../../types";
+import { todayDateInput } from "../../services/date-filter";
 
 const APPLIED_HUE = "#24845b";
 const FAILED_HUE = "#cf4646";
@@ -15,8 +16,9 @@ const RUNNING_MODES = [
 
 export function ApplicationStatisticsPage() {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof api.failedApplicationStats>> | null>(null);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  // Today's statistics by default.
+  const [from, setFrom] = useState(todayDateInput);
+  const [to, setTo] = useState(todayDateInput);
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
