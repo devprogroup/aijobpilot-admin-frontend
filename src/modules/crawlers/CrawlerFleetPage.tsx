@@ -14,7 +14,7 @@ import {
 import { Play, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
-import type { Crawler } from "../../types";
+import type { Crawler, CrawlerRunCounts } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CreateCrawlerModal } from "./components/CreateCrawlerModal";
 import { onSocketEvent } from "../../services/websocket";
@@ -36,6 +36,10 @@ const time = (date: string | null) =>
         minute: "2-digit",
       }).format(new Date(date))
     : "—";
+
+/** Every crawled_jobs row of a run, whatever ats-engine did with it. */
+const crawledTotal = (counts: CrawlerRunCounts) =>
+  counts.queued + counts.inserted + counts.ignored + counts.duplicated + counts.failed;
 
 export function CrawlerFleetPage() {
   const [items, setItems] = useState<Crawler[]>([]);
@@ -322,6 +326,15 @@ export function CrawlerFleetPage() {
                   px="5"
                   py="3"
                 >
+                  Ingested / crawled
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Stop signal data
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -349,7 +362,7 @@ export function CrawlerFleetPage() {
               {!loading && shown.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={8}
+                    colSpan={9}
                     px="5"
                     py="10"
                     textAlign="center"
@@ -388,6 +401,17 @@ export function CrawlerFleetPage() {
                           : crawler.latestRun.status
                         : "not run"}
                     />
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.600">
+                    {crawler.latestRun ? (
+                      <Text title="Jobs ats-engine inserted from the latest run / all jobs that run crawled">
+                        <Text as="span" fontWeight="semibold" color="green.700">
+                          {crawler.latestRun.counts.inserted.toLocaleString()}
+                        </Text>
+                        {" / "}
+                        {crawledTotal(crawler.latestRun.counts).toLocaleString()}
+                      </Text>
+                    ) : "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {crawler.stopSignalData ?? "—"}

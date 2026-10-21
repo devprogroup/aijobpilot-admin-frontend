@@ -22,6 +22,18 @@ export function ApplicationStatisticsPage() {
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [waking, setWaking] = useState(false);
+  const [wakeMessage, setWakeMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function wakeWorker() {
+    setWaking(true); setWakeMessage(null);
+    try {
+      await api.wakeApplicationWorker();
+      setWakeMessage({ ok: true, text: "Wake signal sent to the application worker." });
+    } catch (error) {
+      setWakeMessage({ ok: false, text: error instanceof Error ? error.message : "Unable to wake the application worker" });
+    } finally { setWaking(false); }
+  }
 
   useEffect(() => {
     let active = true;
@@ -38,8 +50,12 @@ export function ApplicationStatisticsPage() {
   return <>
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
       <Box><Text as="h1" fontSize="3xl" fontWeight="bold">Statistics</Text><Text color="gray.500">Application volume by status and application site.</Text></Box>
-      <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      <Flex gap="3">
+        <Button variant="outline" loading={waking} onClick={() => void wakeWorker()}>Wake worker</Button>
+        <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      </Flex>
     </Flex>
+    {wakeMessage && <Text role="status" color={wakeMessage.ok ? "green.600" : "red.600"} mb="4">{wakeMessage.text}</Text>}
     <Flex as="form" gap="3" mb="5" wrap="wrap" onSubmit={(event) => event.preventDefault()}>
       <Input aria-label="From date" type="date" value={from} max={to || undefined} onChange={(event) => setFrom(event.target.value)} bg="white" w="44" />
       <Input aria-label="To date" type="date" value={to} min={from || undefined} onChange={(event) => setTo(event.target.value)} bg="white" w="44" />

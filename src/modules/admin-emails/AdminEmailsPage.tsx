@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Dialog, Flex, Input, NativeSelect, Portal, Table, Text } from "@chakra-ui/react";
-import { Eye, RefreshCw } from "lucide-react";
+import { Eye, RefreshCw, Trash2 } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { AdminEmail, AdminEmailSummary, EmailStatusFilter } from "../../types";
@@ -45,6 +45,39 @@ export function AdminEmailsPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteEmail = async (email: { id: number; subject: string }) => {
+    if (!window.confirm(`Delete the email "${email.subject || "(no subject)"}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.deleteEmail(email.id);
+      if (emails.length === 1 && page > 1) setPage(page - 1);
+      else setRevision((current) => current + 1);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to delete the email.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  /** Deletes every email matching the applied search and status filter, not just this page. */
+  const deleteAll = async () => {
+    const scope = search || status !== "all" ? " matching the current search and filter" : "";
+    if (!window.confirm(`Delete all ${total.toLocaleString()} emails${scope}? This cannot be undone.`)) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.deleteAllEmails(search, status);
+      setPage(1);
+      setRevision((current) => current + 1);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to delete emails.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -90,11 +123,12 @@ export function AdminEmailsPage() {
           <NativeSelect.Root size="sm" w="48"><NativeSelect.Field aria-label="Filter emails" value={status} onChange={(event) => { setStatus(event.target.value as EmailStatusFilter); setPage(1); }}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
           <Button type="submit" size="sm" variant="outline">Search</Button>
           <Button type="button" size="sm" variant="ghost" aria-label="Refresh emails" onClick={() => setRevision((current) => current + 1)}><RefreshCw size={15} /></Button>
+          <Button type="button" size="sm" variant="outline" colorPalette="red" disabled={loading || deleting || total === 0} onClick={() => void deleteAll()}><Trash2 size={15} /> Delete all</Button>
         </Flex>
       </Flex>
       <Box overflowX="auto">
         <Table.Root minW="1050px" size="sm">
-          <Table.Header><Table.Row><Table.ColumnHeader>Received</Table.ColumnHeader><Table.ColumnHeader>From</Table.ColumnHeader><Table.ColumnHeader>To</Table.ColumnHeader><Table.ColumnHeader>Subject</Table.ColumnHeader><Table.ColumnHeader>Status</Table.ColumnHeader><Table.ColumnHeader>Expires</Table.ColumnHeader><Table.ColumnHeader>Read</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Header><Table.Row><Table.ColumnHeader>Received</Table.ColumnHeader><Table.ColumnHeader>From</Table.ColumnHeader><Table.ColumnHeader>To</Table.ColumnHeader><Table.ColumnHeader>Subject</Table.ColumnHeader><Table.ColumnHeader>Status</Table.ColumnHeader><Table.ColumnHeader>Expires</Table.ColumnHeader><Table.ColumnHeader>Actions</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>
             {!loading && emails.length === 0 && <Table.Row><Table.Cell colSpan={7}><Text py="7" textAlign="center" color="gray.500">No emails found.</Text></Table.Cell></Table.Row>}
             {emails.map((email) => <Table.Row key={email.id}>
@@ -104,7 +138,7 @@ export function AdminEmailsPage() {
               <Table.Cell maxW="64" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={email.subject}>{email.subject}</Table.Cell>
               <Table.Cell><Text color={emailStatus(email) === "Available" ? "green.700" : "gray.500"}>{emailStatus(email)}</Text></Table.Cell>
               <Table.Cell whiteSpace="nowrap">{formatDate(email.expiresAt)}</Table.Cell>
-              <Table.Cell><Button size="xs" variant="outline" onClick={() => setSelectedId(email.id)}><Eye size={14} /> View</Button></Table.Cell>
+              <Table.Cell><Flex gap="2"><Button size="xs" variant="outline" onClick={() => setSelectedId(email.id)}><Eye size={14} /> View</Button><Button size="xs" variant="outline" colorPalette="red" disabled={deleting} aria-label={`Delete email ${email.subject}`} onClick={() => void deleteEmail(email)}><Trash2 size={14} /> Delete</Button></Flex></Table.Cell>
             </Table.Row>)}
             {loading && <Table.Row><Table.Cell colSpan={7}><Text py="7" textAlign="center" color="gray.500">Loading emails…</Text></Table.Cell></Table.Row>}
           </Table.Body>
