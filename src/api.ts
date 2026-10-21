@@ -116,6 +116,8 @@ export const api = {
   },
   failedApplicationStats: (from: string, to: string) =>
     request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+  wakeApplicationWorker: () =>
+    request<{ ok: true }>("/applications/worker/wake", { method: "POST" }),
   applicationStatusSummary: (from: string, to: string) =>
     request<ApplicationStatusSummary>(`/applications/status-summary?${new URLSearchParams({ from, to })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
