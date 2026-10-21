@@ -6,7 +6,7 @@ import { PagePicker } from "../../components/PagePicker";
 import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
 import { useAuth } from "../../auth/AuthContext";
-import { todayDateInput } from "../../services/date-filter";
+import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 
 const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "", label: "All statuses" },
@@ -102,8 +102,9 @@ export function AllApplicationsPage() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
+    const dateRange = dateFilterRange(from, to);
     api.applications(page, {
-      search: query, from, to,
+      search: query, ...dateRange,
       status: status || undefined,
       applicationSiteId: applicationSiteId ? Number(applicationSiteId) : undefined,
       userId: userId ? Number(userId) : undefined,

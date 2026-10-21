@@ -3,7 +3,7 @@ import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { api } from "../../api";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { ApplicationStatus } from "../../types";
-import { todayDateInput } from "../../services/date-filter";
+import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 
 const APPLIED_HUE = "#24845b";
 const FAILED_HUE = "#cf4646";
@@ -26,7 +26,8 @@ export function ApplicationStatisticsPage() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    api.failedApplicationStats(from, to).then((value) => {
+    const dateRange = dateFilterRange(from, to);
+    api.failedApplicationStats(dateRange.from ?? "", dateRange.to ?? "").then((value) => {
       if (active) setStats(value);
     }).catch((error: unknown) => {
       if (active) setError(error instanceof Error ? error.message : "Unable to load statistics");
