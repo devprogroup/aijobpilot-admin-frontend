@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { AlertTriangle, Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Server, ShieldCheck, Trash2, WalletCards } from "lucide-react";
+import { AlertTriangle, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
-import type { AppConfig, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
+import type { AppConfig, ApplicationStatusSummary, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
+import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../auth/AuthContext";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -110,6 +110,58 @@ function MetricCard({
   );
 }
 
+/** Today's counts follow the Applications page's default filter (created today, admin's time zone). */
+const applicationStatusTiles = [
+  { key: "queued", label: "Queued", note: "Waiting now", color: "gray.700" },
+  { key: "applying", label: "Applying", note: "Running now", color: "blue.600" },
+  { key: "applied", label: "Applied", note: "Created today", color: "green.700" },
+  { key: "failed", label: "Failed", note: "Created today", color: "red.600" },
+  { key: "closed", label: "Closed", note: "Created today", color: "gray.500" },
+  { key: "total", label: "Total", note: "Created today", color: "gray.700" },
+] as const;
+
+function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSummary | null }) {
+  const today = summary?.byStatus ?? {};
+  const value = (key: (typeof applicationStatusTiles)[number]["key"]) => {
+    if (!summary) return null;
+    if (key === "queued" || key === "applying") return summary[key];
+    if (key === "total") return Object.values(today).reduce<number>((sum, count) => sum + (count ?? 0), 0);
+    return today[key] ?? 0;
+  };
+  return (
+    <Box mb="8" {...cardStyle}>
+      <Flex align="center" justify="space-between" gap="3" mb="4">
+        <Flex align="center" gap="3">
+          <Flex h="10" w="10" align="center" justify="center" borderRadius="xl" bg="green.50" color="green.700">
+            <Icon as={Send} boxSize="5" />
+          </Flex>
+          <Box>
+            <Text fontWeight="bold">Applications</Text>
+            <Text fontSize="xs" color="gray.400">Live queue and today's results</Text>
+          </Box>
+        </Flex>
+        <Link to="/applications/all" style={{ textDecoration: "none" }}>
+          <Button size="sm" variant="outline">View applications</Button>
+        </Link>
+      </Flex>
+      <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)", xl: "repeat(6, 1fr)" }} gap="3">
+        {applicationStatusTiles.map((tile) => {
+          const count = value(tile.key);
+          return (
+            <Box key={tile.key} borderRadius="xl" bg="gray.50" px="4" py="3">
+              <Text fontSize="xs" fontWeight="semibold" color="gray.500">{tile.label}</Text>
+              <Text fontSize="2xl" fontWeight="bold" color={tile.color} fontVariantNumeric="tabular-nums">
+                {count === null ? "—" : count.toLocaleString()}
+              </Text>
+              <Text fontSize="xs" color="gray.400">{tile.note}</Text>
+            </Box>
+          );
+        })}
+      </Grid>
+    </Box>
+  );
+}
+
 function SystemMetricsSection({ metrics }: { metrics: SystemMetrics | null }) {
   const memoryPercent = metrics ? metrics.memory.usedBytes / metrics.memory.totalBytes * 100 : null;
   const storagePercent = metrics ? metrics.storage.usedBytes / metrics.storage.totalBytes * 100 : null;
@@ -135,96 +187,59 @@ function SystemMetricsSection({ metrics }: { metrics: SystemMetrics | null }) {
   );
 }
 
-function BalanceCard({
-  balance,
-  loading,
-}: {
-  balance: ProviderBalance;
-  loading: boolean;
-}) {
-  const deepseek = balance.provider === "deepseek";
-  const twoCaptcha = balance.provider === "2captcha";
-  const BalanceIcon = deepseek ? Bot : twoCaptcha ? ShieldCheck : WalletCards;
-  return (
-    <Box
-      borderRadius="2xl"
-      border="1px solid"
-      borderColor="gray.200"
-      bg="white"
-      p="5"
-      boxShadow="0 12px 35px rgba(24, 43, 34, .07)"
-    >
-      <Flex align="center" justify="space-between" gap="3">
-        <Flex align="center" gap="3">
-          <Flex
-            h="10"
-            w="10"
-            align="center"
-            justify="center"
-            borderRadius="xl"
-            bg={deepseek ? "blue.50" : twoCaptcha ? "orange.50" : "green.50"}
-            color={
-              deepseek ? "blue.600" : twoCaptcha ? "orange.600" : "green.700"
-            }
-          >
-            <Icon as={BalanceIcon} boxSize="5" />
-          </Flex>
-          <Box>
-            <Text fontWeight="bold" textTransform="capitalize">
-              {balance.provider}
-            </Text>
-            <Text fontSize="xs" color="gray.400">
-              API credit balance
-            </Text>
-          </Box>
-        </Flex>
-        {loading && (
-          <Spinner size="sm" color={deepseek ? "blue.500" : "green.600"} />
-        )}
-      </Flex>
-      <Text mt="5" fontSize="3xl" fontWeight="bold">
-        {balance.amount === null ? "—" : money.format(balance.amount)}
-      </Text>
-      {balance.error && (
-        <Text mt="2" fontSize="xs" color="red.600" title={balance.error}>
-          {balance.error}
-        </Text>
-      )}
-    </Box>
-  );
-}
+const cardStyle = {
+  borderRadius: "2xl",
+  border: "1px solid",
+  borderColor: "gray.200",
+  bg: "white",
+  p: "5",
+  boxShadow: "0 12px 35px rgba(24, 43, 34, .07)",
+} as const;
 
-function BalanceLoadingCard({
-  provider,
-}: {
-  provider: ProviderBalance["provider"];
+/** One row of the dashboard's status cards: a name with a note under it, and a value on the right. */
+function StatusRow({ title, note, noteColor = "gray.400", children }: {
+  title: string;
+  note: string;
+  noteColor?: string;
+  children: ReactNode;
 }) {
-  const label =
-    provider === "deepseek"
-      ? "DeepSeek"
-      : provider === "openai"
-        ? "OpenAI"
-        : "2Captcha";
   return (
-    <Flex
-      minH="40"
-      align="center"
-      justify="center"
-      borderRadius="2xl"
-      border="1px solid"
-      borderColor="gray.200"
-      bg="white"
-      color="gray.400"
-    >
-      <Spinner size="sm" mr="2" />
-      Loading {label} balance…
+    <Flex align="center" justify="space-between" gap="3" py="3" borderTop="1px solid" borderColor="gray.100">
+      <Box minW="0">
+        <Text fontWeight="semibold">{title}</Text>
+        <Text fontSize="xs" color={noteColor} title={note} lineClamp={1}>{note}</Text>
+      </Box>
+      <Flex flexShrink={0} align="center" gap="2">{children}</Flex>
     </Flex>
   );
 }
 
+const providerLabels: Record<ProviderBalance["provider"], string> = {
+  deepseek: "DeepSeek",
+  openai: "OpenAI",
+  "2captcha": "2Captcha",
+};
+
+function BalanceRow({ provider, balance, loading }: {
+  provider: ProviderBalance["provider"];
+  balance: ProviderBalance | null;
+  loading: boolean;
+}) {
+  return (
+    <StatusRow
+      title={providerLabels[provider]}
+      note={balance?.error || (balance ? `Checked ${new Date(balance.updatedAt).toLocaleTimeString()}` : "Loading balance...")}
+      noteColor={balance?.error ? "red.600" : "gray.400"}
+    >
+      {loading && <Spinner size="xs" color="gray.400" />}
+      <Text fontSize="xl" fontWeight="bold" fontVariantNumeric="tabular-nums">
+        {balance?.amount == null ? "—" : money.format(balance.amount)}
+      </Text>
+    </StatusRow>
+  );
+}
+
 export function DashboardPage() {
-  const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
   const [services, setServices] = useState<ServiceHealth[]>([]);
   const [serviceLoading, setServiceLoading] = useState<Record<string, boolean>>(
     Object.fromEntries(serviceDefinitions.map(({ id }) => [id, true])),
@@ -239,7 +254,7 @@ export function DashboardPage() {
   );
   const [twoCaptchaBalance, setTwoCaptchaBalance] =
     useState<ProviderBalance | null>(null);
-  const [paymentBalance, setPaymentBalance] = useState<number | null>(null);
+  const [applicationSummary, setApplicationSummary] = useState<ApplicationStatusSummary | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [settlingStatus, setSettlingStatus] = useState<SettlingStatus | null>(null);
   const [cleanupRunning, setCleanupRunning] = useState(false);
@@ -306,15 +321,16 @@ export function DashboardPage() {
     }
   }, []);
 
-  const loadPaymentBalance = useCallback(async () => {
-    if (!isSuperAdmin) { setPaymentBalance(null); return; }
-    try { setPaymentBalance((await api.paymentSummary()).totalBalance); }
-    catch { setPaymentBalance(null); }
-  }, [isSuperAdmin]);
-
   const loadSystemMetrics = useCallback(async () => {
     try { setSystemMetrics(await api.systemMetrics()); }
     catch { setSystemMetrics(null); }
+  }, []);
+
+  const loadApplicationSummary = useCallback(async () => {
+    const today = todayDateInput();
+    const { from, to } = dateFilterRange(today, today);
+    try { setApplicationSummary(await api.applicationStatusSummary(from!, to!)); }
+    catch { setApplicationSummary(null); }
   }, []);
 
   const loadSettlingStatus = useCallback(async () => {
@@ -343,10 +359,10 @@ export function DashboardPage() {
     void loadServices();
     void loadDeepSeekBalance();
     void loadTwoCaptchaBalance();
-    void loadPaymentBalance();
     void loadSystemMetrics();
     void loadSettlingStatus();
-  }, [loadDeepSeekBalance, loadPaymentBalance, loadServices, loadSettlingStatus, loadSystemMetrics, loadTwoCaptchaBalance]);
+    void loadApplicationSummary();
+  }, [loadApplicationSummary, loadDeepSeekBalance, loadServices, loadSettlingStatus, loadSystemMetrics, loadTwoCaptchaBalance]);
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 15000);
@@ -354,6 +370,7 @@ export function DashboardPage() {
   }, [refresh]);
 
   const running = services.filter((service) => service.running).length;
+  const allRunning = services.length > 0 && running === serviceDefinitions.length;
   const refreshing =
     Object.values(serviceLoading).some(Boolean) ||
     deepSeekLoading ||
@@ -429,119 +446,67 @@ export function DashboardPage() {
         </Box>
       )}
 
+      <ApplicationStatusSection summary={applicationSummary} />
+
       <SystemMetricsSection metrics={systemMetrics} />
 
-      <Box mb="8">
-        <Text fontWeight="bold">Provider balances</Text>
-        <Text mt="1" mb="3" fontSize="xs" color="gray.400">
-          Current API credit
-        </Text>
-        <Grid
-          templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }}
-          gap="4"
-          maxW="2xl"
-        >
-          {deepSeekLoading && !deepSeekBalance ? (
-            <BalanceLoadingCard provider="deepseek" />
-          ) : (
-            deepSeekBalance && (
-              <BalanceCard
-                balance={deepSeekBalance}
-                loading={deepSeekLoading}
-              />
-            )
-          )}
-          {/* {openAiLoading && !openAiBalance ? <BalanceLoadingCard provider="openai" /> : openAiBalance && <BalanceCard balance={openAiBalance} loading={openAiLoading} />} */}
-          {twoCaptchaLoading && !twoCaptchaBalance ? (
-            <BalanceLoadingCard provider="2captcha" />
-          ) : (
-            twoCaptchaBalance && (
-              <BalanceCard
-                balance={twoCaptchaBalance}
-                loading={twoCaptchaLoading}
-              />
-            )
-          )}
-        </Grid>
-      </Box>
-
-      {isSuperAdmin && <Box mb="8" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" p="5" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
-        <Flex align="center" justify="space-between" gap="4">
-          <Box><Text fontWeight="bold">USDT payment balance</Text><Text mt="1" fontSize="xs" color="gray.400">Across confirmed customer deposit addresses</Text></Box>
-          <Text fontSize="2xl" fontWeight="bold">{paymentBalance === null ? "—" : `${paymentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USDT`}</Text>
-        </Flex>
-        <Link to="/wallets" style={{ textDecoration: "none" }}><Button mt="3" size="sm" variant="outline">Manage wallets</Button></Link>
-      </Box>}
-
-      <Grid
-        templateColumns={{
-          base: "1fr",
-          sm: "repeat(2, 1fr)",
-          xl: "repeat(4, 1fr)",
-        }}
-        gap="4"
-      >
-        {serviceDefinitions
-          .map((definition) => {
+      <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap="4" alignItems="start">
+        <Box {...cardStyle}>
+          <Flex align="center" justify="space-between" gap="3" mb="2">
+            <Flex align="center" gap="3">
+              <Flex
+                h="10"
+                w="10"
+                align="center"
+                justify="center"
+                borderRadius="xl"
+                bg={allRunning ? "green.50" : "red.50"}
+                color={allRunning ? "green.700" : "red.600"}
+              >
+                <Icon as={Server} boxSize="5" />
+              </Flex>
+              <Text fontWeight="bold">Service availability</Text>
+            </Flex>
+            <Text fontSize="sm" color="gray.500">
+              {services.length ? `${running} of ${serviceDefinitions.length} running` : "Checking..."}
+            </Text>
+          </Flex>
+          {serviceDefinitions.map((definition) => {
             const service = services.find((item) => item.id === definition.id);
             const loading = serviceLoading[definition.id];
             return (
-              <Box
+              <StatusRow
                 key={definition.id}
-                borderRadius="2xl"
-                border="1px solid"
-                borderColor="gray.200"
-                bg="white"
-                p="5"
-                boxShadow="0 12px 35px rgba(24, 43, 34, .07)"
+                title={definition.name}
+                note={service ? `Checked ${new Date(service.checkedAt).toLocaleTimeString()}` : "Waiting for health check"}
               >
-                <Flex align="center" justify="space-between" gap="3">
-                  <Flex
-                    h="10"
-                    w="10"
-                    align="center"
-                    justify="center"
-                    borderRadius="xl"
-                    bg={service?.running ? "green.50" : "red.50"}
-                    color={service?.running ? "green.700" : "red.600"}
-                  >
-                    <Icon as={Server} boxSize="5" />
-                  </Flex>
-                  <Flex
-                    align="center"
-                    gap="2"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    color={service?.running ? "green.700" : "red.600"}
-                  >
-                    {loading ? (
-                      <Spinner size="xs" />
-                    ) : (
-                      <Box
-                        h="2"
-                        w="2"
-                        borderRadius="full"
-                        bg={service?.running ? "green.400" : "red.400"}
-                      />
-                    )}
-                    {loading && !service
-                      ? "CHECKING"
-                      : service?.running
-                        ? "RUNNING"
-                        : "UNAVAILABLE"}
-                  </Flex>
+                <Flex align="center" gap="2" fontSize="xs" fontWeight="bold" color={service?.running ? "green.700" : "red.600"}>
+                  {loading ? (
+                    <Spinner size="xs" />
+                  ) : (
+                    <Box h="2" w="2" borderRadius="full" bg={service?.running ? "green.400" : "red.400"} />
+                  )}
+                  {loading && !service ? "CHECKING" : service?.running ? "RUNNING" : "UNAVAILABLE"}
                 </Flex>
-                <Text mt="5" fontWeight="bold">
-                  {definition.name}
-                </Text>
-                <Text mt="1" fontSize="xs" color="gray.400">
-                  {service
-                    ? `Checked ${new Date(service.checkedAt).toLocaleTimeString()}`
-                    : "Waiting for health check"}
-                </Text>
-              </Box>
+              </StatusRow>
             );
           })}
+        </Box>
+
+        <Box {...cardStyle}>
+          <Flex align="center" gap="3" mb="2">
+            <Flex h="10" w="10" align="center" justify="center" borderRadius="xl" bg="blue.50" color="blue.600">
+              <Icon as={WalletCards} boxSize="5" />
+            </Flex>
+            <Box>
+              <Text fontWeight="bold">Provider balances</Text>
+              <Text fontSize="xs" color="gray.400">Current API credit</Text>
+            </Box>
+          </Flex>
+          <BalanceRow provider="deepseek" balance={deepSeekBalance} loading={deepSeekLoading} />
+          {/* <BalanceRow provider="openai" balance={openAiBalance} loading={openAiLoading} /> */}
+          <BalanceRow provider="2captcha" balance={twoCaptchaBalance} loading={twoCaptchaLoading} />
+        </Box>
       </Grid>
     </>
   );

@@ -1,4 +1,5 @@
 import type {
+  ApplicationStatusSummary,
   PromoCode,
   ApplicationSite,
   ApplicationSitePayload,
@@ -115,6 +116,8 @@ export const api = {
   },
   failedApplicationStats: (from: string, to: string) =>
     request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+  applicationStatusSummary: (from: string, to: string) =>
+    request<ApplicationStatusSummary>(`/applications/status-summary?${new URLSearchParams({ from, to })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
   createApplicationSite: (payload: ApplicationSitePayload) =>
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),
