@@ -9,6 +9,7 @@ import { CrawlerSettingsPage } from "./modules/crawlers/CrawlerSettingsPage";
 import { CrawledJobsPage } from "./modules/crawlers/CrawledJobsPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
+import { ProfileDetailsPage } from "./modules/users/ProfileDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { ConstantsPage } from "./modules/settings/ConstantsPage";
 import { BonusPlansPage } from "./modules/settings/BonusPlansPage";
@@ -75,6 +76,7 @@ export default function App() {
           <Route path="/users" element={<Navigate to="/users/clients" replace />} />
           <Route path="/users/clients" element={<UsersPage />} />
           <Route path="/users/clients/:userId" element={<UserDetailsPage />} />
+          <Route path="/users/clients/:userId/profiles/:profileId" element={<ProfileDetailsPage />} />
           <Route path="/users/:userId" element={<UserDetailsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/logs" element={<ServiceLogsPage />} />

@@ -79,6 +79,17 @@ export interface UserDetails {
   applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+export interface AdminProfileDetails {
+  id: number; userId: number; name: string | null; email: string | null; phone: string | null;
+  location: { city: string; state: string; country: string } | null;
+  linkedin: string | null; dateOfBirth: string | null; status: string;
+  createdAt: string; updatedAt: string; lastApplicationAt: string | null;
+  needResumeTailor: boolean; applicationLimit: number | null;
+  applicationTimeWindows: { timezone: string; windows: { start: string; end: string }[] } | null;
+  resumeData: unknown; atsData: unknown; workAuthorization: unknown; eeo: unknown;
+  additionalInfo: unknown; applicationAnswers: unknown; savedSearch: unknown; botSearch: unknown;
+  taxonomies: string[] | null;
+}
 /** A confirmed top-up of at least minTopup USDT is credited at amount x bonusRate. */
 export interface BonusPlan { id:number; minTopup:number; bonusRate:number; active:boolean; createdAt:string; updatedAt:string }
 export type BonusPlanPayload = Pick<BonusPlan, "minTopup" | "bonusRate" | "active">

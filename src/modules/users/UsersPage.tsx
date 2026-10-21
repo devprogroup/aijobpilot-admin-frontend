@@ -275,9 +275,9 @@ export function UsersPage() {
                   <Table.Cell px="5" py="4">
                     <Text>{u._count?.profiles ?? 0}</Text>
                     {(u.profileIds?.length ?? 0) > 0 && (
-                      <Text fontSize="xs" color="gray.500" fontFamily="mono" title="Profile IDs (not deleted)">
-                        {u.profileIds!.map((id) => `#${id}`).join(", ")}
-                      </Text>
+                      <Flex gap="2" wrap="wrap" fontSize="xs" fontFamily="mono">
+                        {u.profileIds!.map((id) => <Link key={id} to={`/users/clients/${u.id}/profiles/${id}`} aria-label={`View profile #${id}`} style={{ color: "#15803d", textDecoration: "underline" }}>#{id}</Link>)}
+                      </Flex>
                     )}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
