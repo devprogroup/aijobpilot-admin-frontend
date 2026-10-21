@@ -153,9 +153,15 @@ export const api = {
   emails: (page: number, search: string, status: EmailStatusFilter) =>
     request<{ emails: AdminEmailSummary[]; total: number; page: number; pageSize: number }>(`/emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
   email: (id: number) => request<{ email: AdminEmail }>(`/emails/${id}`),
+  deleteEmail: (id: number) => request<void>(`/emails/${id}`, { method: "DELETE" }),
+  deleteAllEmails: (search: string, status: EmailStatusFilter) =>
+    request<{ deleted: number }>(`/emails?${new URLSearchParams({ ...(search ? { search } : {}), status })}`, { method: "DELETE" }),
   inboundEmails: (page: number, search: string, status: EmailStatusFilter) =>
     request<{ emails: InboundEmailSummary[]; total: number; page: number; pageSize: number }>(`/inbound-emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
   inboundEmail: (id: number) => request<{ email: InboundEmail }>(`/inbound-emails/${id}`),
+  deleteInboundEmail: (id: number) => request<void>(`/inbound-emails/${id}`, { method: "DELETE" }),
+  deleteAllInboundEmails: (search: string, status: EmailStatusFilter) =>
+    request<{ deleted: number }>(`/inbound-emails?${new URLSearchParams({ ...(search ? { search } : {}), status })}`, { method: "DELETE" }),
   systemMetrics: () => request<SystemMetrics>("/system-metrics"),
   triggerCleanup: () => request<CleanupReport>("/maintenance/cleanup", { method: "POST" }),
   maintenance: () => request<{ maintenance: MaintenanceEntry[] }>("/maintenance"),
