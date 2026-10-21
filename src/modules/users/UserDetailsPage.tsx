@@ -55,7 +55,7 @@ export function UserDetailsPage() {
       <Box bg="white" borderRadius="2xl" p="5" mb="6" overflowX="auto">
         <Text fontWeight="bold">Profiles ({details.user._count?.profiles ?? 0})</Text><Text fontSize="xs" color="gray.500" mb="4">Latest {details.profiles.length} non-deleted profiles</Text>
         <Table.Root size="sm"><Table.Header><Table.Row>{['ID', 'Profile', 'Email', 'Status', 'Last application'].map((label) => <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>)}</Table.Row></Table.Header><Table.Body>
-          {details.profiles.map((profile) => <Table.Row key={profile.id}><Table.Cell fontFamily="mono" color="gray.600">#{profile.id}</Table.Cell><Table.Cell>{profile.name || `Profile #${profile.id}`}</Table.Cell><Table.Cell>{profile.email || '—'}</Table.Cell><Table.Cell><StatusBadge status={profile.status} /></Table.Cell><Table.Cell>{time(profile.lastApplicationAt)}</Table.Cell></Table.Row>)}
+          {details.profiles.map((profile) => <Table.Row key={profile.id}><Table.Cell fontFamily="mono" color="gray.600">#{profile.id}</Table.Cell><Table.Cell><Link to={`/users/clients/${id}/profiles/${profile.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>{profile.name || `Profile #${profile.id}`}</Link></Table.Cell><Table.Cell>{profile.email || '—'}</Table.Cell><Table.Cell><StatusBadge status={profile.status} /></Table.Cell><Table.Cell>{time(profile.lastApplicationAt)}</Table.Cell></Table.Row>)}
           {!details.profiles.length && <Table.Row><Table.Cell colSpan={5}>No profiles yet.</Table.Cell></Table.Row>}
         </Table.Body></Table.Root>
       </Box>

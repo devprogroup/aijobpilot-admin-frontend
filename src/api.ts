@@ -10,6 +10,7 @@ import type {
   UpdateCrawlerPayload,
   User,
   UserDetails,
+  AdminProfileDetails,
   AdminApplication,
   ApplicationFilters,
   ApplicationStatus,
@@ -230,6 +231,8 @@ export const api = {
   sendUserMessage: (payload: { recipient: "all" | "user"; userId?: number; title: string; content: string; variant: "info" | "success" | "warning" | "error" }) =>
     request<{ sent: number }>("/messages", { method: "POST", body: JSON.stringify(payload) }),
   user: (id: number) => request<UserDetails>(`/users/${id}`),
+  userProfile: (userId: number, profileId: number) =>
+    request<{ profile: AdminProfileDetails }>(`/users/${userId}/profiles/${profileId}`),
   userPayments: (id: number, page: number) => request<{
     payments: { id: number; amount: number; network: "erc20" | "bep20" | null; txHash: string | null; status: string | null; createdAt: string }[];
     total:number; page:number; pageSize:number;
