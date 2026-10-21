@@ -233,6 +233,22 @@ export const api = {
   user: (id: number) => request<UserDetails>(`/users/${id}`),
   userProfile: (userId: number, profileId: number) =>
     request<{ profile: AdminProfileDetails }>(`/users/${userId}/profiles/${profileId}`),
+  userProfileResume: async (userId: number, profileId: number) => {
+    const token = getAdminToken();
+    const response = await fetch(`${base}/users/${userId}/profiles/${profileId}/resume/download`, {
+      credentials: "omit",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) {
+      setAdminToken(null);
+      window.dispatchEvent(new Event("admin:unauthorized"));
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Unable to download resume.");
+    }
+    return response.blob();
+  },
   userPayments: (id: number, page: number) => request<{
     payments: { id: number; amount: number; network: "erc20" | "bep20" | null; txHash: string | null; status: string | null; createdAt: string }[];
     total:number; page:number; pageSize:number;

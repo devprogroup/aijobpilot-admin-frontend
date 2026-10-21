@@ -80,6 +80,7 @@ export interface UserDetails {
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
 export interface AdminProfileDetails {
+  resumeFileName: string | null;
   id: number; userId: number; name: string | null; email: string | null; phone: string | null;
   location: { city: string; state: string; country: string } | null;
   linkedin: string | null; dateOfBirth: string | null; status: string;

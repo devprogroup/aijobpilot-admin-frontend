@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Box, Button, Flex, SimpleGrid, Text } from "@chakra-ui/react";
 import { Link, useParams } from "react-router-dom";
+import { Download } from "lucide-react";
 import { api } from "../../api";
 import type { AdminProfileDetails } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -41,6 +42,24 @@ export function ProfileDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+  const downloadResume = async () => {
+    if (!profile?.resumeFileName || downloading) return;
+    setDownloading(true); setError("");
+    try {
+      const blob = await api.userProfileResume(userId, profileId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = profile.resumeFileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to download resume.");
+    } finally { setDownloading(false); }
+  };
   useEffect(() => {
     let active = true;
     setProfile(null); setLoading(true); setError("");
@@ -57,7 +76,10 @@ export function ProfileDetailsPage() {
     <Flex mt="5" mb="6" justify="space-between" align="center" gap="4">
       <Box><Text as="h1" fontSize="3xl" fontWeight="bold">{profile?.name || `Profile #${params.profileId}`}</Text>
         <Text color="gray.500">User #{params.userId} · Profile #{params.profileId}</Text></Box>
-      <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      <Flex gap="2" wrap="wrap">
+        {profile?.resumeFileName && <Button variant="outline" loading={downloading} disabled={loading || downloading} onClick={() => void downloadResume()}><Download size={16} />Download resume</Button>}
+        <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      </Flex>
     </Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
     {loading && <Text role="status">Loading profile details...</Text>}
@@ -67,6 +89,7 @@ export function ProfileDetailsPage() {
         <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap="5">
           {Object.entries({ name: profile.name, email: profile.email, phone: profile.phone,
             location: profile.location, linkedin: profile.linkedin, dateOfBirth: profile.dateOfBirth,
+            resume: profile.resumeFileName ?? "No resume uploaded",
             created: time(profile.createdAt), updated: time(profile.updatedAt),
             lastApplication: time(profile.lastApplicationAt) }).map(([key, value]) => <Box key={key}>
             <Text fontSize="xs" color="gray.500" mb="1">{label(key)}</Text><DetailData value={value} />
