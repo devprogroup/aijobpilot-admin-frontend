@@ -2,7 +2,7 @@ import { Box, SimpleGrid, Text } from "@chakra-ui/react";
 
 export function UserStats({ stats }: { stats: Array<[string, number]> }) {
   return (
-    <SimpleGrid columns={{ base: 1, sm: 3 }} gap="4" mb="6">
+    <SimpleGrid columns={{ base: 1, sm: 2, lg: stats.length }} gap="4" mb="6">
       {stats.map(([label, value]) => (
         <Box
           key={label}

@@ -28,7 +28,7 @@ export interface CrawledJobRow { id:number; createdAt:string; title:string; comp
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
-export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; _count?:{profiles?:number;applications?:number} }
+export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
 export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }

@@ -76,7 +76,9 @@ export function UsersPage() {
   const visible = shown.slice((currentPage - 1) * 20, currentPage * 20);
   const stats: [string, number][] = [
     ["Total users", users.length],
-    ["Active", users.filter((x) => x.status === "active").length],
+    ["Active users", users.filter((x) => x.status === "active").length],
+    ["Profiles", users.reduce((total, user) => total + (user.profileIds?.length ?? 0), 0)],
+    ["Active profiles", users.reduce((total, user) => total + (user.activeProfileIds?.length ?? 0), 0)],
     [
       "Applications",
       users.reduce((total, user) => total + (user._count?.applications ?? 0), 0),
