@@ -51,6 +51,14 @@ function ApplicationFileLinks({ application, onViewLog }: { application: AdminAp
   );
 }
 
+// Jobs can list many locations; show the first two and put the full list in the tooltip.
+function JobLocations({ locations }: { locations?: { label: string }[] | null }) {
+  const labels = (locations ?? []).map((location) => location.label).filter(Boolean);
+  if (!labels.length) return <Text color="gray.400">—</Text>;
+  const shown = labels.slice(0, 2).join("; ");
+  return <Text fontSize="sm" maxW="56" title={labels.join("\n")}>{shown}{labels.length > 2 && <Text as="span" color="gray.500"> +{labels.length - 2} more</Text>}</Text>;
+}
+
 function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: number; kind: "preview" | "result"; alt: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
@@ -200,10 +208,10 @@ export function AllApplicationsPage() {
     {actionError && <Text role="alert" color="red.600" mb="4">{actionError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
-      <Box overflowX="auto"><Table.Root size="sm" minW="1400px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Retry", "Job / company", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+      <Box overflowX="auto"><Table.Root size="sm" minW="1600px">
+        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Retry", "Job / company", "Location", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
-          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={11} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
+          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
               <Text>#{application.id}</Text>
             </Table.Cell>
@@ -240,6 +248,7 @@ export function AllApplicationsPage() {
               </Text>
               <Text fontSize="xs" color="gray.500">{application.job?.companyName || "—"}</Text>
             </Table.Cell>
+            <Table.Cell p="4"><JobLocations locations={application.job?.location} /></Table.Cell>
             <Table.Cell p="4">{application.job?.applicationSite?.displayText || "—"}</Table.Cell>
             {/* Clicks stay here: the row itself opens the message dialog. */}
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
