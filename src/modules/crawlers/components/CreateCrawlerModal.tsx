@@ -14,9 +14,9 @@ import {
 } from "@chakra-ui/react";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType, CrawlerTypeParameter } from "../../../types";
+import type { CrawlerType, CrawlerTypeParameter, TenantsCsvUpload } from "../../../types";
 
-type ParameterValue = string | string[];
+type ParameterValue = string | string[] | TenantsCsvUpload | null;
 
 function labelFor(name: string): string {
   const spaced = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
@@ -24,7 +24,74 @@ function labelFor(name: string): string {
 }
 
 function defaultValueFor(definition: CrawlerTypeParameter): ParameterValue {
-  return definition.controlType === "multi-select" ? [] : "";
+  if (definition.controlType === "tenants-csv") return null;
+  return definition.controlType === "multi-select" ? [] : definition.defaultValue ?? "";
+}
+
+/** False while a parameter's showWhen conditions don't hold (it is then neither shown nor sent). */
+function isVisible(definition: CrawlerTypeParameter, values: Record<string, ParameterValue>): boolean {
+  return Object.entries(definition.showWhen ?? {}).every(([name, value]) => values[name] === value);
+}
+
+/** Uploads the picked CSV right away; admin-backend stores and parses it and reports the tenant count. */
+function TenantsCsvField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: TenantsCsvUpload | null;
+  onChange: (value: TenantsCsvUpload | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function onFile(file: File | undefined) {
+    onChange(null);
+    setError("");
+    if (!file) return;
+    setUploading(true);
+    try {
+      onChange(await api.uploadTenantsCsv(file));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to upload the CSV");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Field.Root>
+      <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+        {label} (CSV with a tenant column)
+      </Field.Label>
+      <Input
+        type="file"
+        accept=".csv,text/csv"
+        onChange={(event) => void onFile(event.target.files?.[0])}
+        borderColor="gray.200"
+        fontSize="sm"
+        pt="1.5"
+      />
+      {uploading && (
+        <Text fontSize="xs" color="gray.500">
+          Uploading and parsing…
+        </Text>
+      )}
+      {error && (
+        <Text fontSize="xs" color="red.600">
+          {error}
+        </Text>
+      )}
+      {value && (
+        <Text fontSize="xs" color="green.700">
+          {value.tenantCount} tenants parsed and loaded from {value.rowCount} rows
+          {value.skippedCount > 0 ? ` (${value.skippedCount} rows skipped, not Greenhouse)` : ""}, e.g.{" "}
+          {value.sample.join(", ")}
+        </Text>
+      )}
+    </Field.Root>
+  );
 }
 
 function ParameterField({
@@ -40,6 +107,16 @@ function ParameterField({
 }) {
   const label = labelFor(name);
   const options = definition.options ?? [];
+
+  if (definition.controlType === "tenants-csv") {
+    return (
+      <TenantsCsvField
+        label={label}
+        value={value && typeof value === "object" && !Array.isArray(value) ? value : null}
+        onChange={onChange}
+      />
+    );
+  }
 
   if (definition.controlType === "single-select") {
     return (
@@ -167,13 +244,24 @@ export function CreateCrawlerModal({
     setValues(initial);
   }, [selected]);
 
-  const parameterEntries = selected ? Object.entries(selected.parameters) : [];
+  const parameterEntries = selected
+    ? Object.entries(selected.parameters).filter(([, definition]) => isVisible(definition, values))
+    : [];
 
   function buildConfig(): Record<string, unknown> | null {
     const config: Record<string, unknown> = {};
 
     for (const [name, definition] of parameterEntries) {
       const raw = values[name];
+
+      if (definition.controlType === "tenants-csv") {
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          setError(`${labelFor(name)}: upload a CSV file`);
+          return null;
+        }
+        config[name] = { uploadId: raw.uploadId };
+        continue;
+      }
 
       if (definition.controlType === "multi-select") {
         const list = Array.isArray(raw) ? raw : [];

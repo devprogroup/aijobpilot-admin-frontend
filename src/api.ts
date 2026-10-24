@@ -37,6 +37,7 @@ import type {
   AdminEmailSummary,
   InboundEmail,
   InboundEmailSummary,
+  TenantsCsvUpload,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -213,6 +214,12 @@ export const api = {
     request<{ crawlerRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
       method: "POST",
       body: JSON.stringify({ jobs }),
+    }),
+  uploadTenantsCsv: (file: File) =>
+    request<TenantsCsvUpload>(`/crawlers/tenants-csv?fileName=${encodeURIComponent(file.name)}`, {
+      method: "POST",
+      headers: { "Content-Type": "text/csv" },
+      body: file,
     }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),

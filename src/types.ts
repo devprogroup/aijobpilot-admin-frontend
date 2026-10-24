@@ -17,9 +17,12 @@ export interface ApplicationSite {
   wakeUpAt?: string | null;
 }
 export type ApplicationSitePayload = Omit<ApplicationSite, "id" | "sleepPeriod" | "wakeUpAt">;
-export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select";
+export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select" | "tenants-csv";
 export interface CrawlerTypeParameterOption { key:string; value:string }
-export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[] }
+/** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values. */
+export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string> }
+/** A tenant CSV stored and parsed by admin-backend (POST /crawlers/tenants-csv). */
+export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
 export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts }
