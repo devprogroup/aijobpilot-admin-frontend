@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType, CrawlerTypeParameter, TenantsCsvUpload } from "../../../types";
+import type { CrawlerType, CrawlerTypeParameter, TenantCsvFormat, TenantsCsvUpload } from "../../../types";
 
 type ParameterValue = string | string[] | TenantsCsvUpload | null;
 
@@ -36,10 +36,12 @@ function isVisible(definition: CrawlerTypeParameter, values: Record<string, Para
 /** Uploads the picked CSV right away; admin-backend stores and parses it and reports the tenant count. */
 function TenantsCsvField({
   label,
+  format,
   value,
   onChange,
 }: {
   label: string;
+  format: TenantCsvFormat;
   value: TenantsCsvUpload | null;
   onChange: (value: TenantsCsvUpload | null) => void;
 }) {
@@ -52,7 +54,7 @@ function TenantsCsvField({
     if (!file) return;
     setUploading(true);
     try {
-      onChange(await api.uploadTenantsCsv(file));
+      onChange(await api.uploadTenantsCsv(file, format));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to upload the CSV");
     } finally {
@@ -63,7 +65,10 @@ function TenantsCsvField({
   return (
     <Field.Root>
       <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-        {label} (CSV with a tenant column)
+        {label}{" "}
+        {format === "workday"
+          ? "(CSV with company, host, tenant and site columns)"
+          : "(CSV with a tenant column)"}
       </Field.Label>
       <Input
         type="file"
@@ -86,7 +91,10 @@ function TenantsCsvField({
       {value && (
         <Text fontSize="xs" color="green.700">
           {value.tenantCount} tenants parsed and loaded from {value.rowCount} rows
-          {value.skippedCount > 0 ? ` (${value.skippedCount} rows skipped, not Greenhouse)` : ""}, e.g.{" "}
+          {value.skippedCount > 0
+            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : "Greenhouse"})`
+            : ""}
+          , e.g.{" "}
           {value.sample.join(", ")}
         </Text>
       )}
@@ -112,6 +120,7 @@ function ParameterField({
     return (
       <TenantsCsvField
         label={label}
+        format={definition.format ?? "greenhouse"}
         value={value && typeof value === "object" && !Array.isArray(value) ? value : null}
         onChange={onChange}
       />
