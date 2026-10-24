@@ -193,11 +193,6 @@ export const api = {
       `/crawlers/crawled-jobs?${new URLSearchParams(params)}`,
     );
   },
-  retryCrawledJobs: (filters: { ids?: number[]; crawlerId?: number } = {}) =>
-    request<{ retried: number; ids: number[] }>("/crawlers/crawled-jobs/retry", {
-      method: "POST",
-      body: JSON.stringify(filters),
-    }),
   crawlerRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>

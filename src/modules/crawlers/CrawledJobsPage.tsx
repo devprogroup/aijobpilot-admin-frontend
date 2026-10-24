@@ -24,8 +24,6 @@ export function CrawledJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-  const [retryNotice, setRetryNotice] = useState("");
 
   useEffect(() => {
     api.crawlers().then((r) => setCrawlers(r.crawlers)).catch(() => {});
@@ -49,22 +47,6 @@ export function CrawledJobsPage() {
   }, [page, status, crawlerId, revision]);
 
   const pages = result ? Math.max(1, Math.ceil(result.pagination.total / result.pagination.pageSize)) : 1;
-  const retryJobs = async (ids?: number[]) => {
-    if (retrying) return;
-    setRetrying(true);
-    setError("");
-    setRetryNotice("");
-    try {
-      const response = await api.retryCrawledJobs({ ids, crawlerId: crawlerId ? Number(crawlerId) : undefined });
-      setRevision((value) => value + 1);
-      setRetryNotice(`${response.retried} failed job(s) queued for retry.`);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to retry failed crawled jobs");
-    } finally {
-      setRetrying(false);
-    }
-  };
-
   return <>
     {showUpload && (
       <UploadCrawledJobsModal
@@ -78,18 +60,14 @@ export function CrawledJobsPage() {
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
       <Box>
         <Text as="h1" fontSize="3xl" fontWeight="bold">Crawled jobs</Text>
-        <Text color="gray.500">Jobs handed off to ats-engine, newest first.</Text>
+        <Text color="gray.500">Jobs handed off to ats-engine, newest first. A run's jobs are removed once all are processed; its counts stay on the crawler.</Text>
       </Box>
       <Flex gap="3">
-        <Button variant="outline" disabled={retrying || loading} onClick={() => void retryJobs()}>
-          {retrying ? "Retrying..." : crawlerId ? "Retry all failed for this crawler" : "Retry all failed jobs"}
-        </Button>
         <Button bg="green.600" color="white" _hover={{ bg: "green.700" }} onClick={() => setShowUpload(true)}>Upload jobs</Button>
         <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
       </Flex>
     </Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
-    {retryNotice && <Text role="status" color="green.700" mb="4">{retryNotice}</Text>}
     <Flex gap="3" mb="5" flexWrap="wrap">
       <NativeSelect.Root maxW="52" bg="white">
         <NativeSelect.Field
@@ -121,16 +99,15 @@ export function CrawledJobsPage() {
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Crawled jobs" : `${result?.pagination.total ?? 0} job(s)`}</Text><Text fontSize="xs" color="gray.500">Most recently crawled first</Text></Box>
       <Box overflowX="auto"><Table.Root size="sm" minW="1100px">
-        <Table.Header bg="gray.50"><Table.Row>{["Title", "Company", "Status", "Crawler type", "Crawler name", "Created", "Actions"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+        <Table.Header bg="gray.50"><Table.Row>{["Title", "Company", "Status", "Crawler type", "Crawler name", "Created"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
-          {loading || error || !result?.crawledJobs.length ? <Table.Row><Table.Cell colSpan={7} p="8" textAlign="center">{loading ? "Loading crawled jobs..." : error ? "Unable to load crawled jobs. Use Refresh to retry." : "No crawled jobs match these filters."}</Table.Cell></Table.Row> : result.crawledJobs.map((job) => <Table.Row key={job.id} _hover={{ bg: "gray.50" }}>
+          {loading || error || !result?.crawledJobs.length ? <Table.Row><Table.Cell colSpan={6} p="8" textAlign="center">{loading ? "Loading crawled jobs..." : error ? "Unable to load crawled jobs. Use Refresh to retry." : "No crawled jobs match these filters."}</Table.Cell></Table.Row> : result.crawledJobs.map((job) => <Table.Row key={job.id} _hover={{ bg: "gray.50" }}>
             <Table.Cell p="4" fontWeight="semibold">{job.title}</Table.Cell>
             <Table.Cell p="4">{job.company}</Table.Cell>
             <Table.Cell p="4"><StatusBadge status={job.status} /></Table.Cell>
             <Table.Cell p="4">{job.crawlerType}</Table.Cell>
             <Table.Cell p="4">{job.crawlerName}</Table.Cell>
             <Table.Cell p="4" color="gray.500">{time(job.createdAt)}</Table.Cell>
-            <Table.Cell p="4">{job.status === "failed" && <Button size="xs" variant="outline" disabled={retrying} onClick={() => void retryJobs([job.id])}>Retry</Button>}</Table.Cell>
           </Table.Row>)}
         </Table.Body>
       </Table.Root></Box>
