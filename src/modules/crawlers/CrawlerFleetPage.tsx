@@ -11,7 +11,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Play, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ListOrdered, Play, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler, CrawlerRunCounts } from "../../types";
@@ -48,6 +48,8 @@ export function CrawlerFleetPage() {
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [deletingCrawlerId, setDeletingCrawlerId] = useState<number | null>(null);
+  const [runningAll, setRunningAll] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -131,6 +133,26 @@ export function CrawlerFleetPage() {
     }
   };
 
+  /** Queues every active, idle crawler; crawler-backend runs them one after another. */
+  const runAll = async () => {
+    if (runningAll) return;
+    if (!window.confirm("Run every active, idle crawler one after another?")) return;
+    setError("");
+    setNotice("");
+    setRunningAll(true);
+    try {
+      const { queued } = await api.runAllCrawlers();
+      setNotice(queued
+        ? `${queued} crawler(s) queued -- they run one after another.`
+        : "No active, idle crawler to run.");
+      await load();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to run crawlers");
+    } finally {
+      setRunningAll(false);
+    }
+  };
+
   const remove = async (crawler: Crawler) => {
     if (crawler.status === "running" || deletingCrawlerId !== null) return;
     if (!window.confirm(`Delete crawler "${crawler.name}"? This cannot be undone.`)) return;
@@ -193,6 +215,17 @@ export function CrawlerFleetPage() {
         </Box>
         <Flex align="center" gap="3">
           <Button
+            onClick={() => void runAll()}
+            loading={runningAll}
+            disabled={!items.some((crawler) => crawler.active && crawler.status === "idle")}
+            bg="gray.900"
+            color="white"
+            _hover={{ bg: "gray.700" }}
+          >
+            <Icon as={ListOrdered} boxSize="4" />
+            Run all
+          </Button>
+          <Button
             onClick={() => setShowCreate(true)}
             bg="green.600"
             color="white"
@@ -216,6 +249,12 @@ export function CrawlerFleetPage() {
           </Button>
         </Flex>
       </Flex>
+
+      {notice && (
+        <Box mb="5" borderRadius="xl" bg="green.50" p="4" fontSize="sm" color="green.700" role="status">
+          {notice}
+        </Box>
+      )}
 
       {error && (
         <Box
