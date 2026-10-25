@@ -68,7 +68,9 @@ function TenantsCsvField({
         {label}{" "}
         {format === "workday"
           ? "(CSV with company, host, tenant and site columns)"
-          : "(CSV with a tenant column)"}
+          : format === "adp"
+            ? "(CSV with a cid column and an optional host column)"
+            : "(CSV with a tenant column)"}
       </Field.Label>
       <Input
         type="file"
@@ -92,7 +94,7 @@ function TenantsCsvField({
         <Text fontSize="xs" color="green.700">
           {value.tenantCount} tenants parsed and loaded from {value.rowCount} rows
           {value.skippedCount > 0
-            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : format === "ashby" ? "Ashby" : format === "jobvite" ? "Jobvite" : format === "jobdiva" ? "JobDiva" : format === "rippling" ? "Rippling" : format === "smartrecruiters" ? "SmartRecruiters" : "Greenhouse"})`
+            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : format === "ashby" ? "Ashby" : format === "jobvite" ? "Jobvite" : format === "jobdiva" ? "JobDiva" : format === "rippling" ? "Rippling" : format === "smartrecruiters" ? "SmartRecruiters" : format === "adp" ? "ADP companies" : "Greenhouse"})`
             : ""}
           , e.g.{" "}
           {value.sample.join(", ")}
