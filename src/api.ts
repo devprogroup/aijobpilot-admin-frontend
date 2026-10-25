@@ -205,6 +205,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ active }),
     }),
+  runAllCrawlers: () =>
+    request<{ queued: number }>("/crawlers/run-all", { method: "POST" }),
   queueCrawler: (id: number) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}/run`, { method: "POST" }),
   deleteCrawler: (id: number) =>
