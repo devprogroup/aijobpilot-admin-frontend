@@ -46,7 +46,7 @@ const schema = yup.object({
     .required("Parameters is required")
     .test(
       "is-parameter-map",
-      'Parameters must be a JSON object mapping each parameter name to { "controlType": "input" | "textarea" | "single-select" | "multi-select" | "tenants-csv", "options"?: [{ "key": ..., "value": ... }], "defaultValue"?: ..., "showWhen"?: { "<parameter>": "<value>" }, "format"?: "greenhouse" | "workday" | "ashby" | "jobvite" | "jobdiva" }, with options required for single-select/multi-select',
+      'Parameters must be a JSON object mapping each parameter name to { "controlType": "input" | "textarea" | "single-select" | "multi-select" | "tenants-csv", "options"?: [{ "key": ..., "value": ... }], "defaultValue"?: ..., "showWhen"?: { "<parameter>": "<value>" }, "format"?: "greenhouse" | "workday" | "ashby" | "jobvite" | "jobdiva" | "rippling" }, with options required for single-select/multi-select',
       (value) => {
         if (!value) return false;
         try {
