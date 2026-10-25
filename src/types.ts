@@ -22,7 +22,7 @@ export interface CrawlerTypeParameterOption { key:string; value:string }
 /** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values;
  * format: what a tenants-csv row describes (default "greenhouse"). */
 export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string>; format?:TenantCsvFormat }
-export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite";
+export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite" | "jobdiva";
 /** A tenant CSV stored and parsed by admin-backend (POST /crawlers/tenants-csv). */
 export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
