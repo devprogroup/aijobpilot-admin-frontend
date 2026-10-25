@@ -92,7 +92,7 @@ function TenantsCsvField({
         <Text fontSize="xs" color="green.700">
           {value.tenantCount} tenants parsed and loaded from {value.rowCount} rows
           {value.skippedCount > 0
-            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : format === "ashby" ? "Ashby" : "Greenhouse"})`
+            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : format === "ashby" ? "Ashby" : format === "jobvite" ? "Jobvite" : "Greenhouse"})`
             : ""}
           , e.g.{" "}
           {value.sample.join(", ")}
