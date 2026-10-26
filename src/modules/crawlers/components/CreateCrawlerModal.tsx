@@ -65,17 +65,11 @@ function TenantsCsvField({
   return (
     <Field.Root>
       <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-        {label}{" "}
-        {format === "workday"
-          ? "(CSV with company, host, tenant and site columns)"
-          : format === "adp"
-            ? "(CSV with a cid column and an optional host column)"
-            : format === "ultipro"
-              ? "(CSV with tenant and board_id columns and an optional host column)"
-              : format === "oraclecloud"
-                ? "(CSV with host and site_number columns)"
-            : "(CSV with a tenant column)"}
+        {label}
       </Field.Label>
+      <Text fontSize="xs" color="gray.500">
+        {CSV_TIPS[format]}
+      </Text>
       <Input
         type="file"
         accept=".csv,text/csv"
@@ -107,6 +101,23 @@ function TenantsCsvField({
     </Field.Root>
   );
 }
+
+/** What a tenant CSV of each format holds. One-value formats take any single column, with any
+ * header or none; the others read named columns, or a single column of URLs. */
+const CSV_TIPS: Record<TenantCsvFormat, string> = {
+  greenhouse: "One column of board tokens, any header or none: stripe, greenhouse/stripe or https://job-boards.greenhouse.io/stripe.",
+  ashby: "One column of job board slugs, any header or none: openai, ashbyhq/openai or https://jobs.ashbyhq.com/openai.",
+  jobvite: "One column of career site slugs, any header or none: nutanix, jobvite/nutanix or https://jobs.jobvite.com/nutanix.",
+  jobdiva: "One column of portal tokens, any header or none: the a= value of a JobDiva URL, jobdiva/{token} or the URL itself.",
+  rippling: "One column of job board slugs, any header or none: acme, rippling/acme or https://ats.rippling.com/acme/jobs.",
+  smartrecruiters: "One column of company identifiers, any header or none: Intuitive, smartrecruiters/Intuitive or https://jobs.smartrecruiters.com/Intuitive.",
+  paylocity: "One column of company GUIDs, any header or none: the GUID, paylocity/{guid} or https://recruiting.paylocity.com/recruiting/jobs/All/{guid}. Numeric module ids don't work.",
+  applytojob: "One column of careers subdomains, any header or none: acme, applytojob/acme or https://acme.applytojob.com/apply.",
+  adp: "One column of company cids (GUIDs) or https://workforcenow.adp.com/...recruitment.html?cid=... URLs, any header or none. With headers: cid, plus an optional host (workforcenow.adp.com or workforcenow.cloud.adp.com).",
+  workday: "Columns host (acme.wd5.myworkdayjobs.com) and site (External), optional company and tenant -- or one column of career site URLs like https://acme.wd5.myworkdayjobs.com/en-US/External.",
+  ultipro: "Columns tenant (ACM1001) and board_id (the board GUID), optional host (recruiting.ultipro.com, recruiting2.ultipro.com or recruiting.ultipro.ca) -- or one column of job board URLs like https://recruiting.ultipro.com/ACM1001/JobBoard/{board_id}.",
+  oraclecloud: "Columns host (eeho.fa.us2.oraclecloud.com) and site_number (CX_1) -- or one column of careers page URLs like https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1.",
+};
 
 function ParameterField({
   name,

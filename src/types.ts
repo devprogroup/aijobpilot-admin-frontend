@@ -27,7 +27,9 @@ export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite" | "
 export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
-export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts }
+/** titleFiltered: jobs the run's title filter dropped; units: companies / boards / sites handled out of
+ * the run's total (both from its log; crawler list only, null for non-API crawlers). */
+export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts; titleFiltered?:number|null; units?:{ done:number; total:number|null }|null }
 /** One handled company / board / site of a crawler run (newest first in CrawlerRunProgress.recent). */
 export interface CrawlerRunActivity { at:string|null; level:string; event:string; unit:string|null; published:number|null; filtered:number|null; total:number|null; message:string|null }
 /** How far a crawler run got, read from its log. total: companies / boards / sites the run set out to crawl. */
@@ -40,6 +42,18 @@ export interface CrawlerTypePayload { name:string; config:unknown; parameters:Re
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
 export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number }
+/** Jobs of the crawler runs started in a range: crawled = all of them; inserted = new jobs stored,
+ * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
+ * fetch failed after retries, queued = still waiting in ats-engine. */
+export interface CrawlerSummaryCounts { runs: number; runningRuns: number; failedRuns: number; crawled: number; queued: number; inserted: number; ignored: number; duplicated: number; failed: number }
+/** running: runs in progress now (whenever they started), units = companies handled / total from the run's log. */
+export interface CrawlerSummary {
+  total: CrawlerSummaryCounts;
+  byCrawler: (CrawlerSummaryCounts & { crawler: string })[];
+  running?: { crawler: string; startedAt: string | null; units: { done: number; total: number | null } | null }[];
+  /** ats-engine now: jobs in progress (one per busy site) and each site's queued crawled jobs; null if it didn't answer. */
+  atsEngine?: { processing: number; sites: { site: string; running: number; waiting: number }[] } | null;
+}
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface SystemMetrics {
   cpu: { percent: number | null; cores: number };

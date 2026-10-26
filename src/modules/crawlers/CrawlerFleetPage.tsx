@@ -5,18 +5,20 @@ import {
   chakra,
   Flex,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   Switch,
   Table,
   Text,
 } from "@chakra-ui/react";
-import { ListOrdered, Play, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ListOrdered, Play, Plus, RefreshCw, ScrollText, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
 import type { Crawler, CrawlerRunCounts } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CreateCrawlerModal } from "./components/CreateCrawlerModal";
+import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { onSocketEvent } from "../../services/websocket";
 
 interface CrawlerStatusChangedEvent {
@@ -50,6 +52,7 @@ export function CrawlerFleetPage() {
   const [deletingCrawlerId, setDeletingCrawlerId] = useState<number | null>(null);
   const [runningAll, setRunningAll] = useState(false);
   const [notice, setNotice] = useState("");
+  const [logRun, setLogRun] = useState<{ crawlerId: number; runId: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -75,6 +78,8 @@ export function CrawlerFleetPage() {
     setItems((current) => current.map((item) =>
       item.id === event.crawlerId ? { ...item, status: event.status } : item,
     ));
+    // A run that just started isn't the list's latestRun yet; reload so its log button appears.
+    if (event.status === "running") void load();
   }), []);
 
   const shown = useMemo(() => {
@@ -443,13 +448,48 @@ export function CrawlerFleetPage() {
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.600">
                     {crawler.latestRun ? (
-                      <Text title="Jobs ats-engine inserted from the latest run / all jobs that run crawled">
-                        <Text as="span" fontWeight="semibold" color="green.700">
-                          {crawler.latestRun.counts.inserted.toLocaleString()}
+                      <Box>
+                      <Flex align="center" gap="2">
+                        <Text title="Jobs ats-engine inserted from the latest run / jobs that run crawled after the title filter (jobs it saw before the title filter)">
+                          <Text as="span" fontWeight="semibold" color="green.700">
+                            {crawler.latestRun.counts.inserted.toLocaleString()}
+                          </Text>
+                          {" / "}
+                          {crawledTotal(crawler.latestRun.counts).toLocaleString()}
+                          {typeof crawler.latestRun.titleFiltered === "number" && (
+                            <Text as="span" color="gray.400">
+                              {" ("}
+                              {(crawledTotal(crawler.latestRun.counts) + crawler.latestRun.titleFiltered).toLocaleString()}
+                              {")"}
+                            </Text>
+                          )}
                         </Text>
-                        {" / "}
-                        {crawledTotal(crawler.latestRun.counts).toLocaleString()}
-                      </Text>
+                        {crawler.status === "running" && crawler.latestRun.status === "running" && crawler.latestRun.logFilePath && (
+                          <IconButton
+                            size="2xs"
+                            variant="ghost"
+                            color="green.700"
+                            title="View the running crawl's log"
+                            aria-label={`View ${crawler.name} run log`}
+                            onClick={() => setLogRun({ crawlerId: crawler.id, runId: crawler.latestRun!.id })}
+                          >
+                            <Icon as={ScrollText} boxSize="3.5" />
+                          </IconButton>
+                        )}
+                      </Flex>
+                      {crawler.latestRun.units && crawler.crawlerType?.name.startsWith("api-") && (
+                        <Text
+                          mt="0.5"
+                          fontSize="xs"
+                          color="gray.400"
+                          title="Companies the latest run has handled (crawled, skipped or failed) / companies it set out to crawl"
+                        >
+                          {crawler.latestRun.units.done.toLocaleString()}
+                          {crawler.latestRun.units.total !== null && ` / ${crawler.latestRun.units.total.toLocaleString()}`}
+                          {" companies"}
+                        </Text>
+                      )}
+                      </Box>
                     ) : "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
@@ -501,6 +541,9 @@ export function CrawlerFleetPage() {
           </Table.Root>
         </Box>
       </Box>
+      {logRun && (
+        <CrawlerRunLogDialog crawlerId={logRun.crawlerId} runId={logRun.runId} onClose={() => setLogRun(null)} />
+      )}
     </>
   );
 }

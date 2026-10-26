@@ -151,6 +151,8 @@ export function CrawlerDetailsPage() {
       </Box>
     );
   }
+  /** Run progress is parsed from the api-* crawlers' log events; other crawlers don't write them. */
+  const isApiCrawler = crawler.crawlerType.name.startsWith("api-");
 
   return (
     <>
@@ -319,7 +321,7 @@ export function CrawlerDetailsPage() {
         </Flex>
       </Box>
 
-      {(() => {
+      {isApiCrawler && (() => {
         const runs = crawler.crawlerRuns ?? [];
         const run = runs.find((item) => item.id === progressRunId) ?? runs[0];
         return run?.logFilePath ? (
@@ -436,7 +438,7 @@ export function CrawlerDetailsPage() {
                   <Table.Cell px="5" py="4">
                     {run.logFilePath ? (
                       <Flex gap="3">
-                        <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => { setProgressRunId(String(run.id)); document.getElementById("crawler-run-progress")?.scrollIntoView({ behavior: "smooth" }); }}>Progress</Button>
+                        {isApiCrawler && <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => { setProgressRunId(String(run.id)); document.getElementById("crawler-run-progress")?.scrollIntoView({ behavior: "smooth" }); }}>Progress</Button>}
                         <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => setLogRunId(String(run.id))}>View log</Button>
                       </Flex>
                     ) : <Text color="gray.400">Unavailable</Text>}
