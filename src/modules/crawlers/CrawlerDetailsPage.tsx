@@ -151,8 +151,8 @@ export function CrawlerDetailsPage() {
       </Box>
     );
   }
-  /** Run progress is parsed from the *-api crawlers' log events; other crawlers don't write them. */
-  const isApiCrawler = crawler.crawlerType.name.endsWith("-api");
+  /** Run progress is parsed from the api-* crawlers' log events; other crawlers don't write them. */
+  const isApiCrawler = crawler.crawlerType.name.startsWith("api-");
 
   return (
     <>
