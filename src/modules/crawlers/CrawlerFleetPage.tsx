@@ -448,6 +448,7 @@ export function CrawlerFleetPage() {
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.600">
                     {crawler.latestRun ? (
+                      <Box>
                       <Flex align="center" gap="2">
                         <Text title="Jobs ats-engine inserted from the latest run / jobs that run crawled after the title filter (jobs it saw before the title filter)">
                           <Text as="span" fontWeight="semibold" color="green.700">
@@ -476,6 +477,19 @@ export function CrawlerFleetPage() {
                           </IconButton>
                         )}
                       </Flex>
+                      {crawler.latestRun.units && (
+                        <Text
+                          mt="0.5"
+                          fontSize="xs"
+                          color="gray.400"
+                          title="Companies the latest run has handled (crawled, skipped or failed) / companies it set out to crawl"
+                        >
+                          {crawler.latestRun.units.done.toLocaleString()}
+                          {crawler.latestRun.units.total !== null && ` / ${crawler.latestRun.units.total.toLocaleString()}`}
+                          {" companies"}
+                        </Text>
+                      )}
+                      </Box>
                     ) : "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">

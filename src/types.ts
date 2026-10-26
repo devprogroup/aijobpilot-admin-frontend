@@ -27,8 +27,9 @@ export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite" | "
 export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
-/** titleFiltered: jobs the run's title filter dropped (from its log; crawler list only, null for non-API crawlers). */
-export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts; titleFiltered?:number|null }
+/** titleFiltered: jobs the run's title filter dropped; units: companies / boards / sites handled out of
+ * the run's total (both from its log; crawler list only, null for non-API crawlers). */
+export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts; titleFiltered?:number|null; units?:{ done:number; total:number|null }|null }
 /** One handled company / board / site of a crawler run (newest first in CrawlerRunProgress.recent). */
 export interface CrawlerRunActivity { at:string|null; level:string; event:string; unit:string|null; published:number|null; filtered:number|null; total:number|null; message:string|null }
 /** How far a crawler run got, read from its log. total: companies / boards / sites the run set out to crawl. */
