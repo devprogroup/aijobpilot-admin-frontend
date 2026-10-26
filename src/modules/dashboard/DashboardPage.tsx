@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { AlertTriangle, Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
+import { AlertTriangle, Bot, ChevronDown, ChevronLeft, ChevronRight, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
 import type { AppConfig, ApplicationStatusSummary, CrawlerSummary, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { dateFilterRange, todayDateInput } from "../../services/date-filter";
@@ -181,8 +181,17 @@ const crawlerColumns = [
   ["queued", "Waiting"],
 ] as const;
 
+const CRAWLER_ROWS_PER_PAGE = 5;
+
 function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) {
   const total = summary?.total;
+  const [tableOpen, setTableOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const rows = summary?.byCrawler ?? [];
+  const pageCount = Math.max(1, Math.ceil(rows.length / CRAWLER_ROWS_PER_PAGE));
+  // The 15 s refresh can change how many crawlers ran today.
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageRows = rows.slice(currentPage * CRAWLER_ROWS_PER_PAGE, (currentPage + 1) * CRAWLER_ROWS_PER_PAGE);
   return (
     <Box mb="8" {...cardStyle}>
       <Flex align="center" justify="space-between" gap="3" mb="4">
@@ -214,8 +223,14 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
           </Box>
         ))}
       </Grid>
-      {summary && summary.byCrawler.length > 0 && (
-        <Box mt="4" overflowX="auto">
+      {rows.length > 0 && (
+        <Button mt="4" size="sm" variant="ghost" color="gray.600" onClick={() => setTableOpen((open) => !open)} aria-expanded={tableOpen}>
+          <Icon as={ChevronDown} boxSize="4" transform={tableOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+          {tableOpen ? "Hide" : "Show"} per-crawler breakdown ({rows.length})
+        </Button>
+      )}
+      {tableOpen && rows.length > 0 && (
+        <Box mt="2" overflowX="auto">
           <Box as="table" w="full" fontSize="sm" style={{ borderCollapse: "collapse" }}>
             <Box as="thead">
               <Box as="tr" color="gray.500" fontSize="xs" textAlign="right">
@@ -227,7 +242,7 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
               </Box>
             </Box>
             <Box as="tbody">
-              {summary.byCrawler.map((row) => (
+              {pageRows.map((row) => (
                 <Box as="tr" key={row.crawler} borderTop="1px solid" borderColor="gray.100" textAlign="right" fontVariantNumeric="tabular-nums">
                   <Box as="td" py="2" pr="3" textAlign="left" fontWeight="semibold" whiteSpace="nowrap">{row.crawler}</Box>
                   <Box as="td" py="2" px="3" color="gray.600" whiteSpace="nowrap">
@@ -242,6 +257,19 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
               ))}
             </Box>
           </Box>
+          {pageCount > 1 && (
+            <Flex mt="3" align="center" justify="flex-end" gap="2">
+              <Text fontSize="xs" color="gray.500" mr="1">
+                {currentPage * CRAWLER_ROWS_PER_PAGE + 1}–{Math.min(rows.length, (currentPage + 1) * CRAWLER_ROWS_PER_PAGE)} of {rows.length}
+              </Text>
+              <Button size="xs" variant="outline" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 0} aria-label="Previous crawlers">
+                <Icon as={ChevronLeft} boxSize="4" />
+              </Button>
+              <Button size="xs" variant="outline" onClick={() => setPage(currentPage + 1)} disabled={currentPage >= pageCount - 1} aria-label="Next crawlers">
+                <Icon as={ChevronRight} boxSize="4" />
+              </Button>
+            </Flex>
+          )}
         </Box>
       )}
     </Box>
