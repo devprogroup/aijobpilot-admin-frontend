@@ -1,5 +1,6 @@
 import type {
   ApplicationStatusSummary,
+  CrawlerSummary,
   PromoCode,
   ApplicationSite,
   ApplicationSitePayload,
@@ -123,6 +124,8 @@ export const api = {
     request<{ ok: true }>("/applications/worker/wake", { method: "POST" }),
   applicationStatusSummary: (from: string, to: string) =>
     request<ApplicationStatusSummary>(`/applications/status-summary?${new URLSearchParams({ from, to })}`),
+  crawlerSummary: (from: string, to: string) =>
+    request<CrawlerSummary>(`/crawlers/summary?${new URLSearchParams({ from, to })}`),
   applicationSites: () => request<{ applicationSites: ApplicationSite[] }>("/application-sites"),
   createApplicationSite: (payload: ApplicationSitePayload) =>
     request<{ applicationSite: ApplicationSite }>("/application-sites", { method: "POST", body: JSON.stringify(payload) }),

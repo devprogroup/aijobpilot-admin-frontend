@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
-import { AlertTriangle, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
+import { AlertTriangle, Bot, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
-import type { AppConfig, ApplicationStatusSummary, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
+import type { AppConfig, ApplicationStatusSummary, CrawlerSummary, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
 import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 import { Link } from "react-router-dom";
 
@@ -162,6 +162,92 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
   );
 }
 
+/** Jobs of the crawler runs started today (admin's time zone) and what ats-engine made of them. */
+const crawlerTiles = [
+  { key: "crawled", label: "Crawled", note: "Jobs found by today's runs", color: "gray.700" },
+  { key: "inserted", label: "Ingested", note: "New jobs stored", color: "green.700" },
+  { key: "duplicated", label: "Duplicates", note: "Already stored", color: "gray.500" },
+  { key: "ignored", label: "Skipped", note: "Unsupported, closed or unparseable", color: "orange.600" },
+  { key: "failed", label: "Failed", note: "Fetch failed after retries", color: "red.600" },
+  { key: "queued", label: "Waiting", note: "In the ATS queue", color: "blue.600" },
+] as const;
+
+const crawlerColumns = [
+  ["crawled", "Crawled"],
+  ["inserted", "Ingested"],
+  ["duplicated", "Duplicates"],
+  ["ignored", "Skipped"],
+  ["failed", "Failed"],
+  ["queued", "Waiting"],
+] as const;
+
+function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) {
+  const total = summary?.total;
+  return (
+    <Box mb="8" {...cardStyle}>
+      <Flex align="center" justify="space-between" gap="3" mb="4">
+        <Flex align="center" gap="3">
+          <Flex h="10" w="10" align="center" justify="center" borderRadius="xl" bg="green.50" color="green.700">
+            <Icon as={Bot} boxSize="5" />
+          </Flex>
+          <Box>
+            <Text fontWeight="bold">Crawlers</Text>
+            <Text fontSize="xs" color="gray.400">
+              {total
+                ? `${total.runs.toLocaleString()} runs started today · ${total.runningRuns} running · ${total.failedRuns} failed`
+                : "Runs started today"}
+            </Text>
+          </Box>
+        </Flex>
+        <Link to="/crawlers/fleets" style={{ textDecoration: "none" }}>
+          <Button size="sm" variant="outline">View crawlers</Button>
+        </Link>
+      </Flex>
+      <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)", xl: "repeat(6, 1fr)" }} gap="3">
+        {crawlerTiles.map((tile) => (
+          <Box key={tile.key} borderRadius="xl" bg="gray.50" px="4" py="3">
+            <Text fontSize="xs" fontWeight="semibold" color="gray.500">{tile.label}</Text>
+            <Text fontSize="2xl" fontWeight="bold" color={tile.color} fontVariantNumeric="tabular-nums">
+              {total ? total[tile.key].toLocaleString() : "—"}
+            </Text>
+            <Text fontSize="xs" color="gray.400">{tile.note}</Text>
+          </Box>
+        ))}
+      </Grid>
+      {summary && summary.byCrawler.length > 0 && (
+        <Box mt="4" overflowX="auto">
+          <Box as="table" w="full" fontSize="sm" style={{ borderCollapse: "collapse" }}>
+            <Box as="thead">
+              <Box as="tr" color="gray.500" fontSize="xs" textAlign="right">
+                <Box as="th" py="2" pr="3" textAlign="left" fontWeight="semibold">Crawler</Box>
+                <Box as="th" py="2" px="3" fontWeight="semibold">Runs</Box>
+                {crawlerColumns.map(([key, label]) => (
+                  <Box as="th" key={key} py="2" px="3" fontWeight="semibold">{label}</Box>
+                ))}
+              </Box>
+            </Box>
+            <Box as="tbody">
+              {summary.byCrawler.map((row) => (
+                <Box as="tr" key={row.crawler} borderTop="1px solid" borderColor="gray.100" textAlign="right" fontVariantNumeric="tabular-nums">
+                  <Box as="td" py="2" pr="3" textAlign="left" fontWeight="semibold" whiteSpace="nowrap">{row.crawler}</Box>
+                  <Box as="td" py="2" px="3" color="gray.600" whiteSpace="nowrap">
+                    {row.runs}
+                    {row.runningRuns > 0 && <Text as="span" color="blue.600"> · {row.runningRuns} running</Text>}
+                    {row.failedRuns > 0 && <Text as="span" color="red.600"> · {row.failedRuns} failed</Text>}
+                  </Box>
+                  {crawlerColumns.map(([key]) => (
+                    <Box as="td" key={key} py="2" px="3" color={row[key] ? "gray.800" : "gray.300"}>{row[key].toLocaleString()}</Box>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function SystemMetricsSection({ metrics }: { metrics: SystemMetrics | null }) {
   const memoryPercent = metrics ? metrics.memory.usedBytes / metrics.memory.totalBytes * 100 : null;
   const storagePercent = metrics ? metrics.storage.usedBytes / metrics.storage.totalBytes * 100 : null;
@@ -255,6 +341,7 @@ export function DashboardPage() {
   const [twoCaptchaBalance, setTwoCaptchaBalance] =
     useState<ProviderBalance | null>(null);
   const [applicationSummary, setApplicationSummary] = useState<ApplicationStatusSummary | null>(null);
+  const [crawlerSummary, setCrawlerSummary] = useState<CrawlerSummary | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [settlingStatus, setSettlingStatus] = useState<SettlingStatus | null>(null);
   const [cleanupRunning, setCleanupRunning] = useState(false);
@@ -333,6 +420,13 @@ export function DashboardPage() {
     catch { setApplicationSummary(null); }
   }, []);
 
+  const loadCrawlerSummary = useCallback(async () => {
+    const today = todayDateInput();
+    const { from, to } = dateFilterRange(today, today);
+    try { setCrawlerSummary(await api.crawlerSummary(from!, to!)); }
+    catch { setCrawlerSummary(null); }
+  }, []);
+
   const loadSettlingStatus = useCallback(async () => {
     try { setSettlingStatus(readSettlingStatus((await api.settings()).settings)); }
     catch { setSettlingStatus(null); }
@@ -362,7 +456,8 @@ export function DashboardPage() {
     void loadSystemMetrics();
     void loadSettlingStatus();
     void loadApplicationSummary();
-  }, [loadApplicationSummary, loadDeepSeekBalance, loadServices, loadSettlingStatus, loadSystemMetrics, loadTwoCaptchaBalance]);
+    void loadCrawlerSummary();
+  }, [loadApplicationSummary, loadCrawlerSummary, loadDeepSeekBalance, loadServices, loadSettlingStatus, loadSystemMetrics, loadTwoCaptchaBalance]);
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 15000);
@@ -447,6 +542,8 @@ export function DashboardPage() {
       )}
 
       <ApplicationStatusSection summary={applicationSummary} />
+
+      <CrawlerSummarySection summary={crawlerSummary} />
 
       <SystemMetricsSection metrics={systemMetrics} />
 

@@ -42,6 +42,11 @@ export interface CrawlerTypePayload { name:string; config:unknown; parameters:Re
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
 export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number }
+/** Jobs of the crawler runs started in a range: crawled = all of them; inserted = new jobs stored,
+ * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
+ * fetch failed after retries, queued = still waiting in ats-engine. */
+export interface CrawlerSummaryCounts { runs: number; runningRuns: number; failedRuns: number; crawled: number; queued: number; inserted: number; ignored: number; duplicated: number; failed: number }
+export interface CrawlerSummary { total: CrawlerSummaryCounts; byCrawler: (CrawlerSummaryCounts & { crawler: string })[] }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface SystemMetrics {
   cpu: { percent: number | null; cores: number };
