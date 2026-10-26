@@ -28,6 +28,10 @@ export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCo
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
 export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts }
+/** One handled company / board / site of a crawler run (newest first in CrawlerRunProgress.recent). */
+export interface CrawlerRunActivity { at:string|null; level:string; event:string; unit:string|null; published:number|null; filtered:number|null; total:number|null; message:string|null }
+/** How far a crawler run got, read from its log. total: companies / boards / sites the run set out to crawl. */
+export interface CrawlerRunProgress { crawler:string|null; startedAt:string|null; lastEventAt:string|null; total:number|null; done:number; crawled:number; skipped:number; failed:number; published:number; filtered:number; current:string|null; summary:Record<string,unknown>|null; finish:{ status:string|null; errorMessage:string|null }|null; recent:CrawlerRunActivity[] }
 export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; stopSignalData:string|null; crawlerType:{id:number;name:string}; latestRun:CrawlerRun|null; crawlerRuns?:CrawlerRun[]; _count:{crawlerRuns:number} }
 export interface CrawledJobRow { id:number; createdAt:string; title:string; company:string; status:string; crawlerName:string; crawlerType:string }
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }

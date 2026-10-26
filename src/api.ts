@@ -4,6 +4,7 @@ import type {
   ApplicationSite,
   ApplicationSitePayload,
   Crawler,
+  CrawlerRunProgress,
   CrawledJobRow,
   CrawlerType,
   CrawlerTypePayload,
@@ -197,6 +198,8 @@ export const api = {
   },
   crawlerRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
+  crawlerRunProgress: (crawlerId: number, runId: string) =>
+    request<{ progress: CrawlerRunProgress }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/progress`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}`, {
       method: "PATCH",
