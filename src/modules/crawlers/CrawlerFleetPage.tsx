@@ -449,12 +449,19 @@ export function CrawlerFleetPage() {
                   <Table.Cell px="5" py="4" color="gray.600">
                     {crawler.latestRun ? (
                       <Flex align="center" gap="2">
-                        <Text title="Jobs ats-engine inserted from the latest run / all jobs that run crawled">
+                        <Text title="Jobs ats-engine inserted from the latest run / jobs that run crawled after the title filter (jobs it saw before the title filter)">
                           <Text as="span" fontWeight="semibold" color="green.700">
                             {crawler.latestRun.counts.inserted.toLocaleString()}
                           </Text>
                           {" / "}
                           {crawledTotal(crawler.latestRun.counts).toLocaleString()}
+                          {typeof crawler.latestRun.titleFiltered === "number" && (
+                            <Text as="span" color="gray.400">
+                              {" ("}
+                              {(crawledTotal(crawler.latestRun.counts) + crawler.latestRun.titleFiltered).toLocaleString()}
+                              {")"}
+                            </Text>
+                          )}
                         </Text>
                         {crawler.status === "running" && crawler.latestRun.status === "running" && crawler.latestRun.logFilePath && (
                           <IconButton
