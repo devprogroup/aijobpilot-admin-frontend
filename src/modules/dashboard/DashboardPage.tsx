@@ -183,6 +183,32 @@ const crawlerColumns = [
 
 const CRAWLER_ROWS_PER_PAGE = 5;
 
+/** "N processing now" under the ATS queue tile; hovering lists the sites ats-engine is working on
+ * in parallel (one job per site at a time) and how many of each site's jobs are still waiting. */
+function AtsEngineProcessing({ ats }: { ats: NonNullable<CrawlerSummary["atsEngine"]> }) {
+  const [open, setOpen] = useState(false);
+  const label = `${ats.processing.toLocaleString()} ${ats.processing === 1 ? "job" : "jobs"} processing now`;
+  if (ats.sites.length === 0) return <Text mt="1" fontSize="xs" color="gray.500">{label}</Text>;
+  return (
+    <Box position="relative" mt="1" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Text as="span" fontSize="xs" color="blue.600" fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor="blue.300">
+        {label}
+      </Text>
+      {open && (
+        <Box position="absolute" top="100%" right="0" mt="1" zIndex="10" minW="64" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
+          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">ats-engine sites in parallel (1 job each)</Text>
+          {ats.sites.map(({ site, waiting }) => (
+            <Flex key={site} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
+              <Text color="gray.800" fontWeight="semibold">{site}</Text>
+              <Text color="gray.500" fontVariantNumeric="tabular-nums">{waiting.toLocaleString()} waiting</Text>
+            </Flex>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 /** "N running now"; hovering lists the crawlers running in parallel and the companies each has handled. */
 function RunningCrawlers({ running }: { running: NonNullable<CrawlerSummary["running"]> }) {
   const [open, setOpen] = useState(false);
@@ -252,6 +278,7 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
               {total ? total[tile.key].toLocaleString() : "—"}
             </Text>
             <Text fontSize="xs" color="gray.400">{tile.note}</Text>
+            {tile.key === "queued" && summary?.atsEngine && <AtsEngineProcessing ats={summary.atsEngine} />}
           </Box>
         ))}
       </Grid>

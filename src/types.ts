@@ -51,6 +51,8 @@ export interface CrawlerSummary {
   total: CrawlerSummaryCounts;
   byCrawler: (CrawlerSummaryCounts & { crawler: string })[];
   running?: { crawler: string; startedAt: string | null; units: { done: number; total: number | null } | null }[];
+  /** ats-engine now: jobs in progress (one per busy site) and each site's queued crawled jobs; null if it didn't answer. */
+  atsEngine?: { processing: number; sites: { site: string; waiting: number }[] } | null;
 }
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface SystemMetrics {
