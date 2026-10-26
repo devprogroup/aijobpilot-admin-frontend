@@ -4,6 +4,7 @@ import type {
   ApplicationSite,
   ApplicationSitePayload,
   Crawler,
+  CrawlerRunProgress,
   CrawledJobRow,
   CrawlerType,
   CrawlerTypePayload,
@@ -37,6 +38,8 @@ import type {
   AdminEmailSummary,
   InboundEmail,
   InboundEmailSummary,
+  TenantsCsvUpload,
+  TenantCsvFormat,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -195,6 +198,8 @@ export const api = {
   },
   crawlerRunLog: (crawlerId: number, runId: string) =>
     request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
+  crawlerRunProgress: (crawlerId: number, runId: string) =>
+    request<{ progress: CrawlerRunProgress }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/progress`),
   updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
     request<{ crawler: Crawler }>(`/crawlers/${id}`, {
       method: "PATCH",
@@ -215,6 +220,12 @@ export const api = {
     request<{ crawlerRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
       method: "POST",
       body: JSON.stringify({ jobs }),
+    }),
+  uploadTenantsCsv: (file: File, format: TenantCsvFormat = "greenhouse") =>
+    request<TenantsCsvUpload>(`/crawlers/tenants-csv?fileName=${encodeURIComponent(file.name)}&format=${format}`, {
+      method: "POST",
+      headers: { "Content-Type": "text/csv" },
+      body: file,
     }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),
