@@ -18,6 +18,7 @@ import { api } from "../../api";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
+import { CrawlerRunProgressPanel } from "./components/CrawlerRunProgressPanel";
 import { toaster } from "../../components/ui/toaster";
 
 const ChakraRouterLink = chakra(Link);
@@ -43,6 +44,8 @@ export function CrawlerDetailsPage() {
   const [starting, setStarting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [logRunId, setLogRunId] = useState<string | null>(null);
+  /** The run the progress panel shows; the latest run when none was picked. */
+  const [progressRunId, setProgressRunId] = useState<string | null>(null);
 
   const load = async () => {
     if (!Number.isInteger(crawlerId) || crawlerId < 1) return;
@@ -61,6 +64,20 @@ export function CrawlerDetailsPage() {
   useEffect(() => {
     load();
   }, [crawlerId]);
+
+  // While the crawler is queued or running, keep its status and runs current (a new run shows up
+  // in the progress panel) without touching the configuration form.
+  const busy = crawler ? crawler.status !== "idle" : false;
+  useEffect(() => {
+    if (!busy || !Number.isInteger(crawlerId) || crawlerId < 1) return;
+    const timer = window.setInterval(() => {
+      api.crawler(crawlerId).then((result) => setCrawler(result.crawler)).catch(() => {});
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [crawlerId, busy]);
+  const refreshCrawler = () => {
+    api.crawler(crawlerId).then((result) => setCrawler(result.crawler)).catch(() => {});
+  };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -302,6 +319,14 @@ export function CrawlerDetailsPage() {
         </Flex>
       </Box>
 
+      {(() => {
+        const runs = crawler.crawlerRuns ?? [];
+        const run = runs.find((item) => item.id === progressRunId) ?? runs[0];
+        return run?.logFilePath ? (
+          <CrawlerRunProgressPanel key={run.id} crawlerId={crawlerId} run={run} onFinished={refreshCrawler} />
+        ) : null;
+      })()}
+
       <Box
         as="section"
         overflow="hidden"
@@ -410,7 +435,10 @@ export function CrawlerDetailsPage() {
                   <Table.Cell px="5" py="4">{run.counts.duplicated}</Table.Cell>
                   <Table.Cell px="5" py="4">
                     {run.logFilePath ? (
-                      <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => setLogRunId(String(run.id))}>View log</Button>
+                      <Flex gap="3">
+                        <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => { setProgressRunId(String(run.id)); document.getElementById("crawler-run-progress")?.scrollIntoView({ behavior: "smooth" }); }}>Progress</Button>
+                        <Button variant="plain" size="sm" color="green.700" textDecoration="underline" onClick={() => setLogRunId(String(run.id))}>View log</Button>
+                      </Flex>
                     ) : <Text color="gray.400">Unavailable</Text>}
                   </Table.Cell>
                 </Table.Row>
