@@ -477,7 +477,7 @@ export function CrawlerFleetPage() {
                           </IconButton>
                         )}
                       </Flex>
-                      {crawler.latestRun.units && (
+                      {crawler.latestRun.units && crawler.crawlerType?.name.endsWith("-api") && (
                         <Text
                           mt="0.5"
                           fontSize="xs"
