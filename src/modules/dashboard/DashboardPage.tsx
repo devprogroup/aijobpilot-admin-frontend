@@ -183,6 +183,34 @@ const crawlerColumns = [
 
 const CRAWLER_ROWS_PER_PAGE = 5;
 
+/** "N running now"; hovering lists the crawlers running in parallel and the companies each has handled. */
+function RunningCrawlers({ running }: { running: NonNullable<CrawlerSummary["running"]> }) {
+  const [open, setOpen] = useState(false);
+  if (running.length === 0) return <>0 running now</>;
+  return (
+    <Box as="span" position="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Text as="span" color="blue.600" fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor="blue.300">
+        {running.length} running now
+      </Text>
+      {open && (
+        <Box position="absolute" top="100%" left="0" mt="1" zIndex="10" minW="64" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
+          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">Running in parallel</Text>
+          {running.map((run) => (
+            <Flex key={run.crawler} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
+              <Text color="gray.800" fontWeight="semibold">{run.crawler}</Text>
+              <Text color="gray.500" fontVariantNumeric="tabular-nums">
+                {run.units
+                  ? `${run.units.done.toLocaleString()}${run.units.total !== null ? ` / ${run.units.total.toLocaleString()}` : ""} companies`
+                  : run.startedAt ? `since ${new Date(run.startedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+              </Text>
+            </Flex>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) {
   const total = summary?.total;
   const [tableOpen, setTableOpen] = useState(false);
@@ -201,10 +229,14 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
           </Flex>
           <Box>
             <Text fontWeight="bold">Crawlers</Text>
-            <Text fontSize="xs" color="gray.400">
-              {total
-                ? `${total.runs.toLocaleString()} runs started today · ${total.runningRuns} running · ${total.failedRuns} failed`
-                : "Runs started today"}
+            <Text as="div" fontSize="xs" color="gray.400">
+              {total ? (
+                <>
+                  {`${total.runs.toLocaleString()} runs started today · `}
+                  <RunningCrawlers running={summary?.running ?? []} />
+                  {` · ${total.failedRuns} failed`}
+                </>
+              ) : "Runs started today"}
             </Text>
           </Box>
         </Flex>

@@ -46,7 +46,12 @@ export interface ApplicationStatusSummary { byStatus: Partial<Record<string, num
  * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
  * fetch failed after retries, queued = still waiting in ats-engine. */
 export interface CrawlerSummaryCounts { runs: number; runningRuns: number; failedRuns: number; crawled: number; queued: number; inserted: number; ignored: number; duplicated: number; failed: number }
-export interface CrawlerSummary { total: CrawlerSummaryCounts; byCrawler: (CrawlerSummaryCounts & { crawler: string })[] }
+/** running: runs in progress now (whenever they started), units = companies handled / total from the run's log. */
+export interface CrawlerSummary {
+  total: CrawlerSummaryCounts;
+  byCrawler: (CrawlerSummaryCounts & { crawler: string })[];
+  running?: { crawler: string; startedAt: string | null; units: { done: number; total: number | null } | null }[];
+}
 export interface ServiceHealth { id:string; name:string; running:boolean; checkedAt:string }
 export interface SystemMetrics {
   cpu: { percent: number | null; cores: number };
