@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Box, Button, Flex, Grid, Icon, Spinner, Text } from "@chakra-ui/react";
 import { AlertTriangle, Bot, ChevronDown, ChevronLeft, ChevronRight, Cpu, HardDrive, MemoryStick, Network, RefreshCw, Send, Server, Trash2, WalletCards } from "lucide-react";
 import { api } from "../../api";
-import type { AppConfig, ApplicationStatusSummary, CrawlerSummary, ProviderBalance, ServiceHealth, SystemMetrics } from "../../types";
+import type { AppConfig, ApplicationStatusSummary, CrawlerSummary, ProviderBalance, RunningApplication, ServiceHealth, SystemMetrics } from "../../types";
 import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 import { Link } from "react-router-dom";
 
@@ -120,6 +120,52 @@ const applicationStatusTiles = [
   { key: "total", label: "Total", note: "Created today", color: "gray.700" },
 ] as const;
 
+/** "12m 05s" / "1h 03m" for a run that started at `startedAt`. */
+function elapsedSince(startedAt: string, now: number): string {
+  const seconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  const minutes = Math.floor(seconds / 60);
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+  return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
+}
+
+/** The Applying tile's "Running now"; hovering lists the applications in progress -- site, company
+ * and how long each has run, longest first -- so a stuck one shows at a glance. The clock ticks
+ * while the list is open; the list itself follows the dashboard's 15 s refresh. */
+function ApplyingNow({ running }: { running: RunningApplication[] }) {
+  const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!open) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [open]);
+  if (running.length === 0) return <Text fontSize="xs" color="gray.400">Running now</Text>;
+  return (
+    <Box position="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Text as="span" fontSize="xs" color="blue.600" fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor="blue.300">
+        Running now
+      </Text>
+      {open && (
+        <Box position="absolute" top="100%" left="0" mt="1" zIndex="10" minW="80" maxH="96" overflowY="auto" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
+          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">Applying now, longest first</Text>
+          {running.map((run) => (
+            <Flex key={run.id} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
+              <Text color="gray.800" overflow="hidden" textOverflow="ellipsis" maxW="72" title={`#${run.id} ${run.position}${run.claimedBy ? ` · ${run.claimedBy}` : ""}`}>
+                <Text as="span" fontWeight="semibold">{run.site}</Text>
+                {run.company && <Text as="span" color="gray.500"> · {run.company}</Text>}
+              </Text>
+              <Text color={now - new Date(run.startedAt).getTime() >= 15 * 60_000 ? "red.600" : "gray.500"} fontVariantNumeric="tabular-nums">
+                {elapsedSince(run.startedAt, now)}
+              </Text>
+            </Flex>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSummary | null }) {
   const today = summary?.byStatus ?? {};
   const value = (key: (typeof applicationStatusTiles)[number]["key"]) => {
@@ -153,7 +199,9 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
               <Text fontSize="2xl" fontWeight="bold" color={tile.color} fontVariantNumeric="tabular-nums">
                 {count === null ? "—" : count.toLocaleString()}
               </Text>
-              <Text fontSize="xs" color="gray.400">{tile.note}</Text>
+              {tile.key === "applying"
+                ? <ApplyingNow running={summary?.running ?? []} />
+                : <Text fontSize="xs" color="gray.400">{tile.note}</Text>}
             </Box>
           );
         })}

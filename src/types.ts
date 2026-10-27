@@ -41,7 +41,9 @@ export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:u
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
-export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number }
+/** running: the applications in progress now, longest-running first (startedAt = when the run claimed it). */
+export interface RunningApplication { id: number; site: string; company: string; position: string; claimedBy: string | null; startedAt: string }
+export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number; running?: RunningApplication[] }
 /** Jobs of the crawler runs started in a range: crawled = all of them; inserted = new jobs stored,
  * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
  * fetch failed after retries, queued = still waiting in ats-engine. */
