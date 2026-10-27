@@ -179,3 +179,12 @@ export interface AdminDepositAddress {
   reservedUntil: string | null;
   createdAt: string;
 }
+
+/** What a client or profile hard delete removed (admin-backend services/client-deletion.ts). */
+export type ClientDeletionResult = {
+  profiles: number;
+  applications: number;
+  matches: number;
+  privateJobs: number;
+  files: number;
+};

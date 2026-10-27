@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, NativeSelect, SimpleGrid, Table, Text } from "@chakra-ui/react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Trash2 } from "lucide-react";
 import { api } from "../../api";
 import type { User, UserDetails } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -32,6 +33,35 @@ export function UserDetailsPage() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id, revision]);
+  const navigate = useNavigate();
+  const deleteUser = async () => {
+    if (!details) return;
+    const name = details.user.username || details.user.email || `#${id}`;
+    const typed = window.prompt(
+      `Permanently delete ${name} and everything of theirs: all profiles, applications, job matches, private jobs, uploads, messages, credit history and files. This cannot be undone.\n\nType ${name} to confirm.`,
+    );
+    if (typed === null) return;
+    if (typed.trim() !== name) { setError("The name you typed didn't match; nothing was deleted."); return; }
+    setSaving(true); setError("");
+    try {
+      await api.deleteUser(id);
+      navigate("/users/clients", { replace: true });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete user.");
+      setSaving(false);
+    }
+  };
+  const deleteProfile = async (profile: UserDetails["profiles"][number]) => {
+    const name = profile.name || `Profile #${profile.id}`;
+    if (!window.confirm(`Permanently delete ${name}: its applications, job matches, inbound email and resume files. This cannot be undone.`)) return;
+    setSaving(true); setError("");
+    try {
+      await api.deleteUserProfile(id, profile.id);
+      setRevision((value) => value + 1);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete profile.");
+    } finally { setSaving(false); }
+  };
   const update = (user: User) => setDetails((old) => old ? { ...old, user: { ...old.user, ...user } } : old);
   const changeStatus = async (status: User["status"]) => {
     setSaving(true); setError("");
@@ -41,7 +71,7 @@ export function UserDetailsPage() {
   };
   return <Box>
     <Link to="/users/clients">← Back to clients</Link>
-    <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Flex gap="2"><Button variant="outline" disabled={!details || loading || saving} onClick={() => setEditingName(true)}>Edit name</Button><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button></Flex></Flex>
+    <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Flex gap="2"><Button variant="outline" disabled={!details || loading || saving} onClick={() => setEditingName(true)}>Edit name</Button><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>{canEditClients && <Button variant="outline" colorPalette="red" disabled={!details || loading || saving} onClick={() => void deleteUser()}><Trash2 size={16} />Delete user</Button>}</Flex></Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
     {loading && <Text role="status">Loading user details...</Text>}
     {details && <>
@@ -54,9 +84,9 @@ export function UserDetailsPage() {
       </Box>
       <Box bg="white" borderRadius="2xl" p="5" mb="6" overflowX="auto">
         <Text fontWeight="bold">Profiles ({details.user._count?.profiles ?? 0})</Text><Text fontSize="xs" color="gray.500" mb="4">Latest {details.profiles.length} non-deleted profiles</Text>
-        <Table.Root size="sm"><Table.Header><Table.Row>{['ID', 'Profile', 'Email', 'Status', 'Last application'].map((label) => <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>)}</Table.Row></Table.Header><Table.Body>
-          {details.profiles.map((profile) => <Table.Row key={profile.id}><Table.Cell fontFamily="mono" color="gray.600">#{profile.id}</Table.Cell><Table.Cell><Link to={`/users/clients/${id}/profiles/${profile.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>{profile.name || `Profile #${profile.id}`}</Link></Table.Cell><Table.Cell>{profile.email || '—'}</Table.Cell><Table.Cell><StatusBadge status={profile.status} /></Table.Cell><Table.Cell>{time(profile.lastApplicationAt)}</Table.Cell></Table.Row>)}
-          {!details.profiles.length && <Table.Row><Table.Cell colSpan={5}>No profiles yet.</Table.Cell></Table.Row>}
+        <Table.Root size="sm"><Table.Header><Table.Row>{['ID', 'Profile', 'Email', 'Status', 'Last application', ...(canEditClients ? ['Actions'] : [])].map((label) => <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>)}</Table.Row></Table.Header><Table.Body>
+          {details.profiles.map((profile) => <Table.Row key={profile.id}><Table.Cell fontFamily="mono" color="gray.600">#{profile.id}</Table.Cell><Table.Cell><Link to={`/users/clients/${id}/profiles/${profile.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>{profile.name || `Profile #${profile.id}`}</Link></Table.Cell><Table.Cell>{profile.email || '—'}</Table.Cell><Table.Cell><StatusBadge status={profile.status} /></Table.Cell><Table.Cell>{time(profile.lastApplicationAt)}</Table.Cell>{canEditClients && <Table.Cell><Button size="xs" variant="outline" colorPalette="red" disabled={saving} onClick={() => void deleteProfile(profile)}><Trash2 size={14} />Delete</Button></Table.Cell>}</Table.Row>)}
+          {!details.profiles.length && <Table.Row><Table.Cell colSpan={canEditClients ? 6 : 5}>No profiles yet.</Table.Cell></Table.Row>}
         </Table.Body></Table.Root>
       </Box>
       <Box bg="white" borderRadius="2xl" p="5" overflowX="auto">

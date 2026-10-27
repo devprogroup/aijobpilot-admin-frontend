@@ -10,7 +10,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { KeyRound, Search, Users } from "lucide-react";
+import { KeyRound, Search, Trash2, Users } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
@@ -60,6 +60,23 @@ export function UsersPage() {
       ),
     [users, query, statusFilter],
   );
+
+  const deleteUser = async (u: User) => {
+    const name = u.username || u.email || `#${u.id}`;
+    const typed = window.prompt(
+      `Permanently delete ${name} and everything of theirs: all profiles, applications, job matches, private jobs, uploads, messages, credit history and files. This cannot be undone.\n\nType ${name} to confirm.`,
+    );
+    if (typed === null) return;
+    if (typed.trim() !== name) { setError("The name you typed didn't match; nothing was deleted."); return; }
+    setPending(u.id); setError(""); setMessage("");
+    try {
+      const { deleted } = await api.deleteUser(u.id);
+      setUsers((values) => values.filter((old) => old.id !== u.id));
+      setMessage(`Deleted ${name}: ${deleted.profiles} profile(s), ${deleted.applications} application(s), ${deleted.privateJobs} private job(s), ${deleted.files} file location(s).`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete user.");
+    } finally { setPending(null); }
+  };
 
   const change = async (u: User, status: User["status"]) => {
     setPending(u.id);
@@ -289,7 +306,7 @@ export function UsersPage() {
                   <Table.Cell px="5" py="4" color="gray.500">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4"><Button size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button></Table.Cell>
+                  <Table.Cell px="5" py="4"><Flex gap="2"><Button size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button><Button size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} />Delete</Button></Flex></Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
