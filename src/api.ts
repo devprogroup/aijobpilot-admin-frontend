@@ -13,6 +13,7 @@ import type {
   UpdateCrawlerPayload,
   User,
   UserDetails,
+  ClientDeletionResult,
   AdminProfileDetails,
   AdminApplication,
   ApplicationFilters,
@@ -279,6 +280,11 @@ export const api = {
     request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateUserPassword: (id: number, password: string) =>
     request<{ success: boolean }>(`/users/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) }),
+  /** Hard delete of the client and everything of theirs. */
+  deleteUser: (id: number) => request<{ deleted: ClientDeletionResult }>(`/users/${id}`, { method: "DELETE" }),
+  /** Hard delete of one of the client's profiles. */
+  deleteUserProfile: (userId: number, profileId: number) =>
+    request<{ deleted: ClientDeletionResult }>(`/users/${userId}/profiles/${profileId}`, { method: "DELETE" }),
   setUserStatus: (id: number, status: User["status"]) =>
     request<{ user: User }>(`/users/${id}/status`, {
       method: "PATCH",
