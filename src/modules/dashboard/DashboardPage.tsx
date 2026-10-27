@@ -166,6 +166,31 @@ function ApplyingNow({ running }: { running: RunningApplication[] }) {
   );
 }
 
+/** The Failed tile's note; hovering lists today's failures per site, most first. */
+function FailedBySite({ bySite, note }: { bySite: { site: string; count: number }[]; note: string }) {
+  const [open, setOpen] = useState(false);
+  if (bySite.length === 0) return <Text fontSize="xs" color="gray.400">{note}</Text>;
+  const total = bySite.reduce((sum, row) => sum + row.count, 0);
+  return (
+    <Box position="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Text as="span" fontSize="xs" color="red.600" fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor="red.300">
+        {note}
+      </Text>
+      {open && (
+        <Box position="absolute" top="100%" left="0" mt="1" zIndex="10" minW="56" maxH="96" overflowY="auto" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
+          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">Failed by site</Text>
+          {bySite.map((row) => (
+            <Flex key={row.site} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
+              <Text color="gray.800" fontWeight="semibold">{row.site}</Text>
+              <Text color="gray.500" fontVariantNumeric="tabular-nums" title={`${Math.round((row.count / total) * 100)}% of failures`}>{row.count.toLocaleString()}</Text>
+            </Flex>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSummary | null }) {
   const today = summary?.byStatus ?? {};
   const value = (key: (typeof applicationStatusTiles)[number]["key"]) => {
@@ -201,7 +226,9 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
               </Text>
               {tile.key === "applying"
                 ? <ApplyingNow running={summary?.running ?? []} />
-                : <Text fontSize="xs" color="gray.400">{tile.note}</Text>}
+                : tile.key === "failed"
+                  ? <FailedBySite bySite={summary?.failedBySite ?? []} note={tile.note} />
+                  : <Text fontSize="xs" color="gray.400">{tile.note}</Text>}
             </Box>
           );
         })}
