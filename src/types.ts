@@ -44,7 +44,12 @@ export interface User { id:number; name:string|null; username:string; email:stri
 /** running: the applications in progress now, longest-running first (startedAt = when the run claimed it). */
 export interface RunningApplication { id: number; site: string; company: string; position: string; claimedBy: string | null; startedAt: string }
 /** failedBySite: the range's failed applications per site, most first (the Failed tile's hover). */
-export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number; running?: RunningApplication[]; failedBySite?: { site: string; count: number }[] }
+export interface SiteStatusCount { site: string; status: string; count: number }
+/** One profile's applications of one status; profileId null for rows without a profile. */
+export interface ProfileStatusCount { profileId: number | null; profile: string; user: string; status: string; count: number }
+/** bySite / byProfile: the range's applications per site (per profile) and status; liveBySite /
+ * liveByProfile: the live queue (queued / applying) the same way. */
+export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number; running?: RunningApplication[]; failedBySite?: { site: string; count: number }[]; bySite?: SiteStatusCount[]; liveBySite?: SiteStatusCount[]; byProfile?: ProfileStatusCount[]; liveByProfile?: ProfileStatusCount[] }
 /** Jobs of the crawler runs started in a range: crawled = all of them; inserted = new jobs stored,
  * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
  * fetch failed after retries, queued = still waiting in ats-engine. */

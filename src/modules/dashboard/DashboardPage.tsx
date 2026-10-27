@@ -131,7 +131,7 @@ function elapsedSince(startedAt: string, now: number): string {
 /** The Applying tile's "Running now"; hovering lists the applications in progress -- site, company
  * and how long each has run, longest first -- so a stuck one shows at a glance. The clock ticks
  * while the list is open; the list itself follows the dashboard's 15 s refresh. */
-function ApplyingNow({ running }: { running: RunningApplication[] }) {
+function ApplyingNow({ running, profiles }: { running: RunningApplication[]; profiles: BreakdownRow[] }) {
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -160,31 +160,79 @@ function ApplyingNow({ running }: { running: RunningApplication[] }) {
               </Text>
             </Flex>
           ))}
+          {profiles.length > 0 && <BreakdownSection title="Applying by profile" rows={profiles} mt="2" />}
         </Box>
       )}
     </Box>
   );
 }
 
-/** The Failed tile's note; hovering lists today's failures per site, most first. */
-function FailedBySite({ bySite, note }: { bySite: { site: string; count: number }[]; note: string }) {
+/** One line of a tile's hover list: a site or a profile with its count. */
+type BreakdownRow = { key: string; label: string; hint?: string; count: number };
+
+/** A titled list of rows with counts; the hover title shows each row's share of the section. */
+function BreakdownSection({ title, rows, mt }: { title: string; rows: BreakdownRow[]; mt?: string }) {
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
+  return (
+    <Box mt={mt}>
+      <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">{title}</Text>
+      {rows.map((row) => (
+        <Flex key={row.key} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
+          <Text color="gray.800" overflow="hidden" textOverflow="ellipsis" maxW="64" title={row.hint ? `${row.label} · ${row.hint}` : row.label}>
+            <Text as="span" fontWeight="semibold">{row.label}</Text>
+            {row.hint && <Text as="span" color="gray.500"> · {row.hint}</Text>}
+          </Text>
+          <Text color="gray.500" fontVariantNumeric="tabular-nums" title={`${Math.round((row.count / total) * 100)}% of ${total.toLocaleString()}`}>{row.count.toLocaleString()}</Text>
+        </Flex>
+      ))}
+    </Box>
+  );
+}
+
+/** The profiles behind a tile's count, most first: the live queue for Queued and Applying, today's
+ * rows of the tile's status otherwise, and every status together for Total. */
+function profileCounts(summary: ApplicationStatusSummary | null, key: ApplicationTileKey): BreakdownRow[] {
+  if (!summary) return [];
+  const rows = key === "queued" || key === "applying"
+    ? (summary.liveByProfile ?? []).filter((row) => row.status === key)
+    : (summary.byProfile ?? []).filter((row) => key === "total" || row.status === key);
+  const counts = new Map<string, BreakdownRow>();
+  for (const row of rows) {
+    const id = row.profileId == null ? "none" : String(row.profileId);
+    const current = counts.get(id);
+    if (current) current.count += row.count;
+    else counts.set(id, { key: id, label: row.profile || (row.profileId == null ? "No profile" : `Profile #${row.profileId}`), hint: row.user || undefined, count: row.count });
+  }
+  return [...counts.values()].sort((left, right) => right.count - left.count);
+}
+
+type ApplicationTileKey = (typeof applicationStatusTiles)[number]["key"];
+
+/** The sites behind a tile's count, most first: the live queue for Queued and Applying, today's
+ * rows of the tile's status otherwise, and every status together for Total. */
+function siteCounts(summary: ApplicationStatusSummary | null, key: ApplicationTileKey): { site: string; count: number }[] {
+  if (!summary) return [];
+  const rows = key === "queued" || key === "applying"
+    ? (summary.liveBySite ?? []).filter((row) => row.status === key)
+    : (summary.bySite ?? []).filter((row) => key === "total" || row.status === key);
+  const counts = new Map<string, number>();
+  for (const row of rows) counts.set(row.site, (counts.get(row.site) ?? 0) + row.count);
+  return [...counts].map(([site, count]) => ({ site, count })).sort((left, right) => right.count - left.count);
+}
+
+/** A tile's note; hovering lists the tile's count per profile and per site, most first. */
+function CountBreakdown({ sections, note, color }: { sections: { title: string; rows: BreakdownRow[] }[]; note: string; color: string }) {
   const [open, setOpen] = useState(false);
-  if (bySite.length === 0) return <Text fontSize="xs" color="gray.400">{note}</Text>;
-  const total = bySite.reduce((sum, row) => sum + row.count, 0);
+  const shown = sections.filter((section) => section.rows.length > 0);
+  if (shown.length === 0) return <Text fontSize="xs" color="gray.400">{note}</Text>;
   return (
     <Box position="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <Text as="span" fontSize="xs" color="red.600" fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor="red.300">
+      <Text as="span" fontSize="xs" color={color} fontWeight="semibold" cursor="default" borderBottom="1px dotted" borderColor={color.replace(/\.\d+$/, ".300")}>
         {note}
       </Text>
       {open && (
-        <Box position="absolute" top="100%" left="0" mt="1" zIndex="10" minW="56" maxH="96" overflowY="auto" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb="1">Failed by site</Text>
-          {bySite.map((row) => (
-            <Flex key={row.site} justify="space-between" gap="4" py="0.5" fontSize="xs" whiteSpace="nowrap">
-              <Text color="gray.800" fontWeight="semibold">{row.site}</Text>
-              <Text color="gray.500" fontVariantNumeric="tabular-nums" title={`${Math.round((row.count / total) * 100)}% of failures`}>{row.count.toLocaleString()}</Text>
-            </Flex>
-          ))}
+        <Box position="absolute" top="100%" left="0" mt="1" zIndex="10" minW="64" maxH="96" overflowY="auto" bg="white" borderRadius="lg" boxShadow="lg" border="1px solid" borderColor="gray.100" px="3" py="2">
+          {shown.map((section, index) => <BreakdownSection key={section.title} title={section.title} rows={section.rows} mt={index > 0 ? "2" : undefined} />)}
         </Box>
       )}
     </Box>
@@ -225,10 +273,15 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
                 {count === null ? "—" : count.toLocaleString()}
               </Text>
               {tile.key === "applying"
-                ? <ApplyingNow running={summary?.running ?? []} />
-                : tile.key === "failed"
-                  ? <FailedBySite bySite={summary?.failedBySite ?? []} note={tile.note} />
-                  : <Text fontSize="xs" color="gray.400">{tile.note}</Text>}
+                ? <ApplyingNow running={summary?.running ?? []} profiles={profileCounts(summary, tile.key)} />
+                : <CountBreakdown
+                    note={tile.note}
+                    color={tile.color}
+                    sections={[
+                      { title: `${tile.label} by profile`, rows: profileCounts(summary, tile.key) },
+                      { title: `${tile.label} by site`, rows: siteCounts(summary, tile.key).map((row) => ({ key: row.site, label: row.site, count: row.count })) },
+                    ]}
+                  />}
             </Box>
           );
         })}
