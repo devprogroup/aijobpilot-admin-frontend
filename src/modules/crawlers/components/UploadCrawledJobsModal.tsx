@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -7,13 +7,11 @@ import {
   Flex,
   Icon,
   IconButton,
-  NativeSelect,
   Portal,
   Textarea,
 } from "@chakra-ui/react";
 import { FileJson, Upload, X } from "lucide-react";
 import { api } from "../../../api";
-import type { Crawler } from "../../../types";
 import { toaster } from "../../../components/ui/toaster";
 
 export function UploadCrawledJobsModal({
@@ -23,21 +21,12 @@ export function UploadCrawledJobsModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
-  const [crawlers, setCrawlers] = useState<Crawler[]>([]);
-  const [crawlerId, setCrawlerId] = useState("");
   const [mode, setMode] = useState<"text" | "file">("text");
   const [jobsJson, setJobsJson] = useState("");
   const [file, setFile] = useState<{ name: string; text: string; count: number | null } | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    api
-      .crawlers()
-      .then((r) => setCrawlers(r.crawlers))
-      .catch(() => setError("Unable to load crawlers"));
-  }, []);
 
   const onFileChosen = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const chosen = event.target.files?.[0];
@@ -63,10 +52,6 @@ export function UploadCrawledJobsModal({
     event.preventDefault();
     setError("");
 
-    if (!crawlerId) {
-      setError("Select a crawler");
-      return;
-    }
 
     if (mode === "file" && !file) {
       setError("Choose a JSON file");
@@ -87,10 +72,10 @@ export function UploadCrawledJobsModal({
 
     setSubmitting(true);
     try {
-      const result = await api.uploadCrawledJobs(Number(crawlerId), jobs);
+      const result = await api.uploadCrawledJobs(jobs);
       toaster.create({
         title: `Uploaded ${result.count} crawled job${result.count === 1 ? "" : "s"}.`,
-        description: "ats-engine has been notified to process them.",
+        description: "They will be fetched and processed shortly.",
         type: "success",
       });
       onUploaded();
@@ -137,30 +122,6 @@ export function UploadCrawledJobsModal({
                     {error}
                   </Box>
                 )}
-
-                <Field.Root required>
-                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-                    Crawler
-                  </Field.Label>
-                  <NativeSelect.Root>
-                    <NativeSelect.Field
-                      value={crawlerId}
-                      onChange={(event) => setCrawlerId(event.target.value)}
-                      borderColor="gray.200"
-                      fontSize="sm"
-                    >
-                      <option value="" disabled>
-                        Select a crawler
-                      </option>
-                      {crawlers.map((crawler) => (
-                        <option key={crawler.id} value={crawler.id}>
-                          {crawler.name} ({crawler.crawlerType?.name ?? "unknown type"})
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
-                </Field.Root>
 
                 <Field.Root required>
                   <Flex w="full" align="center" justify="space-between" gap="3">
