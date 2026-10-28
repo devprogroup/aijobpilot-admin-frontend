@@ -115,6 +115,7 @@ const applicationStatusTiles = [
   { key: "queued", label: "Queued", note: "Waiting now", color: "gray.700" },
   { key: "applying", label: "Applying", note: "Running now", color: "blue.600" },
   { key: "applied", label: "Applied", note: "Created today", color: "green.700" },
+  // Shown as "bot failures + waiting on customer" (see FailedSplit).
   { key: "failed", label: "Failed", note: "Created today", color: "red.600" },
   { key: "closed", label: "Closed", note: "Created today", color: "gray.500" },
   { key: "total", label: "Total", note: "Created today", color: "gray.700" },
@@ -167,8 +168,22 @@ function ApplyingNow({ running, profiles }: { running: RunningApplication[]; pro
   );
 }
 
-/** One line of a tile's hover list: a site or a profile with its count. */
-type BreakdownRow = { key: string; label: string; hint?: string; count: number };
+/** One line of a tile's hover list: a site or a profile with its count; needsUser (Failed only) is
+ * the part of count waiting on the customer, shown as "bot + customer". */
+type BreakdownRow = { key: string; label: string; hint?: string; count: number; needsUser?: number };
+
+/** A failed count as "X + Y": X failures the bot owns, Y failed rows waiting on the customer
+ * (action required: a date of birth, a transcript, ...). Just the count when nothing waits. */
+function FailedSplit({ count, needsUser, color = "red.600" }: { count: number; needsUser?: number; color?: string }) {
+  const customer = Math.min(count, Math.max(0, needsUser ?? 0));
+  if (customer === 0) return <>{count.toLocaleString()}</>;
+  return (
+    <Text as="span" title={`${(count - customer).toLocaleString()} bot failures + ${customer.toLocaleString()} waiting on the customer (action required) = ${count.toLocaleString()}`}>
+      <Text as="span" color={color}>{(count - customer).toLocaleString()}</Text>
+      <Text as="span" color="orange.500">{` + ${customer.toLocaleString()}`}</Text>
+    </Text>
+  );
+}
 
 /** A titled list of rows with counts; the hover title shows each row's share of the section. */
 function BreakdownSection({ title, rows, mt }: { title: string; rows: BreakdownRow[]; mt?: string }) {
@@ -182,7 +197,9 @@ function BreakdownSection({ title, rows, mt }: { title: string; rows: BreakdownR
             <Text as="span" fontWeight="semibold">{row.label}</Text>
             {row.hint && <Text as="span" color="gray.500"> · {row.hint}</Text>}
           </Text>
-          <Text color="gray.500" fontVariantNumeric="tabular-nums" title={`${Math.round((row.count / total) * 100)}% of ${total.toLocaleString()}`}>{row.count.toLocaleString()}</Text>
+          <Text color="gray.500" fontVariantNumeric="tabular-nums" title={`${Math.round((row.count / total) * 100)}% of ${total.toLocaleString()}`}>
+            {row.needsUser ? <FailedSplit count={row.count} needsUser={row.needsUser} color="gray.500" /> : row.count.toLocaleString()}
+          </Text>
         </Flex>
       ))}
     </Box>
@@ -202,6 +219,7 @@ function profileCounts(summary: ApplicationStatusSummary | null, key: Applicatio
     const current = counts.get(id);
     if (current) current.count += row.count;
     else counts.set(id, { key: id, label: row.profile || (row.profileId == null ? "No profile" : `Profile #${row.profileId}`), hint: row.user || undefined, count: row.count });
+    if (key === "failed" && row.needsUser) counts.get(id)!.needsUser = (counts.get(id)!.needsUser ?? 0) + row.needsUser;
   }
   return [...counts.values()].sort((left, right) => right.count - left.count);
 }
@@ -210,14 +228,19 @@ type ApplicationTileKey = (typeof applicationStatusTiles)[number]["key"];
 
 /** The sites behind a tile's count, most first: the live queue for Queued and Applying, today's
  * rows of the tile's status otherwise, and every status together for Total. */
-function siteCounts(summary: ApplicationStatusSummary | null, key: ApplicationTileKey): { site: string; count: number }[] {
+function siteCounts(summary: ApplicationStatusSummary | null, key: ApplicationTileKey): { site: string; count: number; needsUser?: number }[] {
   if (!summary) return [];
   const rows = key === "queued" || key === "applying"
     ? (summary.liveBySite ?? []).filter((row) => row.status === key)
     : (summary.bySite ?? []).filter((row) => key === "total" || row.status === key);
-  const counts = new Map<string, number>();
-  for (const row of rows) counts.set(row.site, (counts.get(row.site) ?? 0) + row.count);
-  return [...counts].map(([site, count]) => ({ site, count })).sort((left, right) => right.count - left.count);
+  const counts = new Map<string, { count: number; needsUser: number }>();
+  for (const row of rows) {
+    const current = counts.get(row.site) ?? { count: 0, needsUser: 0 };
+    current.count += row.count;
+    if (key === "failed") current.needsUser += row.needsUser ?? 0;
+    counts.set(row.site, current);
+  }
+  return [...counts].map(([site, { count, needsUser }]) => ({ site, count, ...(needsUser ? { needsUser } : {}) })).sort((left, right) => right.count - left.count);
 }
 
 /** A tile's note; hovering lists the tile's count per profile and per site, most first. */
@@ -270,7 +293,7 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
             <Box key={tile.key} borderRadius="xl" bg="gray.50" px="4" py="3">
               <Text fontSize="xs" fontWeight="semibold" color="gray.500">{tile.label}</Text>
               <Text fontSize="2xl" fontWeight="bold" color={tile.color} fontVariantNumeric="tabular-nums">
-                {count === null ? "—" : count.toLocaleString()}
+                {count === null ? "—" : tile.key === "failed" ? <FailedSplit count={count} needsUser={summary?.failedNeedingUser} color={tile.color} /> : count.toLocaleString()}
               </Text>
               {tile.key === "applying"
                 ? <ApplyingNow running={summary?.running ?? []} profiles={profileCounts(summary, tile.key)} />
@@ -279,7 +302,7 @@ function ApplicationStatusSection({ summary }: { summary: ApplicationStatusSumma
                     color={tile.color}
                     sections={[
                       { title: `${tile.label} by profile`, rows: profileCounts(summary, tile.key) },
-                      { title: `${tile.label} by site`, rows: siteCounts(summary, tile.key).map((row) => ({ key: row.site, label: row.site, count: row.count })) },
+                      { title: `${tile.label} by site`, rows: siteCounts(summary, tile.key).map((row) => ({ key: row.site, label: row.site, count: row.count, needsUser: row.needsUser })) },
                     ]}
                   />}
             </Box>

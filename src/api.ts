@@ -120,7 +120,7 @@ export const api = {
     return URL.createObjectURL(await response.blob());
   },
   failedApplicationStats: (from: string, to: string) =>
-    request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+    request<{ total: number; /** Of total, the failed rows waiting on the customer (action required). */ needsUser?: number; bySite: { siteName: string; applied: number; failed: number; failedNeedingUser?: number }[]; byStatus: { status: string; count: number; needsUser?: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   wakeApplicationWorker: () =>
     request<{ ok: true }>("/applications/worker/wake", { method: "POST" }),
   applicationStatusSummary: (from: string, to: string) =>

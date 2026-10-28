@@ -8,6 +8,18 @@ import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 const APPLIED_HUE = "#24845b";
 const FAILED_HUE = "#cf4646";
 const STATUS_ORDER: ApplicationStatus[] = ["queued", "applying", "applied", "failed"];
+/** A failed count as "X + Y": X failures the bot owns, Y failed rows waiting on the customer
+ * (action required). Just the count when nothing waits. */
+function FailedSplit({ count, needsUser }: { count: number; needsUser?: number }) {
+  const customer = Math.min(count, Math.max(0, needsUser ?? 0));
+  if (customer === 0) return <>{count.toLocaleString()}</>;
+  return (
+    <Text as="span" title={`${(count - customer).toLocaleString()} bot failures + ${customer.toLocaleString()} waiting on the customer (action required) = ${count.toLocaleString()}`}>
+      {(count - customer).toLocaleString()}
+      <Text as="span" color="orange.500">{` + ${customer.toLocaleString()}`}</Text>
+    </Text>
+  );
+}
 const RUNNING_MODES = [
   ["headless", "Headless"],
   ["headed", "Headed"],
@@ -67,18 +79,23 @@ export function ApplicationStatisticsPage() {
       <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" minW="56">
         <Text fontSize="sm" color="gray.500" mb="2">Total failed applications</Text>
         <Text fontSize="5xl" fontWeight="bold" lineHeight="1" color="#0b0b0b">
-          {loading ? "—" : (stats?.total ?? 0).toLocaleString()}
+          {loading ? "—" : <FailedSplit count={stats?.total ?? 0} needsUser={stats?.needsUser} />}
         </Text>
-        {(from || to) && <Text fontSize="xs" color="gray.500" mt="2">{from || "…"} to {to || "…"}</Text>}
+        <Text fontSize="xs" color="gray.500" mt="2">
+          {(stats?.needsUser ?? 0) > 0 ? "bot failures + waiting on customer" : "bot failures"}
+          {(from || to) && ` · ${from || "…"} to ${to || "…"}`}
+        </Text>
       </Box>
       {STATUS_ORDER.map((status) => {
-        const count = stats?.byStatus.find((row) => row.status === status)?.count ?? 0;
+        const row = stats?.byStatus.find((row) => row.status === status);
+        const count = row?.count ?? 0;
         return (
           <Box key={status} bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" p="6" minW="40">
             <Box mb="2"><StatusBadge status={status} /></Box>
             <Text fontSize="5xl" fontWeight="bold" lineHeight="1" color="#0b0b0b">
-              {loading ? "—" : count.toLocaleString()}
+              {loading ? "—" : status === "failed" ? <FailedSplit count={count} needsUser={row?.needsUser} /> : count.toLocaleString()}
             </Text>
+            {status === "failed" && !loading && (row?.needsUser ?? 0) > 0 && <Text fontSize="xs" color="gray.500" mt="2">bot failures + waiting on customer</Text>}
           </Box>
         );
       })}
@@ -126,7 +143,10 @@ export function ApplicationStatisticsPage() {
                       {row.applied > 0 && <Flex width={`${appliedPercent}%`} minW={appliedPercent < 2 ? "1px" : undefined} bg={APPLIED_HUE} align="center" justify="center" color="white" fontSize="xs" fontWeight="bold">{appliedPercent >= 15 ? `${appliedLabel}%` : ""}</Flex>}
                       {row.failed > 0 && <Flex width={`${failedPercent}%`} minW={failedPercent < 2 ? "1px" : undefined} bg={FAILED_HUE} align="center" justify="center" color="white" fontSize="xs" fontWeight="bold">{failedPercent >= 15 ? `${failedLabel}%` : ""}</Flex>}
                     </Flex>
-                    <Text mt="1" fontSize="xs" color="gray.500">{appliedLabel}% applied · {failedLabel}% failed ({total.toLocaleString()} total)</Text>
+                    <Text mt="1" fontSize="xs" color="gray.500">
+                      {appliedLabel}% applied · {failedLabel}% failed ({total.toLocaleString()} total)
+                      {(row.failedNeedingUser ?? 0) > 0 && <Text as="span" color="orange.500">{` · ${row.failedNeedingUser!.toLocaleString()} of the failed wait on the customer`}</Text>}
+                    </Text>
                   </Box>;
                 })()}
               </Flex>
