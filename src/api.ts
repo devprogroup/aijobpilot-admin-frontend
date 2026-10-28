@@ -218,8 +218,8 @@ export const api = {
     request<{ crawler: Crawler }>(`/crawlers/${id}/run`, { method: "POST" }),
   deleteCrawler: (id: number) =>
     request<void>(`/crawlers/${id}`, { method: "DELETE" }),
-  uploadCrawledJobs: (crawlerId: number, jobs: unknown[]) =>
-    request<{ crawlerRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
+  uploadCrawledJobs: (jobs: unknown[]) =>
+    request<{ crawlerRunId: number; count: number }>("/crawlers/crawled-jobs", {
       method: "POST",
       body: JSON.stringify({ jobs }),
     }),
