@@ -17,14 +17,10 @@ export interface ApplicationSite {
   wakeUpAt?: string | null;
 }
 export type ApplicationSitePayload = Omit<ApplicationSite, "id" | "sleepPeriod" | "wakeUpAt">;
-export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select" | "tenants-csv";
+export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select";
 export interface CrawlerTypeParameterOption { key:string; value:string }
-/** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values;
- * format: what a tenants-csv row describes (default "greenhouse"). */
-export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string>; format?:TenantCsvFormat }
-export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite" | "jobdiva" | "rippling" | "smartrecruiters" | "adp" | "paylocity" | "applytojob" | "ultipro" | "oraclecloud";
-/** A tenant CSV stored and parsed by admin-backend (POST /crawlers/tenants-csv). */
-export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
+/** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values. */
+export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string> }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
 /** titleFiltered: jobs the run's title filter dropped; units: companies / boards / sites handled out of
