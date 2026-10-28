@@ -17,14 +17,10 @@ export interface ApplicationSite {
   wakeUpAt?: string | null;
 }
 export type ApplicationSitePayload = Omit<ApplicationSite, "id" | "sleepPeriod" | "wakeUpAt">;
-export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select" | "tenants-csv";
+export type CrawlerParameterControlType = "input" | "textarea" | "single-select" | "multi-select";
 export interface CrawlerTypeParameterOption { key:string; value:string }
-/** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values;
- * format: what a tenants-csv row describes (default "greenhouse"). */
-export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string>; format?:TenantCsvFormat }
-export type TenantCsvFormat = "greenhouse" | "workday" | "ashby" | "jobvite" | "jobdiva" | "rippling" | "smartrecruiters" | "adp" | "paylocity" | "applytojob" | "ultipro" | "oraclecloud";
-/** A tenant CSV stored and parsed by admin-backend (POST /crawlers/tenants-csv). */
-export interface TenantsCsvUpload { uploadId:string; fileName:string|null; rowCount:number; tenantCount:number; skippedCount:number; skippedSamples:string[]; sample:string[] }
+/** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values. */
+export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string> }
 export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
 /** titleFiltered: jobs the run's title filter dropped; units: companies / boards / sites handled out of
@@ -41,7 +37,16 @@ export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:u
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
-export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; queued: number; applying: number }
+/** running: the applications in progress now, longest-running first (startedAt = when the run claimed it). */
+export interface RunningApplication { id: number; site: string; company: string; position: string; claimedBy: string | null; startedAt: string }
+/** failedBySite: the range's failed applications per site, most first (the Failed tile's hover). */
+export interface SiteStatusCount { site: string; status: string; count: number; /** Failed rows only: how many of count wait on the customer (action required). */ needsUser?: number }
+/** One profile's applications of one status; profileId null for rows without a profile. */
+export interface ProfileStatusCount { profileId: number | null; profile: string; user: string; status: string; count: number; /** Failed rows only: how many of count wait on the customer (action required). */ needsUser?: number }
+/** bySite / byProfile: the range's applications per site (per profile) and status; liveBySite /
+ * liveByProfile: the live queue (queued / applying) the same way. failedNeedingUser: of
+ * byStatus.failed, the rows waiting on the customer (action required) rather than on the bot. */
+export interface ApplicationStatusSummary { byStatus: Partial<Record<string, number>>; failedNeedingUser?: number; queued: number; applying: number; running?: RunningApplication[]; failedBySite?: { site: string; count: number }[]; bySite?: SiteStatusCount[]; liveBySite?: SiteStatusCount[]; byProfile?: ProfileStatusCount[]; liveByProfile?: ProfileStatusCount[] }
 /** Jobs of the crawler runs started in a range: crawled = all of them; inserted = new jobs stored,
  * duplicated = already stored, ignored = skipped (unsupported / closed / unparseable), failed =
  * fetch failed after retries, queued = still waiting in ats-engine. */

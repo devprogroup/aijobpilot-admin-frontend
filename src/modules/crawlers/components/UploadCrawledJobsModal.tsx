@@ -11,7 +11,7 @@ import {
   Portal,
   Textarea,
 } from "@chakra-ui/react";
-import { Upload, X } from "lucide-react";
+import { FileJson, Upload, X } from "lucide-react";
 import { api } from "../../../api";
 import type { Crawler } from "../../../types";
 import { toaster } from "../../../components/ui/toaster";
@@ -25,7 +25,9 @@ export function UploadCrawledJobsModal({
 }) {
   const [crawlers, setCrawlers] = useState<Crawler[]>([]);
   const [crawlerId, setCrawlerId] = useState("");
+  const [mode, setMode] = useState<"text" | "file">("text");
   const [jobsJson, setJobsJson] = useState("");
+  const [file, setFile] = useState<{ name: string; text: string; count: number | null } | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,11 +40,20 @@ export function UploadCrawledJobsModal({
   }, []);
 
   const onFileChosen = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const chosen = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!chosen) return;
+    setError("");
     try {
-      setJobsJson(await file.text());
+      const text = await chosen.text();
+      let count: number | null = null;
+      try {
+        const parsed: unknown = JSON.parse(text);
+        if (Array.isArray(parsed)) count = parsed.length;
+      } catch {
+        // Reported on submit.
+      }
+      setFile({ name: chosen.name, text, count });
     } catch {
       setError("Unable to read the selected file");
     }
@@ -57,11 +68,16 @@ export function UploadCrawledJobsModal({
       return;
     }
 
+    if (mode === "file" && !file) {
+      setError("Choose a JSON file");
+      return;
+    }
+
     let jobs: unknown;
     try {
-      jobs = JSON.parse(jobsJson);
+      jobs = JSON.parse(mode === "file" ? file!.text : jobsJson);
     } catch {
-      setError("Jobs must be valid JSON");
+      setError(mode === "file" ? "The file isn't valid JSON" : "Jobs must be valid JSON");
       return;
     }
     if (!Array.isArray(jobs) || jobs.length === 0) {
@@ -147,27 +163,87 @@ export function UploadCrawledJobsModal({
                 </Field.Root>
 
                 <Field.Root required>
-                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-                    Jobs (JSON array)
-                  </Field.Label>
-                  <Textarea
-                    rows={12}
-                    value={jobsJson}
-                    onChange={(event) => setJobsJson(event.target.value)}
-                    placeholder={
-                      '[\n' +
-                      '  {\n' +
-                      '    "url": "https://example.com/jobs/123",\n' +
-                      '    "source": "example",\n' +
-                      '    "positionName": "Frontend Engineer",\n' +
-                      '    "company": { "name": "Acme", "url": "", "logoUrl": "" }\n' +
-                      '  }\n' +
-                      ']'
-                    }
-                    borderColor="gray.200"
-                    fontFamily="mono"
-                    fontSize="xs"
-                  />
+                  <Flex w="full" align="center" justify="space-between" gap="3">
+                    <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                      Jobs (JSON array)
+                    </Field.Label>
+                    <Flex border="1px solid" borderColor="gray.200" borderRadius="lg" p="0.5" gap="0.5">
+                      {(["text", "file"] as const).map((option) => (
+                        <Button
+                          key={option}
+                          type="button"
+                          size="xs"
+                          variant="ghost"
+                          borderRadius="md"
+                          px="3"
+                          bg={mode === option ? "gray.100" : "transparent"}
+                          color={mode === option ? "gray.800" : "gray.500"}
+                          aria-pressed={mode === option}
+                          onClick={() => {
+                            setMode(option);
+                            setError("");
+                          }}
+                        >
+                          {option === "text" ? "Text" : "File"}
+                        </Button>
+                      ))}
+                    </Flex>
+                  </Flex>
+                  {mode === "text" ? (
+                    <Textarea
+                      rows={12}
+                      value={jobsJson}
+                      onChange={(event) => setJobsJson(event.target.value)}
+                      placeholder={
+                        '[\n' +
+                        '  {\n' +
+                        '    "url": "https://example.com/jobs/123",\n' +
+                        '    "source": "example",\n' +
+                        '    "positionName": "Frontend Engineer",\n' +
+                        '    "company": { "name": "Acme", "url": "", "logoUrl": "" }\n' +
+                        '  }\n' +
+                        ']'
+                      }
+                      borderColor="gray.200"
+                      fontFamily="mono"
+                      fontSize="xs"
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      w="full"
+                      variant="outline"
+                      h="auto"
+                      flexDirection="column"
+                      alignItems="center"
+                      justifyContent="center"
+                      gap="2"
+                      minH="44"
+                      border="2px dashed"
+                      borderColor="gray.200"
+                      borderRadius="xl"
+                      color="gray.500"
+                      fontSize="sm"
+                      cursor="pointer"
+                      _hover={{ borderColor: "gray.300", bg: "gray.50" }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Icon as={file ? FileJson : Upload} boxSize="6" />
+                      {file ? (
+                        <>
+                          <Box fontWeight="semibold" color="gray.700">{file.name}</Box>
+                          <Box fontSize="xs">
+                            {file.count === null
+                              ? "Not a JSON array"
+                              : `${file.count} job${file.count === 1 ? "" : "s"}`}{" "}
+                            · click to choose another file
+                          </Box>
+                        </>
+                      ) : (
+                        <Box>Choose a .json file (a JSON array of jobs)</Box>
+                      )}
+                    </Button>
+                  )}
                 </Field.Root>
 
                 <input
@@ -177,17 +253,6 @@ export function UploadCrawledJobsModal({
                   onChange={onFileChosen}
                   style={{ display: "none" }}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  alignSelf="flex-start"
-                  borderColor="gray.200"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Icon as={Upload} boxSize="4" />
-                  Load from file…
-                </Button>
 
                 <Flex justify="flex-end" gap="3" pt="2">
                   <Button

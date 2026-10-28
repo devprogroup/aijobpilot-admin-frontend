@@ -40,8 +40,6 @@ import type {
   AdminEmailSummary,
   InboundEmail,
   InboundEmailSummary,
-  TenantsCsvUpload,
-  TenantCsvFormat,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
@@ -120,7 +118,7 @@ export const api = {
     return URL.createObjectURL(await response.blob());
   },
   failedApplicationStats: (from: string, to: string) =>
-    request<{ total: number; bySite: { siteName: string; applied: number; failed: number }[]; byStatus: { status: string; count: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
+    request<{ total: number; /** Of total, the failed rows waiting on the customer (action required). */ needsUser?: number; bySite: { siteName: string; applied: number; failed: number; failedNeedingUser?: number }[]; byStatus: { status: string; count: number; needsUser?: number }[]; runningByMode: { headless: number; headed: number; "chrome-extension": number } }>(`/applications/failed/stats?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`),
   wakeApplicationWorker: () =>
     request<{ ok: true }>("/applications/worker/wake", { method: "POST" }),
   applicationStatusSummary: (from: string, to: string) =>
@@ -224,12 +222,6 @@ export const api = {
     request<{ crawlerRunId: number; count: number }>(`/crawlers/${crawlerId}/crawled-jobs`, {
       method: "POST",
       body: JSON.stringify({ jobs }),
-    }),
-  uploadTenantsCsv: (file: File, format: TenantCsvFormat = "greenhouse") =>
-    request<TenantsCsvUpload>(`/crawlers/tenants-csv?fileName=${encodeURIComponent(file.name)}&format=${format}`, {
-      method: "POST",
-      headers: { "Content-Type": "text/csv" },
-      body: file,
     }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),

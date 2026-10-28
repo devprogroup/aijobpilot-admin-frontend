@@ -14,9 +14,9 @@ import {
 } from "@chakra-ui/react";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType, CrawlerTypeParameter, TenantCsvFormat, TenantsCsvUpload } from "../../../types";
+import type { CrawlerType, CrawlerTypeParameter } from "../../../types";
 
-type ParameterValue = string | string[] | TenantsCsvUpload | null;
+type ParameterValue = string | string[];
 
 function labelFor(name: string): string {
   const spaced = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
@@ -24,7 +24,6 @@ function labelFor(name: string): string {
 }
 
 function defaultValueFor(definition: CrawlerTypeParameter): ParameterValue {
-  if (definition.controlType === "tenants-csv") return null;
   return definition.controlType === "multi-select" ? [] : definition.defaultValue ?? "";
 }
 
@@ -32,92 +31,6 @@ function defaultValueFor(definition: CrawlerTypeParameter): ParameterValue {
 function isVisible(definition: CrawlerTypeParameter, values: Record<string, ParameterValue>): boolean {
   return Object.entries(definition.showWhen ?? {}).every(([name, value]) => values[name] === value);
 }
-
-/** Uploads the picked CSV right away; admin-backend stores and parses it and reports the tenant count. */
-function TenantsCsvField({
-  label,
-  format,
-  value,
-  onChange,
-}: {
-  label: string;
-  format: TenantCsvFormat;
-  value: TenantsCsvUpload | null;
-  onChange: (value: TenantsCsvUpload | null) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function onFile(file: File | undefined) {
-    onChange(null);
-    setError("");
-    if (!file) return;
-    setUploading(true);
-    try {
-      onChange(await api.uploadTenantsCsv(file, format));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to upload the CSV");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <Field.Root>
-      <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
-        {label}
-      </Field.Label>
-      <Text fontSize="xs" color="gray.500">
-        {CSV_TIPS[format]}
-      </Text>
-      <Input
-        type="file"
-        accept=".csv,text/csv"
-        onChange={(event) => void onFile(event.target.files?.[0])}
-        borderColor="gray.200"
-        fontSize="sm"
-        pt="1.5"
-      />
-      {uploading && (
-        <Text fontSize="xs" color="gray.500">
-          Uploading and parsing…
-        </Text>
-      )}
-      {error && (
-        <Text fontSize="xs" color="red.600">
-          {error}
-        </Text>
-      )}
-      {value && (
-        <Text fontSize="xs" color="green.700">
-          {value.tenantCount} tenants parsed and loaded from {value.rowCount} rows
-          {value.skippedCount > 0
-            ? ` (${value.skippedCount} rows skipped, not ${format === "workday" ? "Workday career sites" : format === "ashby" ? "Ashby" : format === "jobvite" ? "Jobvite" : format === "jobdiva" ? "JobDiva" : format === "rippling" ? "Rippling" : format === "smartrecruiters" ? "SmartRecruiters" : format === "adp" ? "ADP companies" : format === "ultipro" ? "UltiPro job boards" : format === "oraclecloud" ? "Oracle Recruiting sites" : format === "paylocity" ? "Paylocity company GUIDs" : format === "applytojob" ? "ApplyToJob companies" : "Greenhouse"})`
-            : ""}
-          , e.g.{" "}
-          {value.sample.join(", ")}
-        </Text>
-      )}
-    </Field.Root>
-  );
-}
-
-/** What a tenant CSV of each format holds. One-value formats take any single column, with any
- * header or none; the others read named columns, or a single column of URLs. */
-const CSV_TIPS: Record<TenantCsvFormat, string> = {
-  greenhouse: "One column of board tokens, any header or none: stripe, greenhouse/stripe or https://job-boards.greenhouse.io/stripe.",
-  ashby: "One column of job board slugs, any header or none: openai, ashbyhq/openai or https://jobs.ashbyhq.com/openai.",
-  jobvite: "One column of career site slugs, any header or none: nutanix, jobvite/nutanix or https://jobs.jobvite.com/nutanix.",
-  jobdiva: "One column of portal tokens, any header or none: the a= value of a JobDiva URL, jobdiva/{token} or the URL itself.",
-  rippling: "One column of job board slugs, any header or none: acme, rippling/acme or https://ats.rippling.com/acme/jobs.",
-  smartrecruiters: "One column of company identifiers, any header or none: Intuitive, smartrecruiters/Intuitive or https://jobs.smartrecruiters.com/Intuitive.",
-  paylocity: "One column of company GUIDs, any header or none: the GUID, paylocity/{guid} or https://recruiting.paylocity.com/recruiting/jobs/All/{guid}. Numeric module ids don't work.",
-  applytojob: "One column of careers subdomains, any header or none: acme, applytojob/acme or https://acme.applytojob.com/apply.",
-  adp: "One column of company cids (GUIDs) or https://workforcenow.adp.com/...recruitment.html?cid=... URLs, any header or none. With headers: cid, plus an optional host (workforcenow.adp.com or workforcenow.cloud.adp.com).",
-  workday: "Columns host (acme.wd5.myworkdayjobs.com) and site (External), optional company and tenant -- or one column of career site URLs like https://acme.wd5.myworkdayjobs.com/en-US/External.",
-  ultipro: "Columns tenant (ACM1001) and board_id (the board GUID), optional host (recruiting.ultipro.com, recruiting2.ultipro.com or recruiting.ultipro.ca) -- or one column of job board URLs like https://recruiting.ultipro.com/ACM1001/JobBoard/{board_id}.",
-  oraclecloud: "Columns host (eeho.fa.us2.oraclecloud.com) and site_number (CX_1) -- or one column of careers page URLs like https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1.",
-};
 
 function ParameterField({
   name,
@@ -132,17 +45,6 @@ function ParameterField({
 }) {
   const label = labelFor(name);
   const options = definition.options ?? [];
-
-  if (definition.controlType === "tenants-csv") {
-    return (
-      <TenantsCsvField
-        label={label}
-        format={definition.format ?? "greenhouse"}
-        value={value && typeof value === "object" && !Array.isArray(value) ? value : null}
-        onChange={onChange}
-      />
-    );
-  }
 
   if (definition.controlType === "single-select") {
     return (
@@ -279,15 +181,6 @@ export function CreateCrawlerModal({
 
     for (const [name, definition] of parameterEntries) {
       const raw = values[name];
-
-      if (definition.controlType === "tenants-csv") {
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-          setError(`${labelFor(name)}: upload a CSV file`);
-          return null;
-        }
-        config[name] = { uploadId: raw.uploadId };
-        continue;
-      }
 
       if (definition.controlType === "multi-select") {
         const list = Array.isArray(raw) ? raw : [];
