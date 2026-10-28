@@ -6,7 +6,7 @@ import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { UploadCrawledJobsModal } from "./components/UploadCrawledJobsModal";
 
-const STATUS_OPTIONS = ["queued", "inserted", "ignored", "duplicated", "failed"];
+const STATUS_OPTIONS = ["created", "queued", "processing", "inserted", "ignored", "duplicated", "failed"];
 
 const time = (date: string) =>
   new Intl.DateTimeFormat(undefined, {
