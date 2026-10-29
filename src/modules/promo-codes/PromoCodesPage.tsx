@@ -19,6 +19,8 @@ function formatDate(value: string | null): string {
 export function PromoCodesPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  // Technical admins see every code too (the API returns them), but generate from their balance.
+  const seesAllCodes = isSuperAdmin || user?.role === "technical";
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [balance, setBalance] = useState(0);
   const [expireDays, setExpireDays] = useState<number | null>(null);
@@ -108,14 +110,14 @@ export function PromoCodesPage() {
       </Flex>
       <Box as="section" overflow="hidden" borderRadius="2xl" border="1px solid" borderColor="gray.200" bg="white" boxShadow="0 12px 35px rgba(24, 43, 34, .07)">
         <Flex align="center" justify="space-between" borderBottom="1px solid" borderColor="gray.100" p="5">
-          <Text m="0" fontWeight="bold">{isSuperAdmin ? "All promo codes" : "Your promo codes"}</Text>
+          <Text m="0" fontWeight="bold">{seesAllCodes ? "All promo codes" : "Your promo codes"}</Text>
           <Text fontSize="xs" color="gray.400">{codes.length} codes</Text>
         </Flex>
         <Box overflowX="auto">
           <Table.Root minW="900px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
-                {["Code", "Status", "Created", "Expires", "Used", ...(isSuperAdmin ? ["Created by"] : [])].map((label) => (
+                {["Code", "Status", "Created", "Expires", "Used", ...(seesAllCodes ? ["Created by"] : [])].map((label) => (
                   <Table.ColumnHeader key={label} px="4" py="3" fontSize="xs" textTransform="uppercase" color="gray.400">{label}</Table.ColumnHeader>
                 ))}
               </Table.Row>
@@ -137,7 +139,7 @@ export function PromoCodesPage() {
                   <Table.Cell px="4" py="3" whiteSpace="nowrap">{formatDate(code.createdAt)}</Table.Cell>
                   <Table.Cell px="4" py="3" whiteSpace="nowrap">{code.status === "used" ? "—" : formatDate(code.expiresAt)}</Table.Cell>
                   <Table.Cell px="4" py="3" whiteSpace="nowrap">{code.usedAt ? `${formatDate(code.usedAt)}${code.usedBy ? ` · user #${code.usedBy}` : ""}` : "—"}</Table.Cell>
-                  {isSuperAdmin && <Table.Cell px="4" py="3">{code.createdByEmail ?? `#${code.createdBy}`}</Table.Cell>}
+                  {seesAllCodes && <Table.Cell px="4" py="3">{code.createdByEmail ?? `#${code.createdBy}`}</Table.Cell>}
                 </Table.Row>
               ))}
             </Table.Body>
