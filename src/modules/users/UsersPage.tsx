@@ -5,6 +5,7 @@ import {
   NativeSelect,
   Flex,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   Table,
@@ -306,7 +307,7 @@ export function UsersPage() {
                   <Table.Cell px="5" py="4" color="gray.500">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4"><Flex gap="2"><Button size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} />Update password</Button><Button size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} />Delete</Button></Flex></Table.Cell>
+                  <Table.Cell px="5" py="4"><Flex gap="2"><IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} /></IconButton><IconButton aria-label={`Delete ${u.email}`} title="Delete" size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} /></IconButton></Flex></Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
