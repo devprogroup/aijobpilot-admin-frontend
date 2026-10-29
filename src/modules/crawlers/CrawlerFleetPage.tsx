@@ -20,6 +20,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CreateCrawlerModal } from "./components/CreateCrawlerModal";
 import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { onSocketEvent } from "../../services/websocket";
+import { isManualCrawler } from "./manual-crawler";
 
 interface CrawlerStatusChangedEvent {
   crawlerId: number;
@@ -499,6 +500,8 @@ export function CrawlerFleetPage() {
                     <Switch.Root
                       checked={crawler.active}
                       onCheckedChange={() => toggle(crawler)}
+                      disabled={isManualCrawler(crawler)}
+                      title={isManualCrawler(crawler) ? "Manual uploads never run on a schedule" : undefined}
                       colorPalette="green"
                     >
                       <Switch.HiddenInput />
@@ -510,17 +513,19 @@ export function CrawlerFleetPage() {
                   </Table.Cell>
                   <Table.Cell px="5" py="4" textAlign="right">
                     <Flex justify="flex-end" gap="2">
-                      <Button
-                        size="xs"
-                        disabled={!(crawler.status === "idle" && crawler.active) || deletingCrawlerId !== null}
-                        onClick={() => queue(crawler)}
-                        bg="gray.900"
-                        color="white"
-                        _hover={{ bg: "gray.700" }}
-                      >
-                        <Icon as={Play} boxSize="3.5" />
-                        Run
-                      </Button>
+                      {!isManualCrawler(crawler) && (
+                        <Button
+                          size="xs"
+                          disabled={!(crawler.status === "idle" && crawler.active) || deletingCrawlerId !== null}
+                          onClick={() => queue(crawler)}
+                          bg="gray.900"
+                          color="white"
+                          _hover={{ bg: "gray.700" }}
+                        >
+                          <Icon as={Play} boxSize="3.5" />
+                          Run
+                        </Button>
+                      )}
                       <Button
                         size="xs"
                         variant="outline"

@@ -20,6 +20,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { CrawlerRunProgressPanel } from "./components/CrawlerRunProgressPanel";
 import { toaster } from "../../components/ui/toaster";
+import { isManualCrawler } from "./manual-crawler";
 
 const ChakraRouterLink = chakra(Link);
 
@@ -200,16 +201,18 @@ export function CrawlerDetailsPage() {
           </Text>
         </Box>
         <Flex gap="3">
-          <Button
-            onClick={start}
-            disabled={starting || !(crawler.status === "idle" && crawler.active)}
-            bg="gray.900"
-            color="white"
-            _hover={{ bg: "gray.700" }}
-          >
-            <Icon as={Play} boxSize="4" />
-            {starting ? "Starting…" : "Start"}
-          </Button>
+          {!isManualCrawler(crawler) && (
+            <Button
+              onClick={start}
+              disabled={starting || !(crawler.status === "idle" && crawler.active)}
+              bg="gray.900"
+              color="white"
+              _hover={{ bg: "gray.700" }}
+            >
+              <Icon as={Play} boxSize="4" />
+              {starting ? "Starting…" : "Start"}
+            </Button>
+          )}
           <Button
             onClick={remove}
             disabled={deleting || crawler.status === "running"}
