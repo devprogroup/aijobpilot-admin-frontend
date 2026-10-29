@@ -35,7 +35,15 @@ export interface CrawledJobRow { id:number; createdAt:string; title:string; comp
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
-export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; _count?:{profiles?:number;applications?:number} }
+export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; /** Newest sign-in or activity event, list endpoint only. */ lastAccess?:UserLastAccess|null; _count?:{profiles?:number;applications?:number} }
+/** A client's most recent access event (client-backend user_access_events). */
+export interface UserLastAccess { at:string; ip:string|null; country:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null }
+/** One sign-up, sign-in (or failed one), password change or throttled activity of a client. ipSource: how the IP was found (cloudflare, cloudflare_unverified, proxy, socket). */
+export interface UserAccessEvent { id:number; event:string; detail:string|null; ip:string|null; ipSource:string|null; forwardedFor:string|null; userAgent:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; country:string|null; region:string|null; city:string|null; createdAt:string }
+/** A client's access history page plus its IPs (with other accounts seen on them) and devices over summaryDays. */
+export interface UserAccessHistory { events:UserAccessEvent[]; total:number; page:number; pageSize:number; summaryDays:number;
+  ips:{ ip:string; country:string|null; city:string|null; events:number; firstSeen:string; lastSeen:string; otherUsers:{ id:number; name:string|null; email:string|null }[] }[];
+  devices:{ browser:string|null; os:string|null; deviceType:string|null; device:string|null; events:number; ips:number; firstSeen:string; lastSeen:string }[] }
 /** Dashboard: status counts for applications created in the range, plus the live queue. */
 /** running: the applications in progress now, longest-running first (startedAt = when the run claimed it). */
 export interface RunningApplication { id: number; site: string; company: string; position: string; claimedBy: string | null; startedAt: string }

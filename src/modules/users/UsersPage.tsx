@@ -190,7 +190,7 @@ export function UsersPage() {
           </InputGroup>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="940px" size="sm">
+          <Table.Root minW="1100px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
                 <Table.ColumnHeader
@@ -256,11 +256,12 @@ export function UsersPage() {
                 >
                   Joined
                 </Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Last seen</Table.ColumnHeader>
                 <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Actions</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={8} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
+              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
               {!loading && visible.map((u) => (
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
@@ -306,6 +307,13 @@ export function UsersPage() {
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
                     {new Date(u.createdAt).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
+                    {u.lastAccess ? <>
+                      <Text>{new Date(u.lastAccess.at).toLocaleString()}</Text>
+                      <Text fontSize="xs" fontFamily="mono">{u.lastAccess.ip || "—"}{u.lastAccess.country ? ` · ${u.lastAccess.country}` : ""}</Text>
+                      <Text fontSize="xs">{[u.lastAccess.browser, u.lastAccess.os].filter(Boolean).join(" on ") || u.lastAccess.deviceType || ""}</Text>
+                    </> : "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4"><Flex gap="2"><IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} /></IconButton><IconButton aria-label={`Delete ${u.email}`} title="Delete" size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} /></IconButton></Flex></Table.Cell>
                 </Table.Row>

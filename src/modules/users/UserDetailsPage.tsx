@@ -8,6 +8,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
 import { UserNameDialog } from "./components/UserNameDialog";
 import { UserPaymentHistory } from "./components/UserPaymentHistory";
+import { UserAccessHistory } from "./components/UserAccessHistory";
 import { useAuth } from "../../auth/AuthContext";
 
 const time = (value: string | null) => value ? new Date(value).toLocaleString() : "—";
@@ -97,6 +98,7 @@ export function UserDetailsPage() {
         </Table.Body></Table.Root>
       </Box>
       <UserPaymentHistory key={id} userId={id} />
+      <UserAccessHistory key={`access-${id}`} userId={id} />
       {editing && <UserDetailsDialog user={details.user} onClose={() => setEditing(false)} onSaved={(user) => { update(user); setEditing(false); }} />}
       {editingName && <UserNameDialog user={details.user} onClose={() => setEditingName(false)} onSaved={(user) => { update(user); setEditingName(false); }} />}
     </>}
