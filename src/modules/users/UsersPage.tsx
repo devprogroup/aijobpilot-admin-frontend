@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Badge,
   Box,
   Button,
   NativeSelect,
@@ -190,7 +191,7 @@ export function UsersPage() {
           </InputGroup>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="1100px" size="sm">
+          <Table.Root minW="1600px" size="sm">
             <Table.Header bg="gray.50">
               <Table.Row>
                 <Table.ColumnHeader
@@ -257,11 +258,14 @@ export function UsersPage() {
                   Joined
                 </Table.ColumnHeader>
                 <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Last seen</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">IP / Location</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Browser / Device</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Fingerprint</Table.ColumnHeader>
                 <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Actions</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={9} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
+              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
               {!loading && visible.map((u) => (
                 <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
@@ -309,10 +313,29 @@ export function UsersPage() {
                     {new Date(u.createdAt).toLocaleDateString()}
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.500">
+                    {u.lastAccess ? new Date(u.lastAccess.at).toLocaleString() : "—"}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
                     {u.lastAccess ? <>
-                      <Text>{new Date(u.lastAccess.at).toLocaleString()}</Text>
-                      <Text fontSize="xs" fontFamily="mono">{u.lastAccess.ip || "—"}{u.lastAccess.country ? ` · ${u.lastAccess.country}` : ""}</Text>
-                      <Text fontSize="xs">{[u.lastAccess.browser, u.lastAccess.os].filter(Boolean).join(" on ") || u.lastAccess.deviceType || ""}</Text>
+                      <Text fontFamily="mono">{u.lastAccess.ip || "—"}</Text>
+                      <Text fontSize="xs">{[u.lastAccess.city, u.lastAccess.region, u.lastAccess.country].filter(Boolean).join(", ") || "Location unknown"}</Text>
+                      <Text fontSize="xs">{u.lastAccess.ipCount} IP{u.lastAccess.ipCount === 1 ? "" : "s"} in 90 days</Text>
+                      {u.lastAccess.otherAccounts > 0 && <Badge colorPalette="orange" title="Other accounts used this IP in the last 90 days">Shared with {u.lastAccess.otherAccounts}</Badge>}
+                    </> : "—"}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
+                    {u.lastAccess ? <>
+                      <Text>{u.lastAccess.browser || "Unknown browser"}</Text>
+                      <Text fontSize="xs">{u.lastAccess.os || "Unknown OS"}</Text>
+                      <Text fontSize="xs" textTransform="capitalize">{[u.lastAccess.deviceType, u.lastAccess.device].filter(Boolean).join(" · ")}</Text>
+                    </> : "—"}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4" color="gray.500">
+                    {u.lastFingerprint ? <>
+                      <Text fontFamily="mono" title={u.lastFingerprint.visitorId}>{u.lastFingerprint.visitorId.slice(0, 12)}</Text>
+                      <Text fontSize="xs">{u.lastFingerprint.timezone || "Timezone unknown"}</Text>
+                      <Text fontSize="xs">{u.lastFingerprint.count} fingerprint{u.lastFingerprint.count === 1 ? "" : "s"}</Text>
+                      {u.lastFingerprint.otherAccounts > 0 && <Badge colorPalette="red" title="Other accounts reported this fingerprint">Shared with {u.lastFingerprint.otherAccounts}</Badge>}
                     </> : "—"}
                   </Table.Cell>
                   <Table.Cell px="5" py="4"><Flex gap="2"><IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} /></IconButton><IconButton aria-label={`Delete ${u.email}`} title="Delete" size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} /></IconButton></Flex></Table.Cell>
