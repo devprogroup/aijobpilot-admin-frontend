@@ -13,6 +13,7 @@ import type {
   UpdateCrawlerPayload,
   User,
   UserDetails,
+  UserAccessHistory,
   ClientDeletionResult,
   AdminProfileDetails,
   AdminApplication,
@@ -268,6 +269,7 @@ export const api = {
     payments: { id: number; amount: number; network: "erc20" | "bep20" | null; txHash: string | null; status: string | null; createdAt: string }[];
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
+  userAccessEvents: (id: number, page: number) => request<UserAccessHistory>(`/users/${id}/access-events?page=${page}`),
   updateUser: (id: number, payload: { name?: string | null; credit?: number }) =>
     request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateUserPassword: (id: number, password: string) =>
