@@ -1,32 +1,14 @@
-import { Box, SimpleGrid, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
 
 export function UserStats({ stats }: { stats: Array<[string, number]> }) {
   return (
-    <SimpleGrid columns={{ base: 1, sm: 2, lg: stats.length }} gap="4" mb="6">
+    <Flex as="dl" m="0" gap="5" wrap="wrap">
       {stats.map(([label, value]) => (
-        <Box
-          key={label}
-          borderRadius="2xl"
-          border="1px solid"
-          borderColor="gray.200"
-          bg="white"
-          p="5"
-          boxShadow="0 12px 35px rgba(24, 43, 34, .07)"
-        >
-          <Text
-            fontSize="xs"
-            fontWeight="semibold"
-            letterSpacing="wider"
-            textTransform="uppercase"
-            color="gray.400"
-          >
-            {label}
-          </Text>
-          <Text mt="2" fontSize="3xl" fontWeight="bold">
-            {value}
-          </Text>
-        </Box>
+        <Flex key={label} align="baseline" gap="1.5">
+          <Text as="dd" m="0" order={1} fontSize="sm" fontWeight="bold" fontVariantNumeric="tabular-nums">{value.toLocaleString()}</Text>
+          <Text as="dt" order={2} fontSize="xs" color="gray.500">{label}</Text>
+        </Flex>
       ))}
-    </SimpleGrid>
+    </Flex>
   );
 }

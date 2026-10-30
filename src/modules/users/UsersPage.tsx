@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Badge,
   Box,
@@ -12,7 +12,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { KeyRound, Search, Trash2, Users } from "lucide-react";
+import { Coins, KeyRound, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
@@ -22,6 +22,40 @@ import { UserPasswordDialog } from "./components/UserPasswordDialog";
 import { UserNameDialog } from "./components/UserNameDialog";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
+
+const PAGE_SIZE = 50;
+/** Fixed widths so the whole table fits a laptop screen and long values are cut, not pushed aside. */
+const COLUMNS: Array<[label: string, width: string]> = [
+  ["Client", "184px"], ["Status", "100px"], ["Credit", "62px"], ["Profiles", "84px"], ["Apps", "46px"], ["Seen / Joined", "88px"],
+  ["IP / Location", "160px"], ["Browser / Device", "130px"], ["Fingerprint", "130px"], ["Actions", "118px"],
+];
+const STATUS_COLORS: Record<User["status"], string> = { active: "green.700", inactive: "gray.500", suspended: "red.600" };
+const LINK_STYLE = { color: "#15803d", textDecoration: "underline" };
+
+function timeAgo(value: string) {
+  const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+  if (minutes < 43200) return `${Math.floor(minutes / 1440)}d ago`;
+  return new Date(value).toLocaleDateString();
+}
+
+const locationOf = ({ city, region, country }: { city: string | null; region: string | null; country: string | null }) =>
+  [city, region, country].filter(Boolean).join(", ");
+
+/** Two tight lines; long values are cut and shown in full on hover. */
+function Lines({ top, bottom, title }: { top: ReactNode; bottom?: ReactNode; title?: string }) {
+  return <Box title={title} minW="0" lineHeight="1.3">
+    <Flex align="center" gap="1" overflow="hidden" whiteSpace="nowrap">{top}</Flex>
+    {bottom && <Text truncate color="gray.500" fontSize="11px">{bottom}</Text>}
+  </Box>;
+}
+
+function SharedBadge({ count, palette, title }: { count: number; palette: string; title: string }) {
+  if (count < 1) return null;
+  return <Badge size="xs" flexShrink={0} colorPalette={palette} title={title}>+{count}</Badge>;
+}
 
 export function UsersPage() {
   // Technical admins can view clients; only super admins change them (the API enforces it).
@@ -34,6 +68,7 @@ export function UsersPage() {
   const [revision, setRevision] = useState(0);
   const [pending, setPending] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [sharedFilter, setSharedFilter] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<User | null>(null);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
@@ -50,18 +85,19 @@ export function UsersPage() {
       .finally(() => setLoading(false));
   }, [revision]);
 
-  const shown = useMemo(
-    () =>
-      users.filter(
-        (x) => (!statusFilter || x.status === statusFilter) && (
-          (x.name || "").toLowerCase().includes(query.toLowerCase()) ||
-          (x.username || "").toLowerCase().includes(query.toLowerCase()) ||
-          (x.email || "").toLowerCase().includes(query.toLowerCase()) ||
-          String(x.id).includes(query.trim()) ||
-          (query.trim() !== "" && (x.profileIds ?? []).some((id) => String(id).includes(query.trim())))),
-      ),
-    [users, query, statusFilter],
-  );
+  const shown = useMemo(() => {
+    const search = query.trim().toLowerCase();
+    return users.filter((x) => {
+      if (statusFilter && x.status !== statusFilter) return false;
+      if (sharedFilter === "ip" && !x.lastAccess?.otherAccounts) return false;
+      if (sharedFilter === "fingerprint" && !x.lastFingerprint?.otherAccounts) return false;
+      if (!search) return true;
+      return [x.name, x.username, x.email, String(x.id), x.lastAccess?.ip, x.lastAccess?.city, x.lastAccess?.region, x.lastAccess?.country,
+        x.lastAccess?.browser, x.lastAccess?.os, x.lastFingerprint?.visitorId, x.lastFingerprint?.timezone]
+        .some((value) => value?.toLowerCase().includes(search))
+        || (x.profileIds ?? []).some((id) => String(id).includes(search));
+    });
+  }, [users, query, statusFilter, sharedFilter]);
 
   const deleteUser = async (u: User) => {
     const name = u.username || u.email || `#${u.id}`;
@@ -90,262 +126,134 @@ export function UsersPage() {
       setError(error instanceof Error ? error.message : "Unable to update user status");
     } finally { setPending(null); }
   };
-  const pages = Math.max(1, Math.ceil(shown.length / 20));
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
-  const visible = shown.slice((currentPage - 1) * 20, currentPage * 20);
+  const visible = shown.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const stats: [string, number][] = [
-    ["Total users", users.length],
-    ["Active users", users.filter((x) => x.status === "active").length],
+    ["Clients", users.length],
+    ["Active", users.filter((x) => x.status === "active").length],
     ["Profiles", users.reduce((total, user) => total + (user.profileIds?.length ?? 0), 0)],
     ["Active profiles", users.reduce((total, user) => total + (user.activeProfileIds?.length ?? 0), 0)],
-    [
-      "Applications",
-      users.reduce((total, user) => total + (user._count?.applications ?? 0), 0),
-    ],
+    ["Applications", users.reduce((total, user) => total + (user._count?.applications ?? 0), 0)],
+    ["Shared devices", users.filter((user) => user.lastFingerprint?.otherAccounts).length],
   ];
 
   return (
     <>
-      <Box as="header" mb="8">
-        <Text
-          mb="2"
-          fontSize="xs"
-          fontWeight="bold"
-          letterSpacing="0.18em"
-          textTransform="uppercase"
-          color="#498366"
-        >
-          People
-        </Text>
-        <Text
-          as="h1"
-          m="0"
-          fontSize="3xl"
-          fontWeight="bold"
-          letterSpacing="tight"
-        >
-          Clients
-        </Text>
-        <Text mt="2" fontSize="sm" color="gray.500">
-          Manage client accounts and review their account activity.
-        </Text>
-      </Box>
-
-      {error && (
-        <Box
-          mb="5"
-          borderRadius="xl"
-          bg="red.50"
-          p="4"
-          fontSize="sm"
-          color="red.700"
-        >
-          {error}
-        </Box>
-      )}
-      {message && <Box mb="5" role="status" borderRadius="xl" bg="green.50" p="4" fontSize="sm" color="green.700">{message}</Box>}
-
-      <UserStats stats={stats} />
-      <Flex gap="3" mb="4">
-        <Button variant="outline" disabled={loading || pending !== null} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
-        <NativeSelect.Root maxW="48"><NativeSelect.Field aria-label="Filter users by status" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
-          <option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
-        </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+      <Flex as="header" mb="4" align="center" justify="space-between" gap="4" wrap="wrap">
+        <Text as="h1" m="0" fontSize="2xl" fontWeight="bold" letterSpacing="tight">Clients</Text>
+        <UserStats stats={stats} />
       </Flex>
 
-      <Box
-        as="section"
-        overflow="hidden"
-        borderRadius="2xl"
-        border="1px solid"
-        borderColor="gray.200"
-        bg="white"
-        boxShadow="0 12px 35px rgba(24, 43, 34, .07)"
-      >
-        <Flex
-          flexWrap="wrap"
-          align="center"
-          justify="space-between"
-          gap="3"
-          borderBottom="1px solid"
-          borderColor="gray.100"
-          p="5"
-        >
-          <Flex align="center" gap="2">
-            <Icon as={Users} boxSize="19px" />
-            <Text fontWeight="bold">All users</Text>
-          </Flex>
-          <InputGroup
-            startElement={<Icon as={Search} boxSize="4" color="gray.400" />}
-            maxW="44"
-          >
+      {error && <Box mb="3" borderRadius="lg" bg="red.50" px="3" py="2" fontSize="sm" color="red.700">{error}</Box>}
+      {message && <Box mb="3" role="status" borderRadius="lg" bg="green.50" px="3" py="2" fontSize="sm" color="green.700">{message}</Box>}
+
+      <Box as="section" overflow="hidden" borderRadius="xl" border="1px solid" borderColor="gray.200" bg="white">
+        <Flex wrap="wrap" align="center" gap="2" borderBottom="1px solid" borderColor="gray.100" p="2.5">
+          <InputGroup flex="1" minW="240px" maxW="420px" startElement={<Icon as={Search} boxSize="3.5" color="gray.400" />}>
             <Input
+              size="xs"
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-              aria-label="Search users by name, username, email or ID"
-              placeholder="Search users, user ID or profile ID"
+              aria-label="Search clients by name, email, ID, profile ID, IP, location, browser or fingerprint"
+              placeholder="Search name, email, ID, IP, location, fingerprint"
               bg="gray.100"
               border="none"
-              fontSize="sm"
+              fontSize="xs"
             />
           </InputGroup>
+          <NativeSelect.Root size="xs" maxW="130px"><NativeSelect.Field aria-label="Filter clients by status" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+            <option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
+          </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+          <NativeSelect.Root size="xs" maxW="150px"><NativeSelect.Field aria-label="Filter clients sharing an IP or device" value={sharedFilter} onChange={(event) => { setSharedFilter(event.target.value); setPage(1); }}>
+            <option value="">All clients</option><option value="ip">Shared IP</option><option value="fingerprint">Shared fingerprint</option>
+          </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+          <IconButton aria-label="Refresh clients" title="Refresh" size="xs" variant="outline" disabled={loading || pending !== null} onClick={() => setRevision((value) => value + 1)}><RefreshCw size={13} /></IconButton>
         </Flex>
         <Box overflowX="auto">
-          <Table.Root minW="1600px" size="sm">
+          <Table.Root minW="1102px" size="sm" fontSize="xs" tableLayout="fixed">
             <Table.Header bg="gray.50">
               <Table.Row>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  User
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Email
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Status
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Credit
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Profiles
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Applications
-                </Table.ColumnHeader>
-                <Table.ColumnHeader
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  color="gray.400"
-                  px="5"
-                  py="3"
-                >
-                  Joined
-                </Table.ColumnHeader>
-                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Last seen</Table.ColumnHeader>
-                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">IP / Location</Table.ColumnHeader>
-                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Browser / Device</Table.ColumnHeader>
-                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Fingerprint</Table.ColumnHeader>
-                <Table.ColumnHeader fontSize="xs" textTransform="uppercase" color="gray.400" px="5" py="3">Actions</Table.ColumnHeader>
+                {COLUMNS.map(([label, width]) => <Table.ColumnHeader key={label} w={width} fontSize="10px" letterSpacing="wide" textTransform="uppercase" color="gray.500" px="2" py="1.5" whiteSpace="nowrap" textAlign={label === "Credit" || label === "Apps" ? "right" : undefined}>{label}</Table.ColumnHeader>)}
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">{loading ? "Loading users..." : error ? "Unable to load users. Use Refresh to retry." : users.length ? "No users match your filters." : "No users yet."}</Table.Cell></Table.Row>}
-              {!loading && visible.map((u) => (
-                <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
-                  <Table.Cell px="5" py="4">
-                    <Text fontWeight="semibold">{u.name || u.username || "—"}</Text>
-                    <Text fontSize="xs" color="gray.500" fontFamily="mono">ID {u.id}</Text>
-                    {u.name && (
-                      <Text fontSize="xs" color="gray.400">
-                        {u.username}
-                      </Text>
-                    )}
-                    <Link to={`/users/clients/${u.id}`} style={{ color: "#15803d", textDecoration: "underline" }}>View details</Link>
-                    {canEditClients && <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setSelected(u)}>Edit</Button>}
-                    {canEditClients && <Button size="xs" variant="plain" disabled={pending !== null} onClick={() => setNameUser(u)}>Edit name</Button>}
+              {(loading || !visible.length) && <Table.Row><Table.Cell colSpan={COLUMNS.length} p="6" textAlign="center">{loading ? "Loading clients..." : error ? "Unable to load clients. Use Refresh to retry." : users.length ? "No clients match your filters." : "No clients yet."}</Table.Cell></Table.Row>}
+              {!loading && visible.map((u) => {
+                const access = u.lastAccess;
+                const fingerprint = u.lastFingerprint;
+                const profileIds = u.profileIds ?? [];
+                return <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
+                  <Table.Cell px="2" py="1">
+                    <Lines
+                      title={[u.username, u.email, u.emailVerified ? "Email verified" : "Email not verified", `Joined ${new Date(u.createdAt).toLocaleDateString()}`].filter(Boolean).join("\n")}
+                      top={<><Link to={`/users/clients/${u.id}`} style={{ ...LINK_STYLE, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || u.username || "—"}</Link><Text as="span" flexShrink={0} color="gray.400" fontFamily="mono" fontSize="11px">#{u.id}</Text></>}
+                      bottom={<>{u.email || "No email"}{u.email && !u.emailVerified && <Text as="span" color="orange.600"> · unverified</Text>}</>}
+                    />
                   </Table.Cell>
-                  <Table.Cell
-                    px="5"
-                    py="4"
-                    textTransform="capitalize"
-                    color="gray.500"
-                  >
-                    <Text textTransform="none">{u.email || "—"}</Text>
-                    {u.email && <Text fontSize="xs">{u.emailVerified ? "Verified" : "Unverified"}</Text>}
-                  </Table.Cell>
-                  <Table.Cell px="5" py="4">
-                    <NativeSelect.Root size="sm" disabled={!canEditClients || pending !== null}><NativeSelect.Field aria-label={`Status for ${u.username}`} value={u.status} onChange={(event) => void change(u, event.target.value as User["status"])}>
+                  <Table.Cell px="2" py="1">
+                    <NativeSelect.Root size="xs" disabled={!canEditClients || pending !== null}><NativeSelect.Field h="6" pl="1.5" pr="5" fontSize="11px" aria-label={`Status for ${u.username}`} value={u.status} color={STATUS_COLORS[u.status]} onChange={(event) => void change(u, event.target.value as User["status"])}>
                       <option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
                     </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
                   </Table.Cell>
-                  <Table.Cell px="5" py="4">
-                    {u.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                  <Table.Cell px="2" py="1" textAlign="right" fontVariantNumeric="tabular-nums" title={String(u.credit)}>
+                    {u.credit.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4">
-                    <Text>{u.profileIds?.length ?? 0} total</Text>
-                    <Text fontSize="xs" color="gray.500">{u.activeProfileIds?.length ?? 0} active</Text>
-                    {(u.profileIds?.length ?? 0) > 0 && (
-                      <Flex gap="2" wrap="wrap" fontSize="xs" fontFamily="mono">
-                        {u.profileIds!.map((id) => <Link key={id} to={`/users/clients/${u.id}/profiles/${id}`} aria-label={`View profile #${id}`} style={{ color: "#15803d", textDecoration: "underline" }}>#{id}</Link>)}
-                      </Flex>
-                    )}
+                  <Table.Cell px="2" py="1">
+                    <Lines
+                      top={<>{u.activeProfileIds?.length ?? 0}/{profileIds.length}<Text as="span" color="gray.500">active</Text></>}
+                      bottom={profileIds.length > 0 && <>
+                        {profileIds.slice(0, 2).map((id, index) => <span key={id}>{index > 0 && " "}<Link to={`/users/clients/${u.id}/profiles/${id}`} aria-label={`View profile #${id}`} style={LINK_STYLE}>#{id}</Link></span>)}
+                        {profileIds.length > 2 && <> <Link to={`/users/clients/${u.id}`} style={LINK_STYLE}>+{profileIds.length - 2}</Link></>}
+                      </>}
+                    />
                   </Table.Cell>
-                  <Table.Cell px="5" py="4">
-                    {u._count?.applications ?? 0}
+                  <Table.Cell px="2" py="1" textAlign="right" fontVariantNumeric="tabular-nums">{u._count?.applications ?? 0}</Table.Cell>
+                  <Table.Cell px="2" py="1" whiteSpace="nowrap">
+                    <Lines
+                      title={access ? new Date(access.at).toLocaleString() : undefined}
+                      top={access ? timeAgo(access.at) : <Text as="span" color="gray.400">Not yet</Text>}
+                      bottom={new Date(u.createdAt).toLocaleDateString()}
+                    />
                   </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {new Date(u.createdAt).toLocaleDateString()}
+                  <Table.Cell px="2" py="1">
+                    {access ? <Lines
+                      title={[access.ip, locationOf(access), `${access.ipCount} IP(s) in 90 days`, access.otherAccounts ? `${access.otherAccounts} other account(s) on this IP` : ""].filter(Boolean).join("\n")}
+                      top={<><Text as="span" truncate fontFamily="mono">{access.ip || "—"}</Text><SharedBadge count={access.otherAccounts} palette="orange" title={`${access.otherAccounts} other account(s) used this IP in the last 90 days`} /></>}
+                      bottom={`${access.ipCount > 1 ? `${access.ipCount} IPs · ` : ""}${locationOf(access) || "Location unknown"}`}
+                    /> : <Text color="gray.400">—</Text>}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {u.lastAccess ? new Date(u.lastAccess.at).toLocaleString() : "—"}
+                  <Table.Cell px="2" py="1">
+                    {access ? <Lines
+                      top={<Text as="span" truncate>{access.browser || "Unknown browser"}</Text>}
+                      bottom={<Text as="span" textTransform="capitalize">{[access.os || "Unknown OS", access.device || access.deviceType].filter(Boolean).join(" · ")}</Text>}
+                    /> : <Text color="gray.400">—</Text>}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {u.lastAccess ? <>
-                      <Text fontFamily="mono">{u.lastAccess.ip || "—"}</Text>
-                      <Text fontSize="xs">{[u.lastAccess.city, u.lastAccess.region, u.lastAccess.country].filter(Boolean).join(", ") || "Location unknown"}</Text>
-                      <Text fontSize="xs">{u.lastAccess.ipCount} IP{u.lastAccess.ipCount === 1 ? "" : "s"} in 90 days</Text>
-                      {u.lastAccess.otherAccounts > 0 && <Badge colorPalette="orange" title="Other accounts used this IP in the last 90 days">Shared with {u.lastAccess.otherAccounts}</Badge>}
-                    </> : "—"}
+                  <Table.Cell px="2" py="1">
+                    {fingerprint ? <Lines
+                      title={[fingerprint.visitorId, fingerprint.gpuRenderer, fingerprint.screen, `${fingerprint.count} fingerprint(s) on this account`, fingerprint.otherAccounts ? `Also on ${fingerprint.otherAccounts} other account(s)` : ""].filter(Boolean).join("\n")}
+                      top={<><Text as="span" truncate fontFamily="mono">{fingerprint.visitorId.slice(0, 10)}</Text>{fingerprint.count > 1 && <Text as="span" flexShrink={0} color="gray.500" fontSize="11px">×{fingerprint.count}</Text>}<SharedBadge count={fingerprint.otherAccounts} palette="red" title={`${fingerprint.otherAccounts} other account(s) reported this fingerprint`} /></>}
+                      bottom={fingerprint.timezone || "Timezone unknown"}
+                    /> : <Text color="gray.400">Not captured</Text>}
                   </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {u.lastAccess ? <>
-                      <Text>{u.lastAccess.browser || "Unknown browser"}</Text>
-                      <Text fontSize="xs">{u.lastAccess.os || "Unknown OS"}</Text>
-                      <Text fontSize="xs" textTransform="capitalize">{[u.lastAccess.deviceType, u.lastAccess.device].filter(Boolean).join(" · ")}</Text>
-                    </> : "—"}
+                  <Table.Cell px="2" py="1">
+                    <Flex gap="0.5">
+                      <IconButton aria-label={`Edit name of ${u.email}`} title="Edit name" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => setNameUser(u)}><Pencil size={13} /></IconButton>
+                      <IconButton aria-label={`Edit credit of ${u.email}`} title="Edit credit" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => setSelected(u)}><Coins size={13} /></IconButton>
+                      <IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={13} /></IconButton>
+                      <IconButton aria-label={`Delete ${u.email}`} title="Delete" size="2xs" variant="ghost" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={13} /></IconButton>
+                    </Flex>
                   </Table.Cell>
-                  <Table.Cell px="5" py="4" color="gray.500">
-                    {u.lastFingerprint ? <>
-                      <Text fontFamily="mono" title={u.lastFingerprint.visitorId}>{u.lastFingerprint.visitorId.slice(0, 12)}</Text>
-                      <Text fontSize="xs">{u.lastFingerprint.timezone || "Timezone unknown"}</Text>
-                      <Text fontSize="xs">{u.lastFingerprint.count} fingerprint{u.lastFingerprint.count === 1 ? "" : "s"}</Text>
-                      {u.lastFingerprint.otherAccounts > 0 && <Badge colorPalette="red" title="Other accounts reported this fingerprint">Shared with {u.lastFingerprint.otherAccounts}</Badge>}
-                    </> : "—"}
-                  </Table.Cell>
-                  <Table.Cell px="5" py="4"><Flex gap="2"><IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="sm" variant="outline" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={14} /></IconButton><IconButton aria-label={`Delete ${u.email}`} title="Delete" size="sm" variant="outline" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={14} /></IconButton></Flex></Table.Cell>
-                </Table.Row>
-              ))}
+                </Table.Row>;
+              })}
             </Table.Body>
           </Table.Root>
         </Box>
+        <Flex justify="space-between" align="center" gap="3" wrap="wrap" borderTop="1px solid" borderColor="gray.100" px="2.5" py="2">
+          <Text fontSize="xs" color="gray.500">{shown.length} client{shown.length === 1 ? "" : "s"} · Page {currentPage} of {pages}</Text>
+          <Flex gap="1.5" align="center"><PagePicker page={currentPage} totalPages={pages} onChange={setPage} disabled={loading} /><Button size="xs" fontSize="xs" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="xs" fontSize="xs" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex>
+        </Flex>
       </Box>
-      <Flex mt="4" justify="space-between" align="center" gap="3" wrap="wrap"><Text fontSize="sm">{shown.length} users · Page {currentPage} of {pages}</Text><Flex gap="2" align="center"><PagePicker page={currentPage} totalPages={pages} onChange={setPage} disabled={loading} /><Button size="sm" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex></Flex>
       {selected && <UserDetailsDialog user={selected} onClose={() => setSelected(null)} onSaved={(user) => {
         setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
         setSelected(null);
