@@ -16,6 +16,7 @@ import { Coins, KeyRound, Pencil, RefreshCw, Search, Trash2 } from "lucide-react
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
+import { FingerprintHoverCard } from "./components/FingerprintHoverCard";
 import { UserStats } from "./components/UserStats";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
 import { UserPasswordDialog } from "./components/UserPasswordDialog";
@@ -93,7 +94,7 @@ export function UsersPage() {
       if (sharedFilter === "fingerprint" && !x.lastFingerprint?.otherAccounts) return false;
       if (!search) return true;
       return [x.name, x.username, x.email, String(x.id), x.lastAccess?.ip, x.lastAccess?.city, x.lastAccess?.region, x.lastAccess?.country,
-        x.lastAccess?.browser, x.lastAccess?.os, x.lastFingerprint?.visitorId, x.lastFingerprint?.timezone]
+        x.lastAccess?.browser, x.lastAccess?.os, x.lastFingerprint?.visitorId, x.lastFingerprint?.details.timezone]
         .some((value) => value?.toLowerCase().includes(search))
         || (x.profileIds ?? []).some((id) => String(id).includes(search));
     });
@@ -230,11 +231,10 @@ export function UsersPage() {
                     /> : <Text color="gray.400">—</Text>}
                   </Table.Cell>
                   <Table.Cell px="2" py="1">
-                    {fingerprint ? <Lines
-                      title={[fingerprint.visitorId, fingerprint.gpuRenderer, fingerprint.screen, `${fingerprint.count} fingerprint(s) on this account`, fingerprint.otherAccounts ? `Also on ${fingerprint.otherAccounts} other account(s)` : ""].filter(Boolean).join("\n")}
+                    {fingerprint ? <FingerprintHoverCard fingerprint={fingerprint}><Lines
                       top={<><Text as="span" truncate fontFamily="mono">{fingerprint.visitorId.slice(0, 10)}</Text>{fingerprint.count > 1 && <Text as="span" flexShrink={0} color="gray.500" fontSize="11px">×{fingerprint.count}</Text>}<SharedBadge count={fingerprint.otherAccounts} palette="red" title={`${fingerprint.otherAccounts} other account(s) reported this fingerprint`} /></>}
-                      bottom={fingerprint.timezone || "Timezone unknown"}
-                    /> : <Text color="gray.400">Not captured</Text>}
+                      bottom={fingerprint.details.timezone || "Timezone unknown"}
+                    /></FingerprintHoverCard> : <Text color="gray.400">Not captured</Text>}
                   </Table.Cell>
                   <Table.Cell px="2" py="1">
                     <Flex gap="0.5">

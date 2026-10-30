@@ -39,7 +39,7 @@ export interface User { id:number; name:string|null; username:string; email:stri
 /** A client's most recent access event (client-backend user_access_events). */
 export interface UserLastAccess { at:string; event:string; ip:string|null; country:string|null; region:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; /** Other accounts seen on this IP in the last 90 days. */ otherAccounts:number; /** IPs of this client in the last 90 days. */ ipCount:number }
 /** A client's most recently seen device fingerprint. otherAccounts: accounts sharing it; count: this client's fingerprints. */
-export interface UserLastFingerprint { visitorId:string; at:string; timezone:string|null; gpuRenderer:string|null; screen:string|null; otherAccounts:number; count:number }
+export interface UserLastFingerprint { visitorId:string; at:string; firstSeen:string; confidence:number|null; details:FingerprintDetails; ip:string|null; country:string|null; region:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; seenCount:number; otherAccounts:number; count:number }
 /** The signals behind a device fingerprint, as the client app reported them. */
 export interface FingerprintDetails { timezone?:string|null; locale?:string|null; languages?:string|null; screen?:string|null; colorDepth?:number|null; pixelRatio?:number|null; cores?:number|null; memoryGb?:number|null; platform?:string|null; gpuVendor?:string|null; gpuRenderer?:string|null; touchPoints?:number|null; fontCount?:number|null }
 /** One sign-up, sign-in (or failed one), password change or throttled activity of a client. ipSource: how the IP was found (cloudflare, cloudflare_unverified, proxy, socket). */
