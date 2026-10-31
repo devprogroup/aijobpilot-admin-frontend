@@ -7,6 +7,8 @@ import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
 import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
 import { CrawlerSettingsPage } from "./modules/crawlers/CrawlerSettingsPage";
 import { CrawledJobsPage } from "./modules/crawlers/CrawledJobsPage";
+import { CompaniesPage } from "./modules/companies/CompaniesPage";
+import { UnknownCompaniesPage } from "./modules/companies/UnknownCompaniesPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { ProfileDetailsPage } from "./modules/users/ProfileDetailsPage";
@@ -56,6 +58,8 @@ export default function App() {
           <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
           <Route path="/crawlers/crawled-jobs" element={<CrawledJobsPage />} />
           <Route path="/crawlers/settings" element={<CrawlerSettingsPage />} />
+          <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/unknown" element={<UnknownCompaniesPage />} />
           <Route path="/applications/sites" element={<ApplicationSitesPage />} />
           <Route path="/applications/all" element={<AllApplicationsPage />} />
           <Route path="/applications/failed" element={<Navigate to="/applications/all" replace />} />

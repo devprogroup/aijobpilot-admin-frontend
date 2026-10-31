@@ -41,9 +41,16 @@ import type {
   AdminEmailSummary,
   InboundEmail,
   InboundEmailSummary,
+  AdminCompany,
+  CompanyBoard,
+  CompanyJob,
+  CompanyPayload,
+  Pagination,
 } from "./types";
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
+/** A /imgs/<file> company logo, served by the admin API next to /api. */
+export const companyLogoUrl = (logo: string | null) => (logo ? `${base.replace(/\/api\/?$/, "")}${logo}` : null);
 export const getAdminToken = () => window.localStorage.getItem(ADMIN_TOKEN_KEY);
 const setAdminToken = (token: string | null) => {
   if (token) window.localStorage.setItem(ADMIN_TOKEN_KEY, token);
@@ -224,6 +231,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ jobs }),
     }),
+  companies: (page: number, filters: { pageSize?: number; name?: string; board?: string; unnamed?: boolean } = {}) => {
+    const params: Record<string, string> = { page: String(page), pageSize: String(filters.pageSize ?? 25) };
+    if (filters.name) params.name = filters.name;
+    if (filters.board) params.board = filters.board;
+    if (filters.unnamed) params.unnamed = "true";
+    return request<{ companies: AdminCompany[]; pagination: Pagination }>(`/companies?${new URLSearchParams(params)}`);
+  },
+  companyBoards: () => request<{ boards: CompanyBoard[] }>("/companies/boards"),
+  companyJobs: (id: number, page = 1) =>
+    request<{ jobs: CompanyJob[]; pagination: Pagination }>(`/companies/${id}/jobs?page=${page}`),
+  createCompany: (payload: CompanyPayload & { board: string; boardId: string }) =>
+    request<{ company: AdminCompany }>("/companies", { method: "POST", body: JSON.stringify(payload) }),
+  updateCompany: (id: number, payload: CompanyPayload) =>
+    request<{ company: AdminCompany; jobsNamed: number }>(`/companies/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  deleteCompany: (id: number) =>
+    request<{ deleted: boolean; jobsUnlinked: number }>(`/companies/${id}`, { method: "DELETE" }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),
   createCrawler: (payload: CreateCrawlerPayload) =>
