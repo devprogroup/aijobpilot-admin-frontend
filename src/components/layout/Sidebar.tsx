@@ -16,6 +16,7 @@ import {
   BarChart3,
   Boxes,
   Briefcase,
+  Building2,
   CalendarClock,
   ChevronDown,
   List,
@@ -48,14 +49,17 @@ function ChildLink({
   icon,
   children,
   onClick,
+  end,
 }: {
   to: string;
   icon: typeof Boxes;
   children: ReactNode;
   onClick: () => void;
+  /** Active only on exactly this path, not on its sub-pages. */
+  end?: boolean;
 }) {
   return (
-    <NavLink to={to} onClick={onClick} style={{ textDecoration: "none" }}>
+    <NavLink to={to} end={end} onClick={onClick} style={{ textDecoration: "none" }}>
       {({ isActive }) => (
         <Flex
           align="center"
@@ -110,6 +114,8 @@ export function Sidebar({
   const logsActive = location.pathname.startsWith("/logs");
   const emailsActive = location.pathname.startsWith("/emails");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
+  const companiesActive = location.pathname.startsWith("/companies");
+  const [companiesOpen, setCompaniesOpen] = useState(companiesActive);
   const [emailsOpen, setEmailsOpen] = useState(emailsActive);
 
   useEffect(() => {
@@ -119,6 +125,10 @@ export function Sidebar({
   useEffect(() => {
     if (emailsActive) setEmailsOpen(true);
   }, [emailsActive]);
+
+  useEffect(() => {
+    if (companiesActive) setCompaniesOpen(true);
+  }, [companiesActive]);
 
   useEffect(() => {
     if (applicationsActive) setApplicationsOpen(true);
@@ -317,6 +327,25 @@ export function Sidebar({
                 </ChildLink>
                 <ChildLink to="/crawlers/settings" icon={Settings} onClick={onClose}>
                   Crawler settings
+                </ChildLink>
+              </VStack>
+            </Collapsible.Content>
+          </Collapsible.Root>
+          <Collapsible.Root open={companiesOpen} onOpenChange={({ open }) => setCompaniesOpen(open)}>
+            <Collapsible.Trigger asChild>
+              <chakra.button type="button" w="full" display="flex" alignItems="center" gap="3" borderRadius="xl" px="4" py="3" fontSize="sm" fontWeight="semibold" color={companiesActive ? "white" : "whiteAlpha.700"} _hover={{ bg: "whiteAlpha.200", color: "white" }}>
+                <Icon as={Building2} boxSize="5" />
+                <Text>Companies</Text>
+                <Icon as={ChevronDown} boxSize="4" ml="auto" transform={companiesOpen ? "rotate(180deg)" : undefined} transition="transform .2s" />
+              </chakra.button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <VStack align="stretch" gap="1" ml="5" pl="3" mt="1" borderLeft="1px solid" borderColor="whiteAlpha.200">
+                <ChildLink to="/companies" icon={Building2} onClick={onClose} end>
+                  All companies
+                </ChildLink>
+                <ChildLink to="/companies/unknown" icon={HelpCircle} onClick={onClose}>
+                  Unknown companies
                 </ChildLink>
               </VStack>
             </Collapsible.Content>
