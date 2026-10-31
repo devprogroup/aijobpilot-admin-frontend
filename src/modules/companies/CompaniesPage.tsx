@@ -6,6 +6,7 @@ import { PagePicker } from "../../components/PagePicker";
 import { toaster } from "../../components/ui/toaster";
 import type { AdminCompany, CompanyBoard } from "../../types";
 import { CompanyFormModal } from "./components/CompanyFormModal";
+import { CompanyJobsModal } from "./components/CompanyJobsModal";
 
 const date = (value: string | null) =>
   value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value)) : "—";
@@ -24,6 +25,7 @@ export function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<AdminCompany | "new" | null>(null);
+  const [jobsOf, setJobsOf] = useState<AdminCompany | null>(null);
 
   useEffect(() => {
     api.companyBoards().then((value) => setBoards(value.boards)).catch(() => {});
@@ -65,6 +67,7 @@ export function CompaniesPage() {
 
   const pages = result?.pagination.totalPages ?? 1;
   return <>
+    {jobsOf && <CompanyJobsModal company={jobsOf} onClose={() => setJobsOf(null)} />}
     {editing && (
       <CompanyFormModal
         company={editing === "new" ? undefined : editing}
@@ -112,7 +115,7 @@ export function CompaniesPage() {
               <Table.Cell p="4">{company.board}</Table.Cell>
               <Table.Cell p="4" fontFamily="mono" fontSize="xs" maxW="64" truncate title={company.boardId}>{company.boardId}</Table.Cell>
               <Table.Cell p="4" maxW="56" truncate>{company.url ? <a href={company.url} target="_blank" rel="noreferrer" style={{ color: "#2f855a" }}>{company.url}</a> : "—"}</Table.Cell>
-              <Table.Cell p="4">{company.jobCount.toLocaleString()}</Table.Cell>
+              <Table.Cell p="4">{company.jobCount ? <Button size="xs" variant="outline" title="Show the job URLs" onClick={() => setJobsOf(company)}>{company.jobCount.toLocaleString()}</Button> : <Text color="gray.400">0</Text>}</Table.Cell>
               <Table.Cell p="4" color="gray.500" whiteSpace="nowrap">{date(company.updatedAt)}</Table.Cell>
               <Table.Cell p="2" whiteSpace="nowrap">
                 <IconButton aria-label={`Edit ${company.tenant}`} size="xs" variant="ghost" onClick={() => setEditing(company)}><Pencil size={14} /></IconButton>

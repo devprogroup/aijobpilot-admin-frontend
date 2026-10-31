@@ -5,7 +5,7 @@ import { api } from "../../../api";
 import { PagePicker } from "../../../components/PagePicker";
 import type { AdminCompany, CompanyJob, Pagination } from "../../../types";
 
-/** The URLs of a company's jobs, newest first -- to identify a company stored without a name. */
+/** The URLs of a company's jobs, newest first -- e.g. to identify a company stored without a name. */
 export function CompanyJobsModal({ company, onClose }: { company: AdminCompany; onClose: () => void }) {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<{ jobs: CompanyJob[]; pagination: Pagination } | null>(null);
@@ -28,7 +28,7 @@ export function CompanyJobsModal({ company, onClose }: { company: AdminCompany; 
           <Dialog.Content maxW="3xl" borderRadius="2xl" p="6">
             <Flex mb="4" align="start" justify="space-between" gap="4">
               <Box minW="0">
-                <Dialog.Title fontSize="lg" fontWeight="bold">Jobs of {company.board}</Dialog.Title>
+                <Dialog.Title fontSize="lg" fontWeight="bold">Jobs of {company.name || company.board}</Dialog.Title>
                 <Text fontFamily="mono" fontSize="xs" color="gray.500" wordBreak="break-all">{company.tenant}</Text>
               </Box>
               <Dialog.CloseTrigger asChild>
