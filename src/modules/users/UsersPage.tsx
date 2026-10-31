@@ -12,7 +12,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Coins, KeyRound, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Coins, KeyRound, RefreshCw, Search, Trash2 } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
@@ -20,15 +20,14 @@ import { FingerprintHoverCard } from "./components/FingerprintHoverCard";
 import { UserStats } from "./components/UserStats";
 import { UserDetailsDialog } from "./components/UserDetailsDialog";
 import { UserPasswordDialog } from "./components/UserPasswordDialog";
-import { UserNameDialog } from "./components/UserNameDialog";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 
 const PAGE_SIZE = 50;
 /** Fixed widths so the whole table fits a laptop screen and long values are cut, not pushed aside. */
 const COLUMNS: Array<[label: string, width: string]> = [
-  ["Client", "184px"], ["Status", "100px"], ["Credit", "62px"], ["Profiles", "84px"], ["Apps", "46px"], ["Seen / Joined", "88px"],
-  ["IP / Location", "160px"], ["Browser / Device", "130px"], ["Fingerprint", "130px"], ["Actions", "118px"],
+  ["Client", "196px"], ["Status", "108px"], ["Credit", "70px"], ["Profiles", "92px"], ["Apps", "54px"], ["Seen / Joined", "96px"],
+  ["IP / Location", "168px"], ["Browser / Device", "138px"], ["Fingerprint", "138px"], ["Actions", "106px"],
 ];
 const STATUS_COLORS: Record<User["status"], string> = { active: "green.700", inactive: "gray.500", suspended: "red.600" };
 const LINK_STYLE = { color: "#15803d", textDecoration: "underline" };
@@ -73,7 +72,6 @@ export function UsersPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<User | null>(null);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
-  const [nameUser, setNameUser] = useState<User | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -149,8 +147,8 @@ export function UsersPage() {
       {error && <Box mb="3" borderRadius="lg" bg="red.50" px="3" py="2" fontSize="sm" color="red.700">{error}</Box>}
       {message && <Box mb="3" role="status" borderRadius="lg" bg="green.50" px="3" py="2" fontSize="sm" color="green.700">{message}</Box>}
 
-      <Box as="section" overflow="hidden" borderRadius="xl" border="1px solid" borderColor="gray.200" bg="white">
-        <Flex wrap="wrap" align="center" gap="2" borderBottom="1px solid" borderColor="gray.100" p="2.5">
+      <Box as="section" overflow="hidden" borderRadius="xl" border="1px solid" borderColor="gray.200" bg="white" p="4">
+        <Flex wrap="wrap" align="center" gap="2" mb="3">
           <InputGroup flex="1" minW="240px" maxW="420px" startElement={<Icon as={Search} boxSize="3.5" color="gray.400" />}>
             <Input
               size="xs"
@@ -171,11 +169,11 @@ export function UsersPage() {
           </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
           <IconButton aria-label="Refresh clients" title="Refresh" size="xs" variant="outline" disabled={loading || pending !== null} onClick={() => setRevision((value) => value + 1)}><RefreshCw size={13} /></IconButton>
         </Flex>
-        <Box overflowX="auto">
-          <Table.Root minW="1102px" size="sm" fontSize="xs" tableLayout="fixed">
+        <Box overflowX="auto" border="1px solid" borderColor="gray.100" borderRadius="lg">
+          <Table.Root minW="1166px" size="sm" fontSize="xs" tableLayout="fixed">
             <Table.Header bg="gray.50">
               <Table.Row>
-                {COLUMNS.map(([label, width]) => <Table.ColumnHeader key={label} w={width} fontSize="10px" letterSpacing="wide" textTransform="uppercase" color="gray.500" px="2" py="1.5" whiteSpace="nowrap" textAlign={label === "Credit" || label === "Apps" ? "right" : undefined}>{label}</Table.ColumnHeader>)}
+                {COLUMNS.map(([label, width]) => <Table.ColumnHeader key={label} w={width} fontSize="10px" letterSpacing="wide" textTransform="uppercase" color="gray.500" px="3" py="1.5" ps={label === COLUMNS[0][0] ? "4" : undefined} pe={label === COLUMNS[COLUMNS.length - 1][0] ? "4" : undefined} whiteSpace="nowrap" textAlign={label === "Credit" || label === "Apps" ? "right" : undefined}>{label}</Table.ColumnHeader>)}
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -185,22 +183,22 @@ export function UsersPage() {
                 const fingerprint = u.lastFingerprint;
                 const profileIds = u.profileIds ?? [];
                 return <Table.Row key={u.id} _hover={{ bg: "gray.50" }}>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" ps="4" py="1">
                     <Lines
                       title={[u.username, u.email, u.emailVerified ? "Email verified" : "Email not verified", `Joined ${new Date(u.createdAt).toLocaleDateString()}`].filter(Boolean).join("\n")}
                       top={<><Link to={`/users/clients/${u.id}`} style={{ ...LINK_STYLE, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || u.username || "—"}</Link><Text as="span" flexShrink={0} color="gray.400" fontFamily="mono" fontSize="11px">#{u.id}</Text></>}
                       bottom={<>{u.email || "No email"}{u.email && !u.emailVerified && <Text as="span" color="orange.600"> · unverified</Text>}</>}
                     />
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" py="1">
                     <NativeSelect.Root size="xs" disabled={!canEditClients || pending !== null}><NativeSelect.Field h="6" pl="1.5" pr="5" fontSize="11px" aria-label={`Status for ${u.username}`} value={u.status} color={STATUS_COLORS[u.status]} onChange={(event) => void change(u, event.target.value as User["status"])}>
                       <option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
                     </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
                   </Table.Cell>
-                  <Table.Cell px="2" py="1" textAlign="right" fontVariantNumeric="tabular-nums" title={String(u.credit)}>
+                  <Table.Cell px="3" py="1" textAlign="right" fontVariantNumeric="tabular-nums" title={String(u.credit)}>
                     {u.credit.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" py="1">
                     <Lines
                       top={<>{u.activeProfileIds?.length ?? 0}/{profileIds.length}<Text as="span" color="gray.500">active</Text></>}
                       bottom={profileIds.length > 0 && <>
@@ -209,36 +207,35 @@ export function UsersPage() {
                       </>}
                     />
                   </Table.Cell>
-                  <Table.Cell px="2" py="1" textAlign="right" fontVariantNumeric="tabular-nums">{u._count?.applications ?? 0}</Table.Cell>
-                  <Table.Cell px="2" py="1" whiteSpace="nowrap">
+                  <Table.Cell px="3" py="1" textAlign="right" fontVariantNumeric="tabular-nums">{u._count?.applications ?? 0}</Table.Cell>
+                  <Table.Cell px="3" py="1" whiteSpace="nowrap">
                     <Lines
                       title={access ? new Date(access.at).toLocaleString() : undefined}
                       top={access ? timeAgo(access.at) : <Text as="span" color="gray.400">Not yet</Text>}
                       bottom={new Date(u.createdAt).toLocaleDateString()}
                     />
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" py="1">
                     {access ? <Lines
                       title={[access.ip, locationOf(access), `${access.ipCount} IP(s) in 90 days`, access.otherAccounts ? `${access.otherAccounts} other account(s) on this IP` : ""].filter(Boolean).join("\n")}
                       top={<><Text as="span" truncate fontFamily="mono">{access.ip || "—"}</Text><SharedBadge count={access.otherAccounts} palette="orange" title={`${access.otherAccounts} other account(s) used this IP in the last 90 days`} /></>}
                       bottom={`${access.ipCount > 1 ? `${access.ipCount} IPs · ` : ""}${locationOf(access) || "Location unknown"}`}
                     /> : <Text color="gray.400">—</Text>}
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" py="1">
                     {access ? <Lines
                       top={<Text as="span" truncate>{access.browser || "Unknown browser"}</Text>}
                       bottom={<Text as="span" textTransform="capitalize">{[access.os || "Unknown OS", access.device || access.deviceType].filter(Boolean).join(" · ")}</Text>}
                     /> : <Text color="gray.400">—</Text>}
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" py="1">
                     {fingerprint ? <FingerprintHoverCard fingerprint={fingerprint}><Lines
                       top={<><Text as="span" truncate fontFamily="mono">{fingerprint.visitorId.slice(0, 10)}</Text>{fingerprint.count > 1 && <Text as="span" flexShrink={0} color="gray.500" fontSize="11px">×{fingerprint.count}</Text>}<SharedBadge count={fingerprint.otherAccounts} palette="red" title={`${fingerprint.otherAccounts} other account(s) reported this fingerprint`} /></>}
                       bottom={fingerprint.details.timezone || "Timezone unknown"}
                     /></FingerprintHoverCard> : <Text color="gray.400">Not captured</Text>}
                   </Table.Cell>
-                  <Table.Cell px="2" py="1">
+                  <Table.Cell px="3" pe="4" py="1">
                     <Flex gap="0.5">
-                      <IconButton aria-label={`Edit name of ${u.email}`} title="Edit name" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => setNameUser(u)}><Pencil size={13} /></IconButton>
                       <IconButton aria-label={`Edit credit of ${u.email}`} title="Edit credit" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => setSelected(u)}><Coins size={13} /></IconButton>
                       <IconButton aria-label={`Update password for ${u.email}`} title="Update password" size="2xs" variant="ghost" disabled={!canEditClients || pending !== null} onClick={() => { setError(""); setMessage(""); setPasswordUser(u); }}><KeyRound size={13} /></IconButton>
                       <IconButton aria-label={`Delete ${u.email}`} title="Delete" size="2xs" variant="ghost" colorPalette="red" disabled={!canEditClients || pending !== null} loading={pending === u.id} onClick={() => void deleteUser(u)}><Trash2 size={13} /></IconButton>
@@ -249,8 +246,7 @@ export function UsersPage() {
             </Table.Body>
           </Table.Root>
         </Box>
-        <Flex justify="space-between" align="center" gap="3" wrap="wrap" borderTop="1px solid" borderColor="gray.100" px="2.5" py="2">
-          <Text fontSize="xs" color="gray.500">{shown.length} client{shown.length === 1 ? "" : "s"} · Page {currentPage} of {pages}</Text>
+        <Flex justify="flex-end" align="center" gap="3" wrap="wrap" mt="1.5">
           <Flex gap="1.5" align="center"><PagePicker page={currentPage} totalPages={pages} onChange={setPage} disabled={loading} /><Button size="xs" fontSize="xs" variant="outline" disabled={loading || currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</Button><Button size="xs" fontSize="xs" variant="outline" disabled={loading || currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</Button></Flex>
         </Flex>
       </Box>
@@ -261,10 +257,6 @@ export function UsersPage() {
       {passwordUser && <UserPasswordDialog user={passwordUser} onClose={() => setPasswordUser(null)} onSaved={() => {
         setPasswordUser(null);
         setMessage(`Password updated for ${passwordUser.username}.`);
-      }} />}
-      {nameUser && <UserNameDialog user={nameUser} onClose={() => setNameUser(null)} onSaved={(user) => {
-        setUsers((values) => values.map((old) => old.id === user.id ? { ...old, ...user } : old));
-        setNameUser(null);
       }} />}
     </>
   );

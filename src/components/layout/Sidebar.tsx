@@ -55,17 +55,14 @@ function ChildLink({
   to,
   icon,
   children,
-  end,
 }: {
   to: string;
   icon: typeof Boxes;
   children: ReactNode;
-  /** Active only on exactly this path, not on its sub-pages. */
-  end?: boolean;
 }) {
   const { onClose } = useContext(SidebarContext);
   return (
-    <NavLink to={to} end={end} onClick={onClose} style={{ textDecoration: "none" }}>
+    <NavLink to={to} onClick={onClose} style={{ textDecoration: "none" }}>
       {({ isActive }) => (
         <Flex
           align="center"
@@ -186,7 +183,6 @@ export function Sidebar({
   const emailsActive = location.pathname.startsWith("/emails");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
   const companiesActive = location.pathname.startsWith("/companies");
-  const [companiesOpen, setCompaniesOpen] = useState(companiesActive);
   const [emailsOpen, setEmailsOpen] = useState(emailsActive);
 
   useEffect(() => {
@@ -197,9 +193,6 @@ export function Sidebar({
     if (emailsActive) setEmailsOpen(true);
   }, [emailsActive]);
 
-  useEffect(() => {
-    if (companiesActive) setCompaniesOpen(true);
-  }, [companiesActive]);
 
   useEffect(() => {
     if (applicationsActive) setApplicationsOpen(true);
@@ -327,10 +320,7 @@ export function Sidebar({
             <ChildLink to="/crawlers/crawled-jobs" icon={Briefcase}>Crawled jobs</ChildLink>
             <ChildLink to="/crawlers/settings" icon={Settings}>Crawler settings</ChildLink>
           </NavGroup>
-          <NavGroup icon={Building2} label="Companies" active={companiesActive} open={companiesOpen} onOpenChange={setCompaniesOpen}>
-            <ChildLink to="/companies" icon={Building2} end>All companies</ChildLink>
-            <ChildLink to="/companies/unknown" icon={HelpCircle}>Unknown companies</ChildLink>
-          </NavGroup>
+          <NavItem to="/companies" icon={Building2} active={companiesActive}>Companies</NavItem>
           <NavGroup icon={Briefcase} label="Applications" active={applicationsActive} open={applicationsOpen} onOpenChange={setApplicationsOpen}>
             <ChildLink to="/applications/sites" icon={Globe}>Application sites</ChildLink>
             <ChildLink to="/applications/all" icon={List}>All applications</ChildLink>
