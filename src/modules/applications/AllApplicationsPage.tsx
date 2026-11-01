@@ -7,6 +7,7 @@ import { PagePicker } from "../../components/PagePicker";
 import type { AdminApplication, ApplicationFilterProfile, ApplicationFilterUser, ApplicationSite, ApplicationSortKey, ApplicationStatus } from "../../types";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
 import { CompanyLogo, Hint } from "./components/CompanyLogo";
+import { DateRangeFilter } from "./components/DateRangeFilter";
 import { UserFilterCombobox } from "./components/UserFilterCombobox";
 import { useAuth } from "../../auth/AuthContext";
 import { dateFilterRange, todayDateInput } from "../../services/date-filter";
@@ -281,18 +282,18 @@ export function AllApplicationsPage() {
     {actionError && <Text role="alert" color="red.600" mb="4">{actionError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Flex px="4" py="3" align="baseline" gap="2"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Sorted by {sortLabel}, {sort.dir === "asc" ? "ascending" : "descending"}</Text></Flex>
-      <Box overflowX="auto"><Table.Root size="sm" fontSize="xs" css={{ "& td, & th": { paddingInline: "6px", paddingBlock: "4px" } }}>
+      <Box overflowX="auto"><Table.Root size="sm" fontSize="13px" css={{ "& td, & th": { paddingInline: "6px", paddingBlock: "4px" }, "& input, & select": { fontSize: "13px" } }}>
         <Table.Header bg="gray.50">
           <Table.Row>{COLUMNS.map((column) => {
             const sorted = column.sort && sort.by === column.sort;
-            return <Table.ColumnHeader key={column.label} whiteSpace="nowrap" fontSize="xs" aria-sort={sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}>
+            return <Table.ColumnHeader key={column.label} whiteSpace="nowrap" fontSize="13px" aria-sort={sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}>
               {column.sort ? <chakra.button type="button" display="inline-flex" alignItems="center" gap="1" cursor="pointer" fontWeight="semibold" _hover={{ color: "green.700" }} color={sorted ? "green.700" : undefined} onClick={() => toggleSort(column)}>
                 {column.label}
                 {sorted ? (sort.dir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} color="#9ca3af" />}
               </chakra.button> : column.label}
             </Table.ColumnHeader>;
           })}</Table.Row>
-          <Table.Row verticalAlign="top">
+          <Table.Row>
             <Table.ColumnHeader><Input {...filterInputProps} w="16" aria-label="Filter by application ID" placeholder="ID" inputMode="numeric" value={idFilter} onChange={(event) => setIdFilter(event.target.value.replace(/\D/g, ""))} /></Table.ColumnHeader>
             <Table.ColumnHeader><NativeSelect.Root size="xs" w="24" bg="white"><NativeSelect.Field aria-label="Filter by status" value={status} onChange={(event) => { setStatus(event.target.value as ApplicationStatus | ""); setPage(1); }}>
               {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.value ? option.label : "All"}</option>)}
@@ -314,14 +315,8 @@ export function AllApplicationsPage() {
               <option value="">{filterUser ? "All" : "Choose user"}</option>
               {userProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name || `Profile #${profile.id}`}{profile.isDeleted ? " (deleted)" : ""}</option>)}
             </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.ColumnHeader>
-            <Table.ColumnHeader><Flex direction="column" gap="1">
-              <Input {...filterInputProps} w="28" px="1" aria-label="Created from" title="Created from" type="date" value={from} max={to || undefined} onChange={(event) => { setFrom(event.target.value); setPage(1); }} />
-              <Input {...filterInputProps} w="28" px="1" aria-label="Created to" title="Created to" type="date" value={to} min={from || undefined} onChange={(event) => { setTo(event.target.value); setPage(1); }} />
-            </Flex></Table.ColumnHeader>
-            <Table.ColumnHeader><Flex direction="column" gap="1">
-              <Input {...filterInputProps} w="28" px="1" aria-label="Applied from" title="Applied from" type="date" value={appliedFrom} max={appliedTo || undefined} onChange={(event) => { setAppliedFrom(event.target.value); setPage(1); }} />
-              <Input {...filterInputProps} w="28" px="1" aria-label="Applied to" title="Applied to" type="date" value={appliedTo} min={appliedFrom || undefined} onChange={(event) => { setAppliedTo(event.target.value); setPage(1); }} />
-            </Flex></Table.ColumnHeader>
+            <Table.ColumnHeader><DateRangeFilter label="Created" from={from} to={to} onChange={(start, end) => { setFrom(start); setTo(end); setPage(1); }} /></Table.ColumnHeader>
+            <Table.ColumnHeader><DateRangeFilter label="Applied" from={appliedFrom} to={appliedTo} onChange={(start, end) => { setAppliedFrom(start); setAppliedTo(end); setPage(1); }} /></Table.ColumnHeader>
             <Table.ColumnHeader />
           </Table.Row>
         </Table.Header>
@@ -346,7 +341,7 @@ export function AllApplicationsPage() {
               ) : <Text color="gray.400">—</Text>}
             </Table.Cell>
             <Table.Cell fontWeight="semibold">
-              <Truncated text={application.job?.positionName || "Job unavailable"} maxW="52">
+              <Truncated text={application.job?.positionName || "Job unavailable"} maxW="60">
                 {application.job?.url ? (
                   <a
                     href={application.job.url}
@@ -361,7 +356,7 @@ export function AllApplicationsPage() {
               </Truncated>
             </Table.Cell>
             <Table.Cell><CompanyLogo name={application.job?.company?.name || application.job?.companyName} logo={application.job?.company?.logo} /></Table.Cell>
-            <Table.Cell><Truncated text={application.job?.applicationSite?.displayText || "—"} maxW="24" /></Table.Cell>
+            <Table.Cell><Truncated text={application.job?.applicationSite?.displayText || "—"} maxW="28" /></Table.Cell>
             {/* Clicks stay here: the row itself opens the message dialog. */}
             <Table.Cell onClick={(event) => event.stopPropagation()}>
               <NativeSelect.Root size="xs" w="20" disabled={!canSetSource || sourceBusyId === application.id}>

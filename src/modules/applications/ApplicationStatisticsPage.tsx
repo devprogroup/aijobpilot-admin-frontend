@@ -144,7 +144,7 @@ export function ApplicationStatisticsPage() {
                       {row.failed > 0 && <Flex width={`${failedPercent}%`} minW={failedPercent < 2 ? "1px" : undefined} bg={FAILED_HUE} align="center" justify="center" color="white" fontSize="xs" fontWeight="bold">{failedPercent >= 15 ? `${failedLabel}%` : ""}</Flex>}
                     </Flex>
                     <Text mt="1" fontSize="xs" color="gray.500">
-                      {appliedLabel}% applied · {failedLabel}% failed ({total.toLocaleString()} total)
+                      {appliedLabel}% applied · {failedLabel}% failed ({total.toLocaleString()} total / {row.failed.toLocaleString()} failed)
                       {(row.failedNeedingUser ?? 0) > 0 && <Text as="span" color="orange.500">{` · ${row.failedNeedingUser!.toLocaleString()} of the failed wait on the customer`}</Text>}
                     </Text>
                   </Box>;

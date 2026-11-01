@@ -48,7 +48,7 @@ export function UserFilterCombobox({ user, onChange }: { user: ApplicationFilter
       onValueChange={({ items }) => onChange((items[0] as ApplicationFilterUser | undefined) ?? null)}
     >
       <Combobox.Control>
-        <Combobox.Input aria-label="Filter by user" placeholder="User name" fontWeight="normal" />
+        <Combobox.Input aria-label="Filter by user" placeholder="Search user" fontWeight="normal" autoComplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" />
         <Combobox.IndicatorGroup>
           <Combobox.ClearTrigger aria-label="Clear user filter" onClick={() => { setInput(""); onChange(null); }} />
         </Combobox.IndicatorGroup>
