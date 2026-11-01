@@ -104,6 +104,8 @@ export const api = {
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
     })}`),
+  cancelApplication: (applicationId: number) =>
+    request<void>(`/applications/${applicationId}`, { method: "DELETE" }),
   retryApplication: (applicationId: number) =>
     request<{ id: number; status: "queued" }>(`/applications/${applicationId}/retry`, { method: "POST" }),
   setApplicationStatus: (applicationId: number, status: ApplicationStatus) =>

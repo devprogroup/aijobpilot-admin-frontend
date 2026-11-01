@@ -84,6 +84,7 @@ export function AllApplicationsPage() {
   const [sourceBusyId, setSourceBusyId] = useState<number | null>(null);
   const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
   const [retryBusyId, setRetryBusyId] = useState<number | null>(null);
+  const [cancelBusyId, setCancelBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof api.applications>> | null>(null);
   const [applicationSites, setApplicationSites] = useState<ApplicationSite[]>([]);
@@ -173,6 +174,24 @@ export function AllApplicationsPage() {
     } finally { setRetryBusyId(null); }
   };
 
+  // Deletes the queued/failed application and returns its job to the profile's recommended list.
+  const cancel = async (application: AdminApplication) => {
+    if (!window.confirm(`Cancel application #${application.id}? It is deleted and the job goes back to the profile's recommended jobs.`)) return;
+    setActionError(""); setCancelBusyId(application.id);
+    try {
+      await api.cancelApplication(application.id);
+      setResult((current) => current && {
+        ...current,
+        total: Math.max(0, current.total - 1),
+        applications: current.applications.filter((entry) => entry.id !== application.id),
+      });
+      setMessageModal((current) => current?.id === application.id ? null : current);
+      setRevision((value) => value + 1);
+    } catch (reason) {
+      setActionError(reason instanceof Error ? reason.message : "Unable to cancel the application.");
+    } finally { setCancelBusyId(null); }
+  };
+
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
   const applyFilters = () => { setQuery(search.trim()); setPage(1); setRevision((value) => value + 1); };
   const clearFilters = () => {
@@ -209,7 +228,7 @@ export function AllApplicationsPage() {
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
       <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
       <Box overflowX="auto"><Table.Root size="sm" minW="1600px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Retry", "Job / company", "Location", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Actions", "Job / company", "Location", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>
           {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
@@ -224,12 +243,21 @@ export function AllApplicationsPage() {
               </NativeSelect.Root> : <Text textTransform="capitalize">{application.status}</Text>}
             </Table.Cell>
             <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
-              {application.status === "failed" && canSetSource ? (
-                <Button size="xs" variant="outline" colorPalette="green"
-                  loading={retryBusyId === application.id} disabled={retryBusyId !== null}
-                  onClick={(event) => { event.stopPropagation(); void retry(application); }}>
-                  Retry
-                </Button>
+              {canSetSource && (application.status === "failed" || application.status === "queued") ? (
+                <Flex gap="2">
+                  {application.status === "failed" && (
+                    <Button size="xs" variant="outline" colorPalette="green"
+                      loading={retryBusyId === application.id} disabled={retryBusyId !== null || cancelBusyId === application.id}
+                      onClick={(event) => { event.stopPropagation(); void retry(application); }}>
+                      Retry
+                    </Button>
+                  )}
+                  <Button size="xs" variant="outline" colorPalette="red"
+                    loading={cancelBusyId === application.id} disabled={cancelBusyId !== null || retryBusyId === application.id}
+                    onClick={(event) => { event.stopPropagation(); void cancel(application); }}>
+                    Cancel
+                  </Button>
+                </Flex>
               ) : <Text color="gray.400">—</Text>}
             </Table.Cell>
             <Table.Cell p="4">
