@@ -116,14 +116,20 @@ export interface AdminApplication {
   source: "auto" | "manual";
   createdAt: string; updatedAt: string; appliedAt: string | null;
   previewScreenshot: string | null; resultScreenshot: string | null; logFilePath: string | null;
-  job?: { id: number; positionName: string | null; companyName: string | null; url: string; location?: { label: string }[] | null; applicationSite: { id: number; typeName: string; displayText: string } | null } | null;
+  job?: { id: number; positionName: string | null; companyName: string | null; url: string; company?: { id: number; name: string | null; logo: string | null } | null; applicationSite: { id: number; typeName: string; displayText: string } | null } | null;
   user?: { id: number; name: string | null; username: string } | null;
   profile?: { id: number; name: string | null } | null;
 }
 export interface ApplicationFilters {
   search?: string; from?: string; to?: string; status?: ApplicationStatus;
   applicationSiteId?: number; userId?: number; profileId?: number;
+  id?: string; job?: string; company?: string; source?: AdminApplication["source"];
+  appliedFrom?: string; appliedTo?: string;
+  sortBy?: ApplicationSortKey; sortDir?: "asc" | "desc";
 }
+export type ApplicationSortKey = "id" | "status" | "job" | "company" | "site" | "source" | "user" | "profile" | "createdAt" | "appliedAt";
+export interface ApplicationFilterUser { id: number; name: string | null; username: string; email: string | null }
+export interface ApplicationFilterProfile { id: number; name: string | null; isDeleted: boolean }
 export interface UserDetails {
   user: User;
   profiles: { id:number; name:string|null; email:string|null; status:string; lastApplicationAt:string|null }[];
@@ -183,6 +189,8 @@ export interface PromoCode {
   createdBy: number;
   createdByEmail: string | null;
   usedBy: number | null;
+  /** Only returned to technical and super admins. */
+  usedByEmail: string | null;
   usedAt: string | null;
   expiresAt: string;
   status: "active" | "used" | "expired";

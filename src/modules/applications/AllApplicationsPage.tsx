@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { Box, Button, Dialog, Flex, Input, NativeSelect, Portal, Table, Text } from "@chakra-ui/react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Box, Button, Dialog, Flex, IconButton, Input, NativeSelect, Portal, Table, Text, chakra } from "@chakra-ui/react";
+import { ArrowDown, ArrowUp, Camera, ChevronsUpDown, FileText, Image as ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
-import type { AdminApplication, ApplicationSite, ApplicationStatus } from "../../types";
+import type { AdminApplication, ApplicationFilterProfile, ApplicationFilterUser, ApplicationSite, ApplicationSortKey, ApplicationStatus } from "../../types";
 import { ApplicationLogDialog } from "./components/ApplicationLogDialog";
+import { CompanyLogo, Hint } from "./components/CompanyLogo";
+import { DateRangeFilter } from "./components/DateRangeFilter";
+import { UserFilterCombobox } from "./components/UserFilterCombobox";
 import { useAuth } from "../../auth/AuthContext";
 import { dateFilterRange, todayDateInput } from "../../services/date-filter";
 
@@ -35,29 +39,70 @@ function openScreenshot(applicationId: number, kind: "preview" | "result") {
   });
 }
 
+// Always three slots, so the icons line up from row to row; a missing file is a dimmed icon.
 function ApplicationFileLinks({ application, onViewLog }: { application: AdminApplication; onViewLog: () => void }) {
   const links = [
-    application.logFilePath && { label: "View log", onClick: onViewLog },
-    application.previewScreenshot && { label: "Before submit screenshot", onClick: () => openScreenshot(application.id, "preview") },
-    application.resultScreenshot && { label: "Result screenshot", onClick: () => openScreenshot(application.id, "result") },
-  ].filter((link): link is { label: string; onClick: () => void } => Boolean(link));
-  if (!links.length) return <Text color="gray.400">—</Text>;
+    { label: "View log", missing: "No log", icon: FileText, available: Boolean(application.logFilePath), onClick: onViewLog },
+    { label: "Before submit screenshot", missing: "No before submit screenshot", icon: Camera, available: Boolean(application.previewScreenshot), onClick: () => openScreenshot(application.id, "preview") },
+    { label: "Result screenshot", missing: "No result screenshot", icon: ImageIcon, available: Boolean(application.resultScreenshot), onClick: () => openScreenshot(application.id, "result") },
+  ];
   return (
-    <Flex direction="column" align="flex-start" fontSize="sm" gap="1">
+    <Flex gap="0.5">
       {links.map((link) => (
-        <a key={link.label} href="#" style={linkStyle} onClick={(event) => { event.preventDefault(); event.stopPropagation(); link.onClick(); }}>{link.label}</a>
+        <Hint key={link.label} label={link.available ? link.label : link.missing}>
+          {/* A disabled button fires no hover events, so the hint sits on this wrapper. */}
+          <chakra.span display="inline-flex">
+            <IconButton aria-label={`${link.label} of application #${application.id}`} size="2xs" variant="ghost" color="green.700" disabled={!link.available} onClick={(event) => { event.stopPropagation(); link.onClick(); }}>
+              <link.icon size={15} />
+            </IconButton>
+          </chakra.span>
+        </Hint>
       ))}
     </Flex>
   );
 }
 
-// Jobs can list many locations; show the first two and put the full list in the tooltip.
-function JobLocations({ locations }: { locations?: { label: string }[] | null }) {
-  const labels = (locations ?? []).map((location) => location.label).filter(Boolean);
-  if (!labels.length) return <Text color="gray.400">—</Text>;
-  const shown = labels.slice(0, 2).join("; ");
-  return <Text fontSize="sm" maxW="56" title={labels.join("\n")}>{shown}{labels.length > 2 && <Text as="span" color="gray.500"> +{labels.length - 2} more</Text>}</Text>;
+const dateFormat = new Intl.DateTimeFormat(undefined, { month: "numeric", day: "numeric", year: "2-digit", hour: "numeric", minute: "2-digit" });
+
+/** A compact date with the full timestamp on hover. */
+function CompactDate({ value }: { value: string | null }) {
+  if (!value) return <Text color="gray.400">—</Text>;
+  return <chakra.span title={new Date(value).toLocaleString()} whiteSpace="nowrap">{dateFormat.format(new Date(value))}</chakra.span>;
 }
+
+/** One line, cut off with an ellipsis; the full text shows on hover. */
+function Truncated({ text, maxW, children }: { text: string; maxW: string; children?: ReactNode }) {
+  return <Box title={text} maxW={maxW} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{children ?? text}</Box>;
+}
+
+type Column = { label: string; sort?: ApplicationSortKey; firstDir?: "asc" | "desc" };
+const COLUMNS: Column[] = [
+  { label: "ID", sort: "id", firstDir: "desc" },
+  { label: "Status", sort: "status" },
+  { label: "Actions" },
+  { label: "Job", sort: "job" },
+  { label: "Company", sort: "company" },
+  { label: "Site", sort: "site" },
+  { label: "Source", sort: "source" },
+  { label: "User", sort: "user" },
+  { label: "Profile", sort: "profile" },
+  { label: "Created", sort: "createdAt", firstDir: "desc" },
+  { label: "Applied", sort: "appliedAt", firstDir: "desc" },
+  { label: "Files" },
+];
+const DEFAULT_SORT = { by: "createdAt" as ApplicationSortKey, dir: "desc" as "asc" | "desc" };
+
+/** Waits for a pause in typing before a text filter hits the API. */
+function useDebounced(value: string, delayMs = 300): string {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+const filterInputProps = { size: "xs", bg: "white", fontWeight: "normal" } as const;
 
 function AuthorizedScreenshot({ applicationId, kind, alt }: { applicationId: number; kind: "preview" | "result"; alt: string }) {
   const [src, setSrc] = useState("");
@@ -95,8 +140,19 @@ export function AllApplicationsPage() {
   const [to, setTo] = useState(todayDateInput);
   const [status, setStatus] = useState<ApplicationStatus | "">("");
   const [applicationSiteId, setApplicationSiteId] = useState("");
-  const [userId, setUserId] = useState("");
+  const [idFilter, setIdFilter] = useState("");
+  const [jobFilter, setJobFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<AdminApplication["source"] | "">("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
+  const [filterUser, setFilterUser] = useState<ApplicationFilterUser | null>(null);
+  const [userProfiles, setUserProfiles] = useState<ApplicationFilterProfile[]>([]);
   const [profileId, setProfileId] = useState("");
+  const [sort, setSort] = useState(DEFAULT_SORT);
+  const debouncedId = useDebounced(idFilter);
+  const debouncedJob = useDebounced(jobFilter);
+  const debouncedCompany = useDebounced(companyFilter);
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -108,16 +164,36 @@ export function AllApplicationsPage() {
     api.applicationSites().then((value) => setApplicationSites(value.applicationSites)).catch(() => undefined);
   }, []);
 
+  // A profile only makes sense under its user, so choosing or clearing the user resets it.
+  useEffect(() => {
+    setProfileId(""); setUserProfiles([]);
+    if (!filterUser) return;
+    let active = true;
+    api.applicationFilterProfiles(filterUser.id).then((value) => { if (active) setUserProfiles(value.profiles); }).catch(() => undefined);
+    return () => { active = false; };
+  }, [filterUser]);
+
+  useEffect(() => { setPage(1); }, [debouncedId, debouncedJob, debouncedCompany]);
+
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
     const dateRange = dateFilterRange(from, to);
+    const appliedRange = dateFilterRange(appliedFrom, appliedTo);
     api.applications(page, {
       search: query, ...dateRange,
       status: status || undefined,
       applicationSiteId: applicationSiteId ? Number(applicationSiteId) : undefined,
-      userId: userId ? Number(userId) : undefined,
+      userId: filterUser?.id,
       profileId: profileId ? Number(profileId) : undefined,
+      id: debouncedId || undefined,
+      job: debouncedJob || undefined,
+      company: debouncedCompany || undefined,
+      source: sourceFilter || undefined,
+      appliedFrom: appliedRange.from,
+      appliedTo: appliedRange.to,
+      sortBy: sort.by,
+      sortDir: sort.dir,
     }).then((value) => {
       if (!active) return;
       const lastPage = Math.max(1, Math.ceil(value.total / value.pageSize));
@@ -127,7 +203,7 @@ export function AllApplicationsPage() {
       if (active) setError(error instanceof Error ? error.message : "Unable to load applications");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [page, query, from, to, status, applicationSiteId, userId, profileId, revision]);
+  }, [page, query, from, to, status, applicationSiteId, filterUser, profileId, debouncedId, debouncedJob, debouncedCompany, sourceFilter, appliedFrom, appliedTo, sort, revision]);
 
   const setSource = async (application: AdminApplication, source: AdminApplication["source"]) => {
     if (source === application.source) return;
@@ -196,63 +272,95 @@ export function AllApplicationsPage() {
   const applyFilters = () => { setQuery(search.trim()); setPage(1); setRevision((value) => value + 1); };
   const clearFilters = () => {
     setSearch(""); setQuery(""); setFrom(""); setTo("");
-    setStatus(""); setApplicationSiteId(""); setUserId(""); setProfileId("");
+    setStatus(""); setApplicationSiteId(""); setFilterUser(null); setProfileId("");
+    setIdFilter(""); setJobFilter(""); setCompanyFilter(""); setSourceFilter(""); setAppliedFrom(""); setAppliedTo("");
+    setSort(DEFAULT_SORT);
     setPage(1);
   };
+  const toggleSort = (column: Column) => {
+    if (!column.sort) return;
+    const by = column.sort;
+    setSort((current) => current.by === by
+      ? { by, dir: current.dir === "asc" ? "desc" : "asc" }
+      : { by, dir: column.firstDir ?? "asc" });
+    setPage(1);
+  };
+  const sortLabel = COLUMNS.find((column) => column.sort === sort.by)?.label ?? "";
 
   return <>
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
-      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">All applications</Text><Text color="gray.500">Browse every application and filter by status, site, user or profile.</Text></Box>
+      <Box><Text as="h1" fontSize="3xl" fontWeight="bold">All applications</Text><Text color="gray.500">Browse every application; filter and sort from the column headers.</Text></Box>
       <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
     </Flex>
-    <Flex as="form" gap="3" mb="3" wrap="wrap" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
+    <Flex as="form" gap="3" mb="5" wrap="wrap" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
       <Input aria-label="Search applications" maxLength={200} placeholder="Search job, company, user, profile, ID or message" value={search} onChange={(event) => setSearch(event.target.value)} bg="white" flex="1" minW="56" />
-      <Input aria-label="From date" type="date" value={from} max={to || undefined} onChange={(event) => { setFrom(event.target.value); setPage(1); }} bg="white" w="44" />
-      <Input aria-label="To date" type="date" value={to} min={from || undefined} onChange={(event) => { setTo(event.target.value); setPage(1); }} bg="white" w="44" />
       <Button type="submit" disabled={loading}>Search</Button>
       <Button variant="outline" onClick={clearFilters}>Clear</Button>
-    </Flex>
-    <Flex gap="3" mb="5" wrap="wrap">
-      <NativeSelect.Root maxW="44" bg="white"><NativeSelect.Field aria-label="Filter by status" value={status} onChange={(event) => { setStatus(event.target.value as ApplicationStatus | ""); setPage(1); }}>
-        {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
-      <NativeSelect.Root maxW="56" bg="white"><NativeSelect.Field aria-label="Filter by application site" value={applicationSiteId} onChange={(event) => { setApplicationSiteId(event.target.value); setPage(1); }}>
-        <option value="">All application sites</option>
-        {applicationSites.map((site) => <option key={site.id} value={site.id}>{site.displayText}</option>)}
-      </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
-      <Input aria-label="Filter by user ID" placeholder="User ID" value={userId} onChange={(event) => { setUserId(event.target.value.replace(/\D/g, "")); setPage(1); }} bg="white" w="32" />
-      <Input aria-label="Filter by profile ID" placeholder="Profile ID" value={profileId} onChange={(event) => { setProfileId(event.target.value.replace(/\D/g, "")); setPage(1); }} bg="white" w="32" />
     </Flex>
     {error && <Text role="alert" color="red.600" mb="4">{error}</Text>}
     {actionError && <Text role="alert" color="red.600" mb="4">{actionError}</Text>}
     <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="2xl" overflow="hidden">
-      <Box p="5"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Most recently created first</Text></Box>
-      <Box overflowX="auto"><Table.Root size="sm" minW="1600px">
-        <Table.Header bg="gray.50"><Table.Row>{["Application", "Status", "Actions", "Job / company", "Location", "Site", "Source", "User", "Profile", "Created", "Applied", "Log & screenshots"].map((label) => <Table.ColumnHeader key={label} p="4">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+      <Flex px="4" py="3" align="baseline" gap="2"><Text fontWeight="bold">{loading ? "Loading..." : error ? "Applications" : `${result?.total ?? 0} applications`}</Text><Text fontSize="xs" color="gray.500">Sorted by {sortLabel}, {sort.dir === "asc" ? "ascending" : "descending"}</Text></Flex>
+      <Box overflowX="auto"><Table.Root size="sm" fontSize="13px" css={{ "& td, & th": { paddingInline: "6px", paddingBlock: "4px" }, "& input, & select": { fontSize: "13px" } }}>
+        <Table.Header bg="gray.50">
+          <Table.Row>{COLUMNS.map((column) => {
+            const sorted = column.sort && sort.by === column.sort;
+            return <Table.ColumnHeader key={column.label} whiteSpace="nowrap" fontSize="13px" aria-sort={sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}>
+              {column.sort ? <chakra.button type="button" display="inline-flex" alignItems="center" gap="1" cursor="pointer" fontWeight="semibold" _hover={{ color: "green.700" }} color={sorted ? "green.700" : undefined} onClick={() => toggleSort(column)}>
+                {column.label}
+                {sorted ? (sort.dir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} color="#9ca3af" />}
+              </chakra.button> : column.label}
+            </Table.ColumnHeader>;
+          })}</Table.Row>
+          <Table.Row>
+            <Table.ColumnHeader><Input {...filterInputProps} w="16" aria-label="Filter by application ID" placeholder="ID" inputMode="numeric" value={idFilter} onChange={(event) => setIdFilter(event.target.value.replace(/\D/g, ""))} /></Table.ColumnHeader>
+            <Table.ColumnHeader><NativeSelect.Root size="xs" w="24" bg="white"><NativeSelect.Field aria-label="Filter by status" value={status} onChange={(event) => { setStatus(event.target.value as ApplicationStatus | ""); setPage(1); }}>
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.value ? option.label : "All"}</option>)}
+            </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.ColumnHeader>
+            <Table.ColumnHeader />
+            <Table.ColumnHeader><Input {...filterInputProps} minW="32" aria-label="Filter by job title" placeholder="Job title" value={jobFilter} onChange={(event) => setJobFilter(event.target.value)} /></Table.ColumnHeader>
+            <Table.ColumnHeader><Input {...filterInputProps} w="20" aria-label="Filter by company name" placeholder="Company" value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} /></Table.ColumnHeader>
+            <Table.ColumnHeader><NativeSelect.Root size="xs" w="24" bg="white"><NativeSelect.Field aria-label="Filter by application site" value={applicationSiteId} onChange={(event) => { setApplicationSiteId(event.target.value); setPage(1); }}>
+              <option value="">All</option>
+              {applicationSites.map((site) => <option key={site.id} value={site.id}>{site.displayText}</option>)}
+            </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.ColumnHeader>
+            <Table.ColumnHeader><NativeSelect.Root size="xs" w="20" bg="white"><NativeSelect.Field aria-label="Filter by source" value={sourceFilter} onChange={(event) => { setSourceFilter(event.target.value as AdminApplication["source"] | ""); setPage(1); }}>
+              <option value="">All</option>
+              <option value="auto">Auto</option>
+              <option value="manual">Manual</option>
+            </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.ColumnHeader>
+            <Table.ColumnHeader><UserFilterCombobox user={filterUser} onChange={(user) => { setFilterUser(user); setPage(1); }} /></Table.ColumnHeader>
+            <Table.ColumnHeader><NativeSelect.Root size="xs" w="28" bg="white" disabled={!filterUser}><NativeSelect.Field aria-label="Filter by profile" title={filterUser ? undefined : "Choose a user first"} value={profileId} onChange={(event) => { setProfileId(event.target.value); setPage(1); }}>
+              <option value="">{filterUser ? "All" : "Choose user"}</option>
+              {userProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name || `Profile #${profile.id}`}{profile.isDeleted ? " (deleted)" : ""}</option>)}
+            </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Table.ColumnHeader>
+            <Table.ColumnHeader><DateRangeFilter label="Created" from={from} to={to} onChange={(start, end) => { setFrom(start); setTo(end); setPage(1); }} /></Table.ColumnHeader>
+            <Table.ColumnHeader><DateRangeFilter label="Applied" from={appliedFrom} to={appliedTo} onChange={(start, end) => { setAppliedFrom(start); setAppliedTo(end); setPage(1); }} /></Table.ColumnHeader>
+            <Table.ColumnHeader />
+          </Table.Row>
+        </Table.Header>
         <Table.Body>
-          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
-            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
-              <Text>#{application.id}</Text>
-            </Table.Cell>
-            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
-              {canSetSource ? <NativeSelect.Root size="sm" minW="32" disabled={statusBusyId !== null}>
+          {loading || error || !result?.applications.length ? <Table.Row><Table.Cell colSpan={COLUMNS.length} p="8" textAlign="center">{loading ? "Loading applications..." : error ? "Unable to load applications. Use Refresh to retry." : "No applications match your filters."}</Table.Cell></Table.Row> : result.applications.map((application) => <Table.Row key={application.id} cursor="pointer" _hover={{ bg: "gray.50" }} onClick={() => setMessageModal(application)}>
+            <Table.Cell whiteSpace="nowrap" onClick={(event) => event.stopPropagation()}>#{application.id}</Table.Cell>
+            <Table.Cell onClick={(event) => event.stopPropagation()}>
+              {canSetSource ? <NativeSelect.Root size="xs" w="24" disabled={statusBusyId !== null}>
                 <NativeSelect.Field aria-label={`Status of application #${application.id}`} value={application.status} onChange={(event) => void changeStatus(application, event.target.value as ApplicationStatus)}>
                   {STATUS_OPTIONS.filter((option) => option.value !== "").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root> : <Text textTransform="capitalize">{application.status}</Text>}
             </Table.Cell>
-            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
+            <Table.Cell onClick={(event) => event.stopPropagation()}>
               {canSetSource && (application.status === "failed" || application.status === "queued") ? (
                 <Flex gap="2">
                   {application.status === "failed" && (
-                    <Button size="xs" variant="outline" colorPalette="green"
+                    <Button size="2xs" variant="outline" colorPalette="green"
                       loading={retryBusyId === application.id} disabled={retryBusyId !== null || cancelBusyId === application.id}
                       onClick={(event) => { event.stopPropagation(); void retry(application); }}>
                       Retry
                     </Button>
                   )}
-                  <Button size="xs" variant="outline" colorPalette="red"
+                  <Button size="2xs" variant="outline" colorPalette="red"
                     loading={cancelBusyId === application.id} disabled={cancelBusyId !== null || retryBusyId === application.id}
                     onClick={(event) => { event.stopPropagation(); void cancel(application); }}>
                     Cancel
@@ -260,27 +368,26 @@ export function AllApplicationsPage() {
                 </Flex>
               ) : <Text color="gray.400">—</Text>}
             </Table.Cell>
-            <Table.Cell p="4">
-              <Text fontWeight="semibold">
+            <Table.Cell fontWeight="semibold">
+              <Truncated text={application.job?.positionName || "Job unavailable"} maxW="60">
                 {application.job?.url ? (
                   <a
                     href={application.job.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(event) => event.stopPropagation()}
-                    style={{ color: "#15803d", textDecoration: "underline" }}
+                    style={linkStyle}
                   >
                     {application.job.positionName || "Job unavailable"}
                   </a>
-                ) : application.job?.positionName || "Job unavailable"}
-              </Text>
-              <Text fontSize="xs" color="gray.500">{application.job?.companyName || "—"}</Text>
+                ) : undefined}
+              </Truncated>
             </Table.Cell>
-            <Table.Cell p="4"><JobLocations locations={application.job?.location} /></Table.Cell>
-            <Table.Cell p="4">{application.job?.applicationSite?.displayText || "—"}</Table.Cell>
+            <Table.Cell><CompanyLogo name={application.job?.company?.name || application.job?.companyName} logo={application.job?.company?.logo} /></Table.Cell>
+            <Table.Cell><Truncated text={application.job?.applicationSite?.displayText || "—"} maxW="28" /></Table.Cell>
             {/* Clicks stay here: the row itself opens the message dialog. */}
-            <Table.Cell p="4" onClick={(event) => event.stopPropagation()}>
-              <NativeSelect.Root size="sm" minW="28" disabled={!canSetSource || sourceBusyId === application.id}>
+            <Table.Cell onClick={(event) => event.stopPropagation()}>
+              <NativeSelect.Root size="xs" w="20" disabled={!canSetSource || sourceBusyId === application.id}>
                 <NativeSelect.Field aria-label={`Source of application #${application.id}`} value={application.source} onChange={(event) => void setSource(application, event.target.value as AdminApplication["source"])}>
                   <option value="auto">Auto</option>
                   <option value="manual">Manual</option>
@@ -288,11 +395,11 @@ export function AllApplicationsPage() {
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
             </Table.Cell>
-            <Table.Cell p="4">{application.user ? <Link to={`/users/clients/${application.user.id}`} onClick={(event) => event.stopPropagation()} style={{ color: "#15803d", textDecoration: "underline" }}>{application.user.name || application.user.username}</Link> : "—"}</Table.Cell>
-            <Table.Cell p="4">{application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : "—")}</Table.Cell>
-            <Table.Cell p="4">{new Date(application.createdAt).toLocaleString()}</Table.Cell>
-            <Table.Cell p="4">{application.appliedAt ? new Date(application.appliedAt).toLocaleString() : "—"}</Table.Cell>
-            <Table.Cell p="4" whiteSpace="nowrap"><ApplicationFileLinks application={application} onViewLog={() => setLogApplicationId(application.id)} /></Table.Cell>
+            <Table.Cell>{application.user ? <Truncated text={application.user.name || application.user.username} maxW="32"><Link to={`/users/clients/${application.user.id}`} onClick={(event) => event.stopPropagation()} style={linkStyle}>{application.user.name || application.user.username}</Link></Truncated> : "—"}</Table.Cell>
+            <Table.Cell><Truncated text={application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : "—")} maxW="28" /></Table.Cell>
+            <Table.Cell><CompactDate value={application.createdAt} /></Table.Cell>
+            <Table.Cell><CompactDate value={application.appliedAt} /></Table.Cell>
+            <Table.Cell onClick={(event) => event.stopPropagation()}><ApplicationFileLinks application={application} onViewLog={() => setLogApplicationId(application.id)} /></Table.Cell>
           </Table.Row>)}
         </Table.Body>
       </Table.Root></Box>

@@ -18,6 +18,8 @@ import type {
   AdminProfileDetails,
   AdminApplication,
   ApplicationFilters,
+  ApplicationFilterProfile,
+  ApplicationFilterUser,
   ApplicationStatus,
   ServiceHealth,
   AppConfig,
@@ -103,9 +105,21 @@ export const api = {
       ...(filters.applicationSiteId ? { applicationSiteId: String(filters.applicationSiteId) } : {}),
       ...(filters.userId ? { userId: String(filters.userId) } : {}),
       ...(filters.profileId ? { profileId: String(filters.profileId) } : {}),
+      ...(filters.id ? { id: filters.id } : {}),
+      ...(filters.job ? { job: filters.job } : {}),
+      ...(filters.company ? { company: filters.company } : {}),
+      ...(filters.source ? { source: filters.source } : {}),
+      ...(filters.appliedFrom ? { appliedFrom: filters.appliedFrom } : {}),
+      ...(filters.appliedTo ? { appliedTo: filters.appliedTo } : {}),
+      ...(filters.sortBy ? { sortBy: filters.sortBy } : {}),
+      ...(filters.sortDir ? { sortDir: filters.sortDir } : {}),
     })}`),
   cancelApplication: (applicationId: number) =>
     request<void>(`/applications/${applicationId}`, { method: "DELETE" }),
+  applicationFilterUsers: (search: string) =>
+    request<{ users: ApplicationFilterUser[] }>(`/applications/filter-users?${new URLSearchParams({ search })}`),
+  applicationFilterProfiles: (userId: number) =>
+    request<{ profiles: ApplicationFilterProfile[] }>(`/applications/filter-users/${userId}/profiles`),
   retryApplication: (applicationId: number) =>
     request<{ id: number; status: "queued" }>(`/applications/${applicationId}/retry`, { method: "POST" }),
   setApplicationStatus: (applicationId: number, status: ApplicationStatus) =>
