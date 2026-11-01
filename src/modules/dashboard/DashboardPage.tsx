@@ -718,7 +718,9 @@ export function DashboardPage() {
         justify="space-between"
         gap="4"
       >
-        <Box>
+        {/* The notice sits beside the title and drops under it when the window is narrow. */}
+        <Flex flex="1" minW="0" align="center" gap="6" wrap="wrap">
+        <Box flexShrink={0}>
           <Text
             mb="2"
             fontSize="xs"
@@ -744,7 +746,27 @@ export function DashboardPage() {
               : "Checking service availability"}
           </Text>
         </Box>
-        <Flex direction="column" align="end" gap="2">
+          {settlingStatus && (
+            <Box minW="0" maxW="2xl" borderRadius="xl" border="1px solid" borderColor={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.200" : "blue.200"} bg={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.50" : "blue.50"} px="4" py="3">
+              <Flex align="start" gap="3">
+                <Icon as={AlertTriangle} mt="0.5" color={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.600" : "blue.600"} />
+                <Box>
+                  <Text fontWeight="bold">
+                    {settlingStatus.active ? "Settling period active" : settlingStatus.periods.length ? "Application settling periods" : "No settling periods configured"}
+                  </Text>
+                  <Text mt="1" fontSize="sm" color="gray.700">
+                    {settlingStatus.periods.length
+                      ? `${settlingStatus.periods.map(([from, to]) => `${from}–${to} UTC`).join(", ")} · ${settlingStatus.multiplier ?? "?"}× application pricing`
+                      : "Applications are charged at their standard price until UTC windows are configured."}
+                  </Text>
+                  {!settlingStatus.configured && <Text mt="1" fontSize="xs" color="orange.800">Settling period settings are missing or invalid. Update them in App settings.</Text>}
+                  {!settlingStatus.periods.length && <Link to="/settings" style={{ color: "#9a3412", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>Configure settling periods</Link>}
+                </Box>
+              </Flex>
+            </Box>
+          )}
+        </Flex>
+        <Flex direction="column" align="end" gap="2" flexShrink={0}>
           <Flex align="center" gap="2">
             <Button variant="outline" bg="white" onClick={runCleanup} disabled={cleanupRunning}>
               {cleanupRunning ? <Spinner size="sm" /> : <Icon as={Trash2} boxSize="4" />}
@@ -758,26 +780,6 @@ export function DashboardPage() {
           {cleanupMessage && <Text maxW="sm" textAlign="right" fontSize="xs" color={cleanupMessage.toLowerCase().includes("cleanup:") || cleanupMessage.toLowerCase().includes("failed") ? "red.600" : "gray.500"}>{cleanupMessage}</Text>}
         </Flex>
       </Flex>
-
-      {settlingStatus && (
-        <Box mb="6" maxW="2xl" borderRadius="2xl" border="1px solid" borderColor={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.200" : "blue.200"} bg={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.50" : "blue.50"} p="5">
-          <Flex align="start" gap="3">
-            <Icon as={AlertTriangle} mt="0.5" color={settlingStatus.active || !settlingStatus.periods.length || !settlingStatus.configured ? "orange.600" : "blue.600"} />
-            <Box>
-              <Text fontWeight="bold">
-                {settlingStatus.active ? "Settling period active" : settlingStatus.periods.length ? "Application settling periods" : "No settling periods configured"}
-              </Text>
-              <Text mt="1" fontSize="sm" color="gray.700">
-                {settlingStatus.periods.length
-                  ? `${settlingStatus.periods.map(([from, to]) => `${from}–${to} UTC`).join(", ")} · ${settlingStatus.multiplier ?? "?"}× application pricing`
-                  : "Applications are charged at their standard price until UTC windows are configured."}
-              </Text>
-              {!settlingStatus.configured && <Text mt="1" fontSize="xs" color="orange.800">Settling period settings are missing or invalid. Update them in App settings.</Text>}
-              {!settlingStatus.periods.length && <Link to="/settings" style={{ color: "#9a3412", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>Configure settling periods</Link>}
-            </Box>
-          </Flex>
-        </Box>
-      )}
 
       <ApplicationStatusSection summary={applicationSummary} />
 

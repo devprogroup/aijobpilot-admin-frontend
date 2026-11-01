@@ -3,6 +3,7 @@ import {
   Badge,
   Box,
   Button,
+  chakra,
   NativeSelect,
   Flex,
   Icon,
@@ -12,7 +13,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Coins, KeyRound, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Coins, KeyRound, RefreshCw, Search, Trash2 } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { User } from "../../types";
@@ -25,10 +26,22 @@ import { useAuth } from "../../auth/AuthContext";
 
 const PAGE_SIZE = 50;
 /** Fixed widths so the whole table fits a laptop screen and long values are cut, not pushed aside. */
-const COLUMNS: Array<[label: string, width: string]> = [
-  ["Client", "196px"], ["Status", "108px"], ["Credit", "70px"], ["Profiles", "92px"], ["Apps", "54px"], ["Seen / Joined", "96px"],
-  ["IP / Location", "168px"], ["Browser / Device", "138px"], ["Fingerprint", "138px"], ["Actions", "106px"],
+const COLUMNS: Array<[label: string, width: string, sort?: SortKey]> = [
+  ["Client", "216px", "id"], ["Status", "112px", "status"], ["Credit", "84px", "credit"], ["Profiles", "100px", "profiles"], ["Apps", "76px", "apps"], ["Seen / Joined", "128px", "joined"],
+  ["IP / Location", "176px"], ["Browser / Device", "160px"], ["Fingerprint", "148px"], ["Actions", "106px"],
 ];
+type SortKey = "id" | "status" | "credit" | "profiles" | "apps" | "joined";
+type SortDir = "asc" | "desc";
+const SORT_VALUES: Record<SortKey, (user: User) => number | string> = {
+  id: (user) => user.id,
+  status: (user) => user.status,
+  credit: (user) => user.credit,
+  profiles: (user) => user.profileIds?.length ?? 0,
+  apps: (user) => user._count?.applications ?? 0,
+  joined: (user) => new Date(user.createdAt).getTime(),
+};
+/** The first click on a header: lowest id and A-Z for status, otherwise the largest or newest first. */
+const FIRST_DIR: Record<SortKey, SortDir> = { id: "asc", status: "asc", credit: "desc", profiles: "desc", apps: "desc", joined: "desc" };
 const STATUS_COLORS: Record<User["status"], string> = { active: "green.700", inactive: "gray.500", suspended: "red.600" };
 const LINK_STYLE = { color: "#15803d", textDecoration: "underline" };
 
@@ -48,7 +61,7 @@ const locationOf = ({ city, region, country }: { city: string | null; region: st
 function Lines({ top, bottom, title }: { top: ReactNode; bottom?: ReactNode; title?: string }) {
   return <Box title={title} minW="0" lineHeight="1.3">
     <Flex align="center" gap="1" overflow="hidden" whiteSpace="nowrap">{top}</Flex>
-    {bottom && <Text truncate color="gray.500" fontSize="11px">{bottom}</Text>}
+    {bottom && <Text truncate color="gray.500" fontSize="13px">{bottom}</Text>}
   </Box>;
 }
 
@@ -70,6 +83,8 @@ export function UsersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [sharedFilter, setSharedFilter] = useState("");
   const [page, setPage] = useState(1);
+  // Null keeps the API's order (newest client first), which also breaks ties: the sort is stable.
+  const [sort, setSort] = useState<{ by: SortKey; dir: SortDir } | null>(null);
   const [selected, setSelected] = useState<User | null>(null);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
   const [message, setMessage] = useState("");
@@ -86,7 +101,7 @@ export function UsersPage() {
 
   const shown = useMemo(() => {
     const search = query.trim().toLowerCase();
-    return users.filter((x) => {
+    const matching = users.filter((x) => {
       if (statusFilter && x.status !== statusFilter) return false;
       if (sharedFilter === "ip" && !x.lastAccess?.otherAccounts) return false;
       if (sharedFilter === "fingerprint" && !x.lastFingerprint?.otherAccounts) return false;
@@ -96,7 +111,21 @@ export function UsersPage() {
         .some((value) => value?.toLowerCase().includes(search))
         || (x.profileIds ?? []).some((id) => String(id).includes(search));
     });
-  }, [users, query, statusFilter, sharedFilter]);
+    if (!sort) return matching;
+    const value = SORT_VALUES[sort.by];
+    const direction = sort.dir === "asc" ? 1 : -1;
+    return matching.sort((a, b) => {
+      const [left, right] = [value(a), value(b)];
+      return (left < right ? -1 : left > right ? 1 : 0) * direction;
+    });
+  }, [users, query, statusFilter, sharedFilter, sort]);
+
+  const toggleSort = (by: SortKey) => {
+    setSort((current) => current?.by === by
+      ? { by, dir: current.dir === "asc" ? "desc" : "asc" }
+      : { by, dir: FIRST_DIR[by] });
+    setPage(1);
+  };
 
   const deleteUser = async (u: User) => {
     const name = u.username || u.email || `#${u.id}`;
@@ -158,22 +187,27 @@ export function UsersPage() {
               placeholder="Search name, email, ID, IP, location, fingerprint"
               bg="gray.100"
               border="none"
-              fontSize="xs"
+              fontSize="13px"
             />
           </InputGroup>
-          <NativeSelect.Root size="xs" maxW="130px"><NativeSelect.Field aria-label="Filter clients by status" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+          <NativeSelect.Root size="xs" maxW="130px"><NativeSelect.Field fontSize="13px" aria-label="Filter clients by status" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
             <option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
           </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
-          <NativeSelect.Root size="xs" maxW="150px"><NativeSelect.Field aria-label="Filter clients sharing an IP or device" value={sharedFilter} onChange={(event) => { setSharedFilter(event.target.value); setPage(1); }}>
+          <NativeSelect.Root size="xs" maxW="150px"><NativeSelect.Field fontSize="13px" aria-label="Filter clients sharing an IP or device" value={sharedFilter} onChange={(event) => { setSharedFilter(event.target.value); setPage(1); }}>
             <option value="">All clients</option><option value="ip">Shared IP</option><option value="fingerprint">Shared fingerprint</option>
           </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
           <IconButton aria-label="Refresh clients" title="Refresh" size="xs" variant="outline" disabled={loading || pending !== null} onClick={() => setRevision((value) => value + 1)}><RefreshCw size={13} /></IconButton>
         </Flex>
         <Box overflowX="auto" border="1px solid" borderColor="gray.100" borderRadius="lg">
-          <Table.Root minW="1166px" size="sm" fontSize="xs" tableLayout="fixed">
+          <Table.Root minW="1306px" size="sm" fontSize="14px" tableLayout="fixed">
             <Table.Header bg="gray.50">
               <Table.Row>
-                {COLUMNS.map(([label, width]) => <Table.ColumnHeader key={label} w={width} fontSize="10px" letterSpacing="wide" textTransform="uppercase" color="gray.500" px="3" py="1.5" ps={label === COLUMNS[0][0] ? "4" : undefined} pe={label === COLUMNS[COLUMNS.length - 1][0] ? "4" : undefined} whiteSpace="nowrap" textAlign={label === "Credit" || label === "Apps" ? "right" : undefined}>{label}</Table.ColumnHeader>)}
+                {COLUMNS.map(([label, width, sortKey]) => <Table.ColumnHeader key={label} w={width} aria-sort={sortKey && sort?.by === sortKey ? (sort.dir === "asc" ? "ascending" : "descending") : undefined} fontSize="12px" letterSpacing="wide" textTransform="uppercase" color="gray.500" px="3" py="1.5" ps={label === COLUMNS[0][0] ? "4" : undefined} pe={label === COLUMNS[COLUMNS.length - 1][0] ? "4" : undefined} whiteSpace="nowrap" textAlign={label === "Credit" || label === "Apps" ? "right" : undefined}>
+                  {sortKey ? <chakra.button type="button" display="inline-flex" alignItems="center" gap="1" cursor="pointer" textTransform="inherit" letterSpacing="inherit" fontWeight="inherit" color={sort?.by === sortKey ? "green.700" : undefined} _hover={{ color: "green.700" }} onClick={() => toggleSort(sortKey)}>
+                    {label}
+                    {sort?.by === sortKey ? (sort.dir === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ChevronsUpDown size={11} color="#9ca3af" />}
+                  </chakra.button> : label}
+                </Table.ColumnHeader>)}
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -186,12 +220,12 @@ export function UsersPage() {
                   <Table.Cell px="3" ps="4" py="1">
                     <Lines
                       title={[u.username, u.email, u.emailVerified ? "Email verified" : "Email not verified", `Joined ${new Date(u.createdAt).toLocaleDateString()}`].filter(Boolean).join("\n")}
-                      top={<><Link to={`/users/clients/${u.id}`} style={{ ...LINK_STYLE, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || u.username || "—"}</Link><Text as="span" flexShrink={0} color="gray.400" fontFamily="mono" fontSize="11px">#{u.id}</Text></>}
+                      top={<><Link to={`/users/clients/${u.id}`} style={{ ...LINK_STYLE, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || u.username || "—"}</Link><Text as="span" flexShrink={0} color="gray.400" fontFamily="mono" fontSize="12px">#{u.id}</Text></>}
                       bottom={<>{u.email || "No email"}{u.email && !u.emailVerified && <Text as="span" color="orange.600"> · unverified</Text>}</>}
                     />
                   </Table.Cell>
                   <Table.Cell px="3" py="1">
-                    <NativeSelect.Root size="xs" disabled={!canEditClients || pending !== null}><NativeSelect.Field h="6" pl="1.5" pr="5" fontSize="11px" aria-label={`Status for ${u.username}`} value={u.status} color={STATUS_COLORS[u.status]} onChange={(event) => void change(u, event.target.value as User["status"])}>
+                    <NativeSelect.Root size="xs" disabled={!canEditClients || pending !== null}><NativeSelect.Field h="7" pl="1.5" pr="5" fontSize="13px" aria-label={`Status for ${u.username}`} value={u.status} color={STATUS_COLORS[u.status]} onChange={(event) => void change(u, event.target.value as User["status"])}>
                       <option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
                     </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
                   </Table.Cell>
@@ -230,7 +264,7 @@ export function UsersPage() {
                   </Table.Cell>
                   <Table.Cell px="3" py="1">
                     {fingerprint ? <FingerprintHoverCard fingerprint={fingerprint}><Lines
-                      top={<><Text as="span" truncate fontFamily="mono">{fingerprint.visitorId.slice(0, 10)}</Text>{fingerprint.count > 1 && <Text as="span" flexShrink={0} color="gray.500" fontSize="11px">×{fingerprint.count}</Text>}<SharedBadge count={fingerprint.otherAccounts} palette="red" title={`${fingerprint.otherAccounts} other account(s) reported this fingerprint`} /></>}
+                      top={<><Text as="span" truncate fontFamily="mono">{fingerprint.visitorId.slice(0, 10)}</Text>{fingerprint.count > 1 && <Text as="span" flexShrink={0} color="gray.500" fontSize="12px">×{fingerprint.count}</Text>}<SharedBadge count={fingerprint.otherAccounts} palette="red" title={`${fingerprint.otherAccounts} other account(s) reported this fingerprint`} /></>}
                       bottom={fingerprint.details.timezone || "Timezone unknown"}
                     /></FingerprintHoverCard> : <Text color="gray.400">Not captured</Text>}
                   </Table.Cell>
