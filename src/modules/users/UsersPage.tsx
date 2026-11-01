@@ -27,21 +27,21 @@ import { useAuth } from "../../auth/AuthContext";
 const PAGE_SIZE = 50;
 /** Fixed widths so the whole table fits a laptop screen and long values are cut, not pushed aside. */
 const COLUMNS: Array<[label: string, width: string, sort?: SortKey]> = [
-  ["Client", "216px", "id"], ["Status", "112px", "status"], ["Credit", "84px", "credit"], ["Profiles", "100px", "profiles"], ["Apps", "76px", "apps"], ["Seen / Joined", "128px", "joined"],
+  ["Client", "216px", "id"], ["Status", "112px", "status"], ["Credit", "84px", "credit"], ["Profiles", "100px", "profiles"], ["Apps", "76px", "apps"], ["Seen / Joined", "128px", "seen"],
   ["IP / Location", "176px"], ["Browser / Device", "160px"], ["Fingerprint", "148px"], ["Actions", "106px"],
 ];
-type SortKey = "id" | "status" | "credit" | "profiles" | "apps" | "joined";
+type SortKey = "id" | "status" | "credit" | "profiles" | "apps" | "seen";
 type SortDir = "asc" | "desc";
-const SORT_VALUES: Record<SortKey, (user: User) => number | string> = {
+const SORT_VALUES: Record<SortKey, (user: User) => number | string | null> = {
   id: (user) => user.id,
   status: (user) => user.status,
   credit: (user) => user.credit,
   profiles: (user) => user.profileIds?.length ?? 0,
   apps: (user) => user._count?.applications ?? 0,
-  joined: (user) => new Date(user.createdAt).getTime(),
+  seen: (user) => user.lastAccess ? new Date(user.lastAccess.at).getTime() : null,
 };
 /** The first click on a header: lowest id and A-Z for status, otherwise the largest or newest first. */
-const FIRST_DIR: Record<SortKey, SortDir> = { id: "asc", status: "asc", credit: "desc", profiles: "desc", apps: "desc", joined: "desc" };
+const FIRST_DIR: Record<SortKey, SortDir> = { id: "asc", status: "asc", credit: "desc", profiles: "desc", apps: "desc", seen: "desc" };
 const STATUS_COLORS: Record<User["status"], string> = { active: "green.700", inactive: "gray.500", suspended: "red.600" };
 const LINK_STYLE = { color: "#15803d", textDecoration: "underline" };
 
@@ -116,6 +116,8 @@ export function UsersPage() {
     const direction = sort.dir === "asc" ? 1 : -1;
     return matching.sort((a, b) => {
       const [left, right] = [value(a), value(b)];
+      // No value (never seen) stays at the bottom in both directions.
+      if (left === null || right === null) return left === right ? 0 : left === null ? 1 : -1;
       return (left < right ? -1 : left > right ? 1 : 0) * direction;
     });
   }, [users, query, statusFilter, sharedFilter, sort]);
