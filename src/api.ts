@@ -114,6 +114,8 @@ export const api = {
       ...(filters.sortBy ? { sortBy: filters.sortBy } : {}),
       ...(filters.sortDir ? { sortDir: filters.sortDir } : {}),
     })}`),
+  cancelApplication: (applicationId: number) =>
+    request<void>(`/applications/${applicationId}`, { method: "DELETE" }),
   applicationFilterUsers: (search: string) =>
     request<{ users: ApplicationFilterUser[] }>(`/applications/filter-users?${new URLSearchParams({ search })}`),
   applicationFilterProfiles: (userId: number) =>
