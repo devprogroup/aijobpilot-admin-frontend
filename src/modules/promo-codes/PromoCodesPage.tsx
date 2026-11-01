@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Box, Button, Flex, Icon, IconButton, Input, Table, Text } from "@chakra-ui/react";
 import { Copy, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "../../api";
 import type { PromoCode } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
@@ -138,7 +139,12 @@ export function PromoCodesPage() {
                   </Table.Cell>
                   <Table.Cell px="4" py="3" whiteSpace="nowrap">{formatDate(code.createdAt)}</Table.Cell>
                   <Table.Cell px="4" py="3" whiteSpace="nowrap">{code.status === "used" ? "—" : formatDate(code.expiresAt)}</Table.Cell>
-                  <Table.Cell px="4" py="3" whiteSpace="nowrap">{code.usedAt ? `${formatDate(code.usedAt)}${code.usedBy ? ` · user #${code.usedBy}` : ""}` : "—"}</Table.Cell>
+                  <Table.Cell px="4" py="3" whiteSpace="nowrap">
+                    {code.usedAt ? formatDate(code.usedAt) : "—"}
+                    {code.usedAt && code.usedBy !== null && (code.usedByEmail
+                      ? <> · <Link to={`/users/clients/${code.usedBy}`} style={{ color: "#15803d", textDecoration: "underline" }}>{code.usedByEmail}</Link> #{code.usedBy}</>
+                      : ` · user #${code.usedBy}`)}
+                  </Table.Cell>
                   {seesAllCodes && <Table.Cell px="4" py="3">{code.createdByEmail ?? `#${code.createdBy}`}</Table.Cell>}
                 </Table.Row>
               ))}
