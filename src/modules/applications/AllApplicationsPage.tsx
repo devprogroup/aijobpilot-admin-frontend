@@ -251,8 +251,10 @@ export function AllApplicationsPage() {
   };
 
   // Deletes the queued/failed application and returns its job to the profile's recommended list.
+  // A failed application is cancelled without asking; the other statuses still confirm.
   const cancel = async (application: AdminApplication) => {
-    if (!window.confirm(`Cancel application #${application.id}? It is deleted and the job goes back to the profile's recommended jobs.`)) return;
+    if (application.status !== "failed"
+      && !window.confirm(`Cancel application #${application.id}? It is deleted and the job goes back to the profile's recommended jobs.`)) return;
     setActionError(""); setCancelBusyId(application.id);
     try {
       await api.cancelApplication(application.id);
