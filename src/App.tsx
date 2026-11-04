@@ -13,6 +13,7 @@ import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { ProfileDetailsPage } from "./modules/users/ProfileDetailsPage";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { ConstantsPage } from "./modules/settings/ConstantsPage";
+import { ModelsPage } from "./modules/settings/ModelsPage";
 import { BonusPlansPage } from "./modules/settings/BonusPlansPage";
 import { ApiKeysPage } from "./modules/settings/ApiKeysPage";
 import { EmailTemplatesPage } from "./modules/email-templates/EmailTemplatesPage";
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/application-sites" element={<Navigate to="/applications/sites" replace />} />
           <Route path="/settings" element={<Navigate to="/settings/constants" replace />} />
           <Route path="/settings/constants" element={<ConstantsPage />} />
+          <Route path="/settings/models" element={<ModelsPage />} />
           <Route path="/settings/bonus-plans" element={<BonusPlansPage />} />
           <Route path="/api-keys" element={<ApiKeysPage />} />
           <Route path="/emails/admin" element={<AdminEmailsPage />} />

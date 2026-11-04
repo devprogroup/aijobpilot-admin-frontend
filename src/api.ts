@@ -23,6 +23,8 @@ import type {
   ApplicationStatus,
   ServiceHealth,
   AppConfig,
+  LlmModelsResponse,
+  LlmUseCaseConfig,
   BonusPlan,
   BonusPlanPayload,
   ManagedApiKey,
@@ -309,7 +311,7 @@ export const api = {
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
   userAccessEvents: (id: number, page: number) => request<UserAccessHistory>(`/users/${id}/access-events?page=${page}`),
-  updateUser: (id: number, payload: { name?: string | null; credit?: number }) =>
+  updateUser: (id: number, payload: { name?: string | null; credit?: number; isInternal?: boolean; isPremium?: boolean }) =>
     request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateUserPassword: (id: number, password: string) =>
     request<{ success: boolean }>(`/users/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) }),
@@ -324,6 +326,12 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   settings: () => request<{ settings: AppConfig[] }>("/settings"),
+  llmModels: () => request<LlmModelsResponse>("/llm-models"),
+  updateLlmModel: (useCase: string, config: LlmUseCaseConfig) =>
+    request<{ config: LlmUseCaseConfig; updatedAt: string }>(`/llm-models/${encodeURIComponent(useCase)}`, {
+      method: "PUT",
+      body: JSON.stringify(config),
+    }),
   createSetting: (payload: Pick<AppConfig, "key" | "value">) =>
     request<{ setting: AppConfig }>("/settings", {
       method: "POST",
