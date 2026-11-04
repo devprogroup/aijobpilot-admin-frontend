@@ -23,6 +23,8 @@ import type {
   ApplicationStatus,
   ServiceHealth,
   AppConfig,
+  LlmModelsResponse,
+  LlmUseCaseConfig,
   BonusPlan,
   BonusPlanPayload,
   ManagedApiKey,
@@ -324,6 +326,12 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   settings: () => request<{ settings: AppConfig[] }>("/settings"),
+  llmModels: () => request<LlmModelsResponse>("/llm-models"),
+  updateLlmModel: (useCase: string, config: LlmUseCaseConfig) =>
+    request<{ config: LlmUseCaseConfig; updatedAt: string }>(`/llm-models/${encodeURIComponent(useCase)}`, {
+      method: "PUT",
+      body: JSON.stringify(config),
+    }),
   createSetting: (payload: Pick<AppConfig, "key" | "value">) =>
     request<{ setting: AppConfig }>("/settings", {
       method: "POST",

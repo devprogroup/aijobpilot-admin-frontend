@@ -335,6 +335,7 @@ export function Sidebar({
           {user?.role === "super_admin" && <NavItem to="/wallets" icon={Wallet} active={paymentsActive}>Wallets</NavItem>}
           {hasPlatformAccess && <NavGroup icon={Settings} label="Settings" active={settingsActive} open={settingsOpen} onOpenChange={setSettingsOpen}>
             <ChildLink to="/settings/constants" icon={SlidersHorizontal}>Constants</ChildLink>
+            <ChildLink to="/settings/models" icon={Sparkles}>Models</ChildLink>
             <ChildLink to="/settings/bonus-plans" icon={Gift}>Bonus plans</ChildLink>
             <ChildLink to="/api-keys" icon={KeyRound}>Credentials</ChildLink>
             <ChildLink to="/email-templates" icon={Mail}>Email templates</ChildLink>

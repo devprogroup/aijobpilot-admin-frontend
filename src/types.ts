@@ -136,6 +136,13 @@ export interface UserDetails {
   applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+/** Settings > Models (admin-backend routes/llm-models.ts; the catalog is packages/db llm-config.ts). */
+export type LlmProvider = "deepseek" | "openai" | "anthropic";
+export interface LlmModelOption { id: string; label: string; efforts: string[]; defaultEffort: string; note?: string }
+export interface LlmProviderOption { id: LlmProvider; label: string; credentialKey: string; credentialConfigured: boolean; models: LlmModelOption[] }
+export interface LlmUseCaseConfig { provider: LlmProvider; model: string; effort: string; textEffort?: string }
+export interface LlmUseCaseRow { id: string; key: string; label: string; description: string; textEffortLabel: string | null; config: LlmUseCaseConfig; updatedAt: string | null }
+export interface LlmModelsResponse { providers: LlmProviderOption[]; effortLabels: Record<string, string>; useCases: LlmUseCaseRow[] }
 export interface AdminProfileDetails {
   resumeFileName: string | null;
   id: number; userId: number; name: string | null; email: string | null; phone: string | null;
