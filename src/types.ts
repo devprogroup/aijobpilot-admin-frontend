@@ -150,7 +150,8 @@ export interface AdminProfileDetails {
   linkedin: string | null; dateOfBirth: string | null; status: string;
   createdAt: string; updatedAt: string; lastApplicationAt: string | null;
   needResumeTailor: boolean; applicationLimit: number | null;
-  applicationTimeWindows: { timezone: string; windows: { start: string; end: string }[] } | null;
+  /** `days` (mon…sun, judged in `timezone`) left out means every day. */
+  applicationTimeWindows: { timezone: string; windows: { start: string; end: string }[]; days?: string[] } | null;
   resumeData: unknown; atsData: unknown; workAuthorization: unknown; eeo: unknown;
   additionalInfo: unknown; applicationAnswers: unknown; savedSearch: unknown; botSearch: unknown;
   taxonomies: string[] | null;
