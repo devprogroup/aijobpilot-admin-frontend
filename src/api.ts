@@ -311,7 +311,7 @@ export const api = {
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
   userAccessEvents: (id: number, page: number) => request<UserAccessHistory>(`/users/${id}/access-events?page=${page}`),
-  updateUser: (id: number, payload: { name?: string | null; credit?: number }) =>
+  updateUser: (id: number, payload: { name?: string | null; credit?: number; isInternal?: boolean; isPremium?: boolean }) =>
     request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateUserPassword: (id: number, password: string) =>
     request<{ success: boolean }>(`/users/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) }),

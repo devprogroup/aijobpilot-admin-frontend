@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Flex, NativeSelect, SimpleGrid, Table, Text } from "@chakra-ui/react";
+import { Box, Button, Checkbox, Flex, NativeSelect, SimpleGrid, Table, Text } from "@chakra-ui/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { api } from "../../api";
@@ -70,6 +70,12 @@ export function UserDetailsPage() {
     catch (error) { setError(error instanceof Error ? error.message : "Unable to update status"); }
     finally { setSaving(false); }
   };
+  const changeFlag = async (flag: "isInternal" | "isPremium", value: boolean) => {
+    setSaving(true); setError("");
+    try { update((await api.updateUser(id, { [flag]: value })).user); }
+    catch (error) { setError(error instanceof Error ? error.message : "Unable to update the account flag"); }
+    finally { setSaving(false); }
+  };
   return <Box>
     <Link to="/users/clients">← Back to clients</Link>
     <Flex mt="5" mb="6" justify="space-between" align="center"><Box><Text as="h1" fontSize="3xl" fontWeight="bold">{details?.user.name || details?.user.username || "User details"}</Text><Text color="gray.500">Account #{userId}</Text></Box><Flex gap="2"><Button variant="outline" disabled={!details || loading || saving} onClick={() => setEditingName(true)}>Edit name</Button><Button variant="outline" disabled={loading || saving} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>{canEditClients && <Button variant="outline" colorPalette="red" disabled={!details || loading || saving} onClick={() => void deleteUser()}><Trash2 size={16} />Delete user</Button>}</Flex></Flex>
@@ -81,6 +87,17 @@ export function UserDetailsPage() {
         <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap="5">
           {[['User ID', String(details.user.id)], ['Name', details.user.name || 'Not set'], ['Username', details.user.username], ['Email', details.user.email || 'Not provided'], ['Email verification', details.user.emailVerified ? 'Verified' : 'Unverified'], ['Credit', details.user.credit.toLocaleString(undefined, { maximumFractionDigits: 6 })], ['Joined', time(details.user.createdAt)], ['Last updated', time(details.user.updatedAt)]].map(([label, value]) => <Box key={label}><Text fontSize="sm" color="gray.500">{label}</Text><Text overflowWrap="anywhere">{value}</Text></Box>)}
           <Box><Text fontSize="sm" color="gray.500" mb="1">Account status</Text><NativeSelect.Root disabled={!canEditClients || saving}><NativeSelect.Field aria-label="Account status" value={details.user.status} onChange={(event) => void changeStatus(event.target.value as User['status'])}><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Box>
+          <Box>
+            <Text fontSize="sm" color="gray.500" mb="1">Account type</Text>
+            <Flex gap="5" wrap="wrap">
+              {([["isInternal", "Internal"], ["isPremium", "Premium"]] as const).map(([flag, label]) => <Checkbox.Root key={flag} checked={Boolean(details.user[flag])} disabled={!canEditClients || saving} onCheckedChange={(change) => void changeFlag(flag, change.checked === true)}>
+                <Checkbox.HiddenInput />
+                <Checkbox.Control />
+                <Checkbox.Label fontSize="sm">{label}</Checkbox.Label>
+              </Checkbox.Root>)}
+            </Flex>
+            <Text fontSize="xs" color="gray.500" mt="1">Internal or premium accounts can sign in to the internal platform.</Text>
+          </Box>
         </SimpleGrid>
       </Box>
       <Box bg="white" borderRadius="2xl" p="5" mb="6" overflowX="auto">
