@@ -15,6 +15,8 @@ function SendMessageTab() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [variant, setVariant] = useState<Variant>("info");
+  /** important: the client app opens it in a dialog on the next sign-in / app load until dismissed. */
+  const [level, setLevel] = useState<"normal" | "important">("normal");
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -41,10 +43,12 @@ function SendMessageTab() {
         title: title.trim(),
         content: content.trim(),
         variant,
+        level,
       });
       setSuccess(`Message sent to ${result.sent} ${result.sent === 1 ? "user" : "users"}.`);
       setTitle("");
       setContent("");
+      setLevel("normal");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to send message.");
     } finally {
@@ -107,6 +111,18 @@ function SendMessageTab() {
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label>Importance</Field.Label>
+          <NativeSelect.Root maxW="xs">
+            <NativeSelect.Field value={level} onChange={(event) => setLevel(event.target.value as "normal" | "important")}>
+              <option value="normal">Normal</option>
+              <option value="important">Important</option>
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+          <Field.HelperText>Important messages open in a dialog the next time the user signs in or loads the app, until they dismiss it.</Field.HelperText>
         </Field.Root>
 
         {recipient === "all" && <Text fontSize="sm" color="orange.700" bg="orange.50" borderRadius="lg" p="3">This will send a message to all {users.length} active users.</Text>}
