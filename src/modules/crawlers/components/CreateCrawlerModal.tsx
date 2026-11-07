@@ -410,7 +410,9 @@ export function CreateCrawlerModal({
                     placeholder='{ "mode": "headless", "apiDelayMs": 2000 }'
                   />
                   <Text mt="1" fontSize="xs" color="gray.400">
-                    The crawler's other settings, e.g. mode, apiDelayMs, maxBatchesPerSession.
+                    {kind === "company"
+                      ? "Overrides of the crawler type's common settings, if any (e.g. a different apiDelayMs for this account)."
+                      : "The crawler's settings, e.g. apiDelayMs."}
                   </Text>
                 </Field.Root>
 

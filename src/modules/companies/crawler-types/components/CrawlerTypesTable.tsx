@@ -132,6 +132,15 @@ export function CrawlerTypesTable() {
                   px="5"
                   py="3"
                 >
+                  Common settings
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  color="gray.400"
+                  px="5"
+                  py="3"
+                >
                   Parameters
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
@@ -159,7 +168,7 @@ export function CrawlerTypesTable() {
               {!loading && types.length === 0 && (
                 <Table.Row>
                   <Table.Cell
-                    colSpan={4}
+                    colSpan={5}
                     px="5"
                     py="8"
                     textAlign="center"
@@ -173,6 +182,19 @@ export function CrawlerTypesTable() {
                 <Table.Row key={t.id} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4" fontWeight="semibold">
                     {t.name}
+                  </Table.Cell>
+                  <Table.Cell px="5" py="4">
+                    <Box
+                      as="pre"
+                      maxW="xs"
+                      overflowX="auto"
+                      whiteSpace="pre-wrap"
+                      wordBreak="break-all"
+                      fontSize="xs"
+                      color="gray.500"
+                    >
+                      {JSON.stringify(t.config ?? {})}
+                    </Box>
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <Box

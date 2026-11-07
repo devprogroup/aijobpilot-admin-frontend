@@ -17,15 +17,28 @@ import { X } from "lucide-react";
 import { api } from "../../../../api";
 import type { CrawlerType } from "../../../../types";
 
-/** A company crawler type: its name and the settings its crawlers must set (parameters). Every
- * other setting (mode, apiDelayMs, ...) is on each crawler's own config. */
+/** A company crawler type: its name, the settings its crawlers have in common (config; a crawler's
+ * own config overrides them) and the ones each crawler must set itself (parameters). */
 interface FormValues {
   name: string;
+  config: string;
   parameters: string;
 }
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
+  config: yup
+    .string()
+    .required("Common settings is required")
+    .test("is-json-object", "Common settings must be a valid JSON object", (value) => {
+      if (!value) return false;
+      try {
+        const parsed = JSON.parse(value);
+        return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
+      } catch {
+        return false;
+      }
+    }),
   parameters: yup
     .string()
     .required("Parameters is required")
@@ -93,6 +106,7 @@ export function CrawlerTypeFormModal({
     resolver: yupResolver(schema),
     defaultValues: {
       name: crawlerType?.name ?? "",
+      config: crawlerType ? JSON.stringify(crawlerType.config ?? {}, null, 2) : "{\n  \n}",
       parameters: crawlerType
         ? JSON.stringify(crawlerType.parameters, null, 2)
         : "{\n  \n}",
@@ -103,6 +117,7 @@ export function CrawlerTypeFormModal({
     setError("");
     const payload = {
       name: data.name,
+      config: JSON.parse(data.config),
       parameters: JSON.parse(data.parameters),
     };
     try {
@@ -156,6 +171,27 @@ export function CrawlerTypeFormModal({
                     fontSize="sm"
                   />
                   <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
+                </Field.Root>
+
+                <Field.Root invalid={!!errors.config}>
+                  <Field.Label
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="gray.500"
+                  >
+                    Common settings (JSON)
+                  </Field.Label>
+                  <Textarea
+                    {...register("config")}
+                    rows={6}
+                    borderColor="gray.200"
+                    fontFamily="mono"
+                    fontSize="xs"
+                  />
+                  <Field.HelperText fontSize="xs" color="gray.400">
+                    Settings every crawler of this type shares, e.g. mode, apiDelayMs, maxBatchesPerSession. A crawler's own config overrides them.
+                  </Field.HelperText>
+                  <Field.ErrorText>{errors.config?.message}</Field.ErrorText>
                 </Field.Root>
 
                 <Field.Root invalid={!!errors.parameters}>
