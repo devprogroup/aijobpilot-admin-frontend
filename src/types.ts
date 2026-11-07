@@ -22,7 +22,7 @@ export interface CrawlerTypeParameterOption { key:string; value:string }
 /** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values. */
 export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string> }
 /** A company crawler type (jobgether, jobright, simplify, tsenta): the settings its crawlers must set. */
-export interface CrawlerType { id:number; name:string; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
+export interface CrawlerType { id:number; name:string; config:Record<string,unknown>; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
 /** One manual upload of crawled jobs (a run of the "Manual upload" crawler): total = its jobs. */
 export interface ManualUpload { id:number; uploadedAt:string|null; total:number; counts:CrawlerRunCounts }
@@ -50,7 +50,7 @@ export type CreateCrawlerPayload =
   | { kind:"company"; name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
   | { kind:"job"; name:string; type:string; config:Record<string,unknown>; stopSignalData?:string };
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
-export interface CrawlerTypePayload { name:string; parameters:Record<string,CrawlerTypeParameter> }
+export interface CrawlerTypePayload { name:string; config:Record<string,unknown>; parameters:Record<string,CrawlerTypeParameter> }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; /** Internal / premium accounts may sign in to the internal platform. */ isInternal:boolean; isPremium:boolean; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; /** Newest sign-in or activity event, list endpoint only. */ lastAccess?:UserLastAccess|null; /** Newest device fingerprint, list endpoint only. */ lastFingerprint?:UserLastFingerprint|null; _count?:{profiles?:number;applications?:number} }
 /** A client's most recent access event (client-backend user_access_events). */
 export interface UserLastAccess { at:string; event:string; ip:string|null; country:string|null; region:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; /** Other accounts seen on this IP in the last 90 days. */ otherAccounts:number; /** IPs of this client in the last 90 days. */ ipCount:number }
