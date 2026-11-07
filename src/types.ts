@@ -174,6 +174,9 @@ export interface AdminEmail extends AdminEmailSummary {
   bodyText: string | null;
   bodyHtml: string | null;
 }
+export type ClientMailingRecipients = "all" | number[];
+export interface ClientMailingPayload { recipients: ClientMailingRecipients; fromName: string; fromEmailId: string; subject: string; body: string }
+export interface ClientMailingResult { recipients: number; sent: number; failed: number; skipped: number; errors: string[] }
 export interface InboundEmailSummary extends AdminEmailSummary {
   profileId: number;
   messageId: string;
