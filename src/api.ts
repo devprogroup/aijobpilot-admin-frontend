@@ -307,7 +307,7 @@ export const api = {
   deleteCrawlerType: (id: number) =>
     request<void>(`/crawler-types/${id}`, { method: "DELETE" }),
   users: () => request<{ users: User[] }>("/users"),
-  sendUserMessage: (payload: { recipient: "all" | "user"; userId?: number; title: string; content: string; variant: "info" | "success" | "warning" | "error" }) =>
+  sendUserMessage: (payload: { recipient: "all" | "user"; userId?: number; title: string; content: string; variant: "info" | "success" | "warning" | "error"; level: "normal" | "important" }) =>
     request<{ sent: number }>("/messages", { method: "POST", body: JSON.stringify(payload) }),
   user: (id: number) => request<UserDetails>(`/users/${id}`),
   userProfile: (userId: number, profileId: number) =>
