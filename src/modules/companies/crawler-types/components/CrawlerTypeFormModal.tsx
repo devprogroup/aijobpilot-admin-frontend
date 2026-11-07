@@ -14,33 +14,18 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { X } from "lucide-react";
-import { api } from "../../../api";
-import type { CrawlerType } from "../../../types";
+import { api } from "../../../../api";
+import type { CrawlerType } from "../../../../types";
 
+/** A company crawler type: its name and the settings its crawlers must set (parameters). Every
+ * other setting (mode, apiDelayMs, ...) is on each crawler's own config. */
 interface FormValues {
   name: string;
-  config: string;
   parameters: string;
 }
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
-  config: yup
-    .string()
-    .required("Config is required")
-    .test("is-json-object", "Config must be a valid JSON object", (value) => {
-      if (!value) return false;
-      try {
-        const parsed = JSON.parse(value);
-        return (
-          parsed !== null &&
-          typeof parsed === "object" &&
-          !Array.isArray(parsed)
-        );
-      } catch {
-        return false;
-      }
-    }),
   parameters: yup
     .string()
     .required("Parameters is required")
@@ -108,9 +93,6 @@ export function CrawlerTypeFormModal({
     resolver: yupResolver(schema),
     defaultValues: {
       name: crawlerType?.name ?? "",
-      config: crawlerType
-        ? JSON.stringify(crawlerType.config, null, 2)
-        : "{\n  \n}",
       parameters: crawlerType
         ? JSON.stringify(crawlerType.parameters, null, 2)
         : "{\n  \n}",
@@ -121,7 +103,6 @@ export function CrawlerTypeFormModal({
     setError("");
     const payload = {
       name: data.name,
-      config: JSON.parse(data.config),
       parameters: JSON.parse(data.parameters),
     };
     try {
@@ -175,24 +156,6 @@ export function CrawlerTypeFormModal({
                     fontSize="sm"
                   />
                   <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
-                </Field.Root>
-
-                <Field.Root invalid={!!errors.config}>
-                  <Field.Label
-                    fontSize="xs"
-                    fontWeight="semibold"
-                    color="gray.500"
-                  >
-                    Config (JSON)
-                  </Field.Label>
-                  <Textarea
-                    {...register("config")}
-                    rows={6}
-                    borderColor="gray.200"
-                    fontFamily="mono"
-                    fontSize="xs"
-                  />
-                  <Field.ErrorText>{errors.config?.message}</Field.ErrorText>
                 </Field.Root>
 
                 <Field.Root invalid={!!errors.parameters}>

@@ -35,6 +35,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
+  Upload,
   MessagesSquare,
   Inbox,
   Settings,
@@ -55,14 +56,17 @@ function ChildLink({
   to,
   icon,
   children,
+  end,
 }: {
   to: string;
   icon: typeof Boxes;
   children: ReactNode;
+  /** Active on this exact path only, not on the paths under it. */
+  end?: boolean;
 }) {
   const { onClose } = useContext(SidebarContext);
   return (
-    <NavLink to={to} onClick={onClose} style={{ textDecoration: "none" }}>
+    <NavLink to={to} end={end} onClick={onClose} style={{ textDecoration: "none" }}>
       {({ isActive }) => (
         <Flex
           align="center"
@@ -183,11 +187,16 @@ export function Sidebar({
   const emailsActive = location.pathname.startsWith("/emails");
   const [crawlersOpen, setCrawlersOpen] = useState(crawlerActive);
   const companiesActive = location.pathname.startsWith("/companies");
+  const [companiesOpen, setCompaniesOpen] = useState(companiesActive);
   const [emailsOpen, setEmailsOpen] = useState(emailsActive);
 
   useEffect(() => {
     if (crawlerActive) setCrawlersOpen(true);
   }, [crawlerActive]);
+
+  useEffect(() => {
+    if (companiesActive) setCompaniesOpen(true);
+  }, [companiesActive]);
 
   useEffect(() => {
     if (emailsActive) setEmailsOpen(true);
@@ -316,11 +325,15 @@ export function Sidebar({
           {hasPlatformAccess && <>
           <NavGroup icon={Bot} label="Crawlers" active={crawlerActive} open={crawlersOpen} onOpenChange={setCrawlersOpen}>
             <ChildLink to="/crawlers/fleets" icon={Boxes}>Crawler fleet</ChildLink>
-            <ChildLink to="/crawlers/types" icon={ListTree}>Crawler types</ChildLink>
             <ChildLink to="/crawlers/crawled-jobs" icon={Briefcase}>Crawled jobs</ChildLink>
+            <ChildLink to="/crawlers/manual-uploads" icon={Upload}>Manual uploads</ChildLink>
             <ChildLink to="/crawlers/settings" icon={Settings}>Crawler settings</ChildLink>
           </NavGroup>
-          <NavItem to="/companies" icon={Building2} active={companiesActive}>Companies</NavItem>
+          <NavGroup icon={Building2} label="Companies" active={companiesActive} open={companiesOpen} onOpenChange={setCompaniesOpen}>
+            <ChildLink to="/companies" icon={List} end>All companies</ChildLink>
+            <ChildLink to="/companies/crawlers" icon={Bot}>Company crawlers</ChildLink>
+            <ChildLink to="/companies/crawler-types" icon={ListTree}>Crawler types</ChildLink>
+          </NavGroup>
           <NavGroup icon={Briefcase} label="Applications" active={applicationsActive} open={applicationsOpen} onOpenChange={setApplicationsOpen}>
             <ChildLink to="/applications/sites" icon={Globe}>Application sites</ChildLink>
             <ChildLink to="/applications/all" icon={List}>All applications</ChildLink>

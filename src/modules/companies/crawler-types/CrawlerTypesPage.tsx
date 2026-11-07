@@ -25,7 +25,7 @@ export function CrawlerTypesPage() {
           Crawler types
         </Text>
         <Text mt="2" fontSize="sm" color="gray.500">
-          Manage crawler type definitions and defaults.
+          The company crawler types (jobgether, jobright, simplify, tsenta) and the settings their crawlers must set. Job crawlers name their type themselves.
         </Text>
       </Box>
       <CrawlerTypesTable />

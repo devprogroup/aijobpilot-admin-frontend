@@ -15,12 +15,12 @@ import {
 import { ArrowLeft, Play, Save, Trash2 } from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
-import type { Crawler } from "../../types";
+import type { Crawler, CrawlerKind } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { CrawlerRunProgressPanel } from "./components/CrawlerRunProgressPanel";
 import { toaster } from "../../components/ui/toaster";
-import { isManualCrawler } from "./manual-crawler";
+import { crawlerListPath, crawlerTypeName, isManualCrawler } from "./manual-crawler";
 
 const ChakraRouterLink = chakra(Link);
 
@@ -32,7 +32,9 @@ const time = (date: string | null) =>
       }).format(new Date(date))
     : "—";
 
-export function CrawlerDetailsPage() {
+/** kind: which table the route's id is in -- /crawlers/fleets/:id (job) or
+ * /companies/crawlers/:id (company, see modules/companies/crawlers). */
+export function CrawlerDetailsPage({ kind = "job" }: { kind?: CrawlerKind }) {
   const { crawlerId: crawlerIdParam } = useParams();
   const crawlerId = Number(crawlerIdParam);
   const navigate = useNavigate();
@@ -51,7 +53,7 @@ export function CrawlerDetailsPage() {
   const load = async () => {
     if (!Number.isInteger(crawlerId) || crawlerId < 1) return;
     try {
-      const result = await api.crawler(crawlerId);
+      const result = await api.crawler(crawlerId, kind);
       setCrawler(result.crawler);
       setName(result.crawler.name);
       setConfig(JSON.stringify(result.crawler.config, null, 2));
@@ -64,7 +66,7 @@ export function CrawlerDetailsPage() {
   };
   useEffect(() => {
     load();
-  }, [crawlerId]);
+  }, [crawlerId, kind]);
 
   // While the crawler is queued or running, keep its status and runs current (a new run shows up
   // in the progress panel) without touching the configuration form.
@@ -72,12 +74,12 @@ export function CrawlerDetailsPage() {
   useEffect(() => {
     if (!busy || !Number.isInteger(crawlerId) || crawlerId < 1) return;
     const timer = window.setInterval(() => {
-      api.crawler(crawlerId).then((result) => setCrawler(result.crawler)).catch(() => {});
+      api.crawler(crawlerId, kind).then((result) => setCrawler(result.crawler)).catch(() => {});
     }, 10000);
     return () => window.clearInterval(timer);
-  }, [crawlerId, busy]);
+  }, [crawlerId, kind, busy]);
   const refreshCrawler = () => {
-    api.crawler(crawlerId).then((result) => setCrawler(result.crawler)).catch(() => {});
+    api.crawler(crawlerId, kind).then((result) => setCrawler(result.crawler)).catch(() => {});
   };
 
   const save = async (event: React.FormEvent) => {
@@ -90,7 +92,7 @@ export function CrawlerDetailsPage() {
         name: name.trim(),
         config: parsedConfig,
         stopSignalData: stopSignalData.trim() || null,
-      });
+      }, kind);
       await load();
     } catch (error) {
       setError(
@@ -105,7 +107,7 @@ export function CrawlerDetailsPage() {
     setError("");
     setStarting(true);
     try {
-      await api.queueCrawler(crawlerId);
+      await api.queueCrawler(crawlerId, kind);
       await load();
       toaster.create({ title: "Crawler queued to run now.", type: "success" });
     } catch (error) {
@@ -126,9 +128,9 @@ export function CrawlerDetailsPage() {
     setError("");
     setDeleting(true);
     try {
-      await api.deleteCrawler(crawlerId);
+      await api.deleteCrawler(crawlerId, kind);
       toaster.create({ title: "Crawler deleted.", type: "success" });
-      navigate("/crawlers/fleets");
+      navigate(crawlerListPath(kind));
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to delete crawler",
@@ -138,7 +140,7 @@ export function CrawlerDetailsPage() {
   };
 
   if (!Number.isInteger(crawlerId) || crawlerId < 1)
-    return <Navigate to="/crawlers/fleets" replace />;
+    return <Navigate to={crawlerListPath(kind)} replace />;
   if (!crawler) {
     return (
       <Box>
@@ -153,12 +155,13 @@ export function CrawlerDetailsPage() {
     );
   }
   /** Run progress is parsed from the api-* crawlers' log events; other crawlers don't write them. */
-  const isApiCrawler = crawler.crawlerType.name.startsWith("api-");
+  const typeName = crawlerTypeName(crawler);
+  const isApiCrawler = typeName.startsWith("api-");
 
   return (
     <>
       <ChakraRouterLink
-        to="/crawlers/fleets"
+        to={crawlerListPath(kind)}
         display="flex"
         mb="5"
         alignItems="center"
@@ -169,7 +172,7 @@ export function CrawlerDetailsPage() {
         _hover={{ color: "gray.800" }}
       >
         <Icon as={ArrowLeft} boxSize="4" />
-        Back to crawler fleet
+        {kind === "company" ? "Back to company crawlers" : "Back to crawler fleet"}
       </ChakraRouterLink>
 
       <Flex as="header" mb="8" align="flex-start" justify="space-between" gap="4" flexWrap="wrap">
@@ -197,7 +200,7 @@ export function CrawlerDetailsPage() {
             <StatusBadge status={crawler.status} />
           </Flex>
           <Text mt="2" fontSize="sm" color="gray.500">
-            {crawler.crawlerType.name} · Crawler #{crawler.id}
+            {typeName} · {kind === "company" ? "Company crawler" : "Crawler"} #{crawler.id}
           </Text>
         </Box>
         <Flex gap="3">
@@ -277,7 +280,7 @@ export function CrawlerDetailsPage() {
             </Field.Label>
             <Input
               disabled
-              value={crawler.crawlerType.name}
+              value={typeName}
               bg="gray.50"
               borderColor="gray.200"
               fontSize="sm"
@@ -452,7 +455,7 @@ export function CrawlerDetailsPage() {
           </Table.Root>
         </Box>
       </Box>
-      {logRunId !== null && <CrawlerRunLogDialog crawlerId={crawlerId} runId={logRunId} onClose={() => setLogRunId(null)} />}
+      {logRunId !== null && <CrawlerRunLogDialog crawlerId={crawlerId} kind={kind} runId={logRunId} onClose={() => setLogRunId(null)} />}
     </>
   );
 }
