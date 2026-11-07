@@ -42,7 +42,7 @@ export interface CrawledJobRow { id:number; createdAt:string; title:string; comp
 export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
 export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
-export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; /** Newest sign-in or activity event, list endpoint only. */ lastAccess?:UserLastAccess|null; /** Newest device fingerprint, list endpoint only. */ lastFingerprint?:UserLastFingerprint|null; _count?:{profiles?:number;applications?:number} }
+export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; /** Internal / premium accounts may sign in to the internal platform. */ isInternal:boolean; isPremium:boolean; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; /** Newest sign-in or activity event, list endpoint only. */ lastAccess?:UserLastAccess|null; /** Newest device fingerprint, list endpoint only. */ lastFingerprint?:UserLastFingerprint|null; _count?:{profiles?:number;applications?:number} }
 /** A client's most recent access event (client-backend user_access_events). */
 export interface UserLastAccess { at:string; event:string; ip:string|null; country:string|null; region:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; /** Other accounts seen on this IP in the last 90 days. */ otherAccounts:number; /** IPs of this client in the last 90 days. */ ipCount:number }
 /** A client's most recently seen device fingerprint. otherAccounts: accounts sharing it; count: this client's fingerprints. */
@@ -136,6 +136,13 @@ export interface UserDetails {
   applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
+/** Settings > Models (admin-backend routes/llm-models.ts; the catalog is packages/db llm-config.ts). */
+export type LlmProvider = "deepseek" | "openai" | "anthropic";
+export interface LlmModelOption { id: string; label: string; efforts: string[]; defaultEffort: string; note?: string }
+export interface LlmProviderOption { id: LlmProvider; label: string; credentialKey: string; credentialConfigured: boolean; models: LlmModelOption[] }
+export interface LlmUseCaseConfig { provider: LlmProvider; model: string; effort: string; textEffort?: string }
+export interface LlmUseCaseRow { id: string; key: string; label: string; description: string; textEffortLabel: string | null; config: LlmUseCaseConfig; updatedAt: string | null }
+export interface LlmModelsResponse { providers: LlmProviderOption[]; effortLabels: Record<string, string>; useCases: LlmUseCaseRow[] }
 export interface AdminProfileDetails {
   resumeFileName: string | null;
   id: number; userId: number; name: string | null; email: string | null; phone: string | null;
@@ -143,7 +150,8 @@ export interface AdminProfileDetails {
   linkedin: string | null; dateOfBirth: string | null; status: string;
   createdAt: string; updatedAt: string; lastApplicationAt: string | null;
   needResumeTailor: boolean; applicationLimit: number | null;
-  applicationTimeWindows: { timezone: string; windows: { start: string; end: string }[] } | null;
+  /** `days` (mon…sun, judged in `timezone`) left out means every day. */
+  applicationTimeWindows: { timezone: string; windows: { start: string; end: string }[]; days?: string[] } | null;
   resumeData: unknown; atsData: unknown; workAuthorization: unknown; eeo: unknown;
   additionalInfo: unknown; applicationAnswers: unknown; savedSearch: unknown; botSearch: unknown;
   taxonomies: string[] | null;

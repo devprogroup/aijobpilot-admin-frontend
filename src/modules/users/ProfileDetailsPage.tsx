@@ -9,6 +9,11 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 const time = (value: string | null) => value ? new Date(value).toLocaleString() : "Not set";
 const label = (value: string) => value.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (char) => char.toUpperCase());
 
+const DAY_LABELS: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+/** The weekdays the profile's bot runs on (Application settings in the client app); none stored = every day. */
+const describeApplicationDays = (days: string[] | undefined) =>
+  !days?.length || days.length === 7 ? "Every day" : days.map((day) => DAY_LABELS[day] ?? day).join(", ");
+
 function DetailData({ value }: { value: unknown }): ReactNode {
   if (value == null || value === "") return <Text color="gray.500">Not set</Text>;
   if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -100,6 +105,7 @@ export function ProfileDetailsPage() {
         <DetailData value={{ resumeTailoring: profile.needResumeTailor,
           dailyApplicationLimit: profile.applicationLimit ?? "Unlimited",
           allowedTimeWindowsUtc: profile.applicationTimeWindows?.windows ?? "Any time",
+          applicationDays: describeApplicationDays(profile.applicationTimeWindows?.days),
           scheduleTimezone: profile.applicationTimeWindows?.timezone ?? "UTC" }} />
       </Section>
       {([
