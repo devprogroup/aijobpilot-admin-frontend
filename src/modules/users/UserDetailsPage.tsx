@@ -107,13 +107,6 @@ export function UserDetailsPage() {
           {!details.profiles.length && <Table.Row><Table.Cell colSpan={canEditClients ? 6 : 5}>No profiles yet.</Table.Cell></Table.Row>}
         </Table.Body></Table.Root>
       </Box>
-      <Box bg="white" borderRadius="2xl" p="5" overflowX="auto">
-        <Text fontWeight="bold">Applications ({details.user._count?.applications ?? 0})</Text><Text fontSize="xs" color="gray.500" mb="4">Latest {details.applications.length} applications</Text>
-        <Table.Root size="sm" minW="800px"><Table.Header><Table.Row>{['Job', 'Profile', 'Status', 'Created', 'Applied', 'Message'].map((label) => <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>)}</Table.Row></Table.Header><Table.Body>
-          {details.applications.map((application) => <Table.Row key={application.id}><Table.Cell><Text>{application.job?.positionName || `Application #${application.id}`}</Text><Text fontSize="xs" color="gray.500">{application.job?.companyName}</Text></Table.Cell><Table.Cell>{application.profile?.name || (application.profile ? `Profile #${application.profile.id}` : '—')}</Table.Cell><Table.Cell><StatusBadge status={application.status} /></Table.Cell><Table.Cell>{time(application.createdAt)}</Table.Cell><Table.Cell>{time(application.appliedAt)}</Table.Cell><Table.Cell maxW="72" whiteSpace="pre-wrap" overflowWrap="anywhere">{application.message || '—'}</Table.Cell></Table.Row>)}
-          {!details.applications.length && <Table.Row><Table.Cell colSpan={6}>No applications yet.</Table.Cell></Table.Row>}
-        </Table.Body></Table.Root>
-      </Box>
       <UserPaymentHistory key={id} userId={id} />
       <UserAccessHistory key={`access-${id}`} userId={id} />
       {editing && <UserDetailsDialog user={details.user} onClose={() => setEditing(false)} onSaved={(user) => { update(user); setEditing(false); }} />}
