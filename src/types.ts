@@ -144,7 +144,6 @@ export interface ApplicationFilterProfile { id: number; name: string | null; isD
 export interface UserDetails {
   user: User;
   profiles: { id:number; name:string|null; email:string|null; status:string; lastApplicationAt:string|null }[];
-  applications: { id:number; status:string; createdAt:string; appliedAt:string|null; message:string|null; job?:{id:number;positionName:string|null;companyName:string|null}; profile?:{id:number;name:string|null} }[];
 }
 export interface AppConfig { key:string; value:string; updatedAt:string }
 /** Settings > Models (admin-backend routes/llm-models.ts; the catalog is packages/db llm-config.ts). */
