@@ -386,7 +386,7 @@ export function CrawlerFleetPage({ kind = "job" }: { kind?: CrawlerKind }) {
                   px="5"
                   py="3"
                 >
-                  Ingested / crawled
+                  {kind === "company" ? "Ingested companies / processed jobs" : "Ingested / crawled"}
                 </Table.ColumnHeader>
                 <Table.ColumnHeader
                   fontSize="xs"
@@ -469,6 +469,21 @@ export function CrawlerFleetPage({ kind = "job" }: { kind?: CrawlerKind }) {
                     {crawler.latestRun ? (
                       <Box>
                       <Flex align="center" gap="2">
+                        {crawler.kind === "company" ? (
+                          <Text title="Distinct companies the latest run saved to the companies table / jobs it processed (each job's company read from its URL, or its posting)">
+                            {crawler.latestRun.companies ? (
+                              <>
+                                <Text as="span" fontWeight="semibold" color="green.700">
+                                  {crawler.latestRun.companies.companies.toLocaleString()}
+                                </Text>
+                                {" / "}
+                                {crawler.latestRun.companies.jobs.toLocaleString()}
+                              </>
+                            ) : (
+                              <Text as="span" color="gray.400">—</Text>
+                            )}
+                          </Text>
+                        ) : (
                         <Text title="Jobs ats-engine inserted from the latest run / jobs that run crawled after the title filter (jobs it saw before the title filter)">
                           <Text as="span" fontWeight="semibold" color="green.700">
                             {crawler.latestRun.counts.inserted.toLocaleString()}
@@ -483,6 +498,7 @@ export function CrawlerFleetPage({ kind = "job" }: { kind?: CrawlerKind }) {
                             </Text>
                           )}
                         </Text>
+                        )}
                         {crawler.status === "running" && crawler.latestRun.status === "running" && crawler.latestRun.logFilePath && (
                           <IconButton
                             size="2xs"
