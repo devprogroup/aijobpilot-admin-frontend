@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Dialog, Flex, Input, NativeSelect, Portal, Table, Text } from "@chakra-ui/react";
-import { Eye, RefreshCw, Trash2 } from "lucide-react";
+import { Eye, RefreshCw, Send, Trash2 } from "lucide-react";
 import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
+import { SendClientEmailDialog } from "./SendClientEmailDialog";
 import type { AdminEmail, AdminEmailSummary, EmailStatusFilter } from "../../types";
 
 const pageSize = 25;
@@ -46,6 +47,7 @@ export function AdminEmailsPage() {
   const [detailError, setDetailError] = useState("");
   const [revision, setRevision] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [composing, setComposing] = useState(false);
 
   const deleteEmail = async (email: { id: number; subject: string }) => {
     if (!window.confirm(`Delete the email "${email.subject || "(no subject)"}"? This cannot be undone.`)) return;
@@ -111,7 +113,7 @@ export function AdminEmailsPage() {
     <Box mb="6">
       <Text mb="2" fontSize="xs" fontWeight="bold" letterSpacing="0.18em" textTransform="uppercase" color="#498366">Operations</Text>
       <Text as="h1" m="0" fontSize="3xl" fontWeight="bold" letterSpacing="tight">Admin emails</Text>
-      <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Read messages delivered to addresses ending in @aijobpilot.co through Cloudflare Email Routing.</Text>
+      <Text mt="2" maxW="760px" fontSize="sm" color="gray.500">Read messages delivered to addresses ending in @aijobpilot.co through Cloudflare Email Routing, or send an email to all or selected clients.</Text>
     </Box>
 
     {error && <Box mb="4" role="alert" borderRadius="xl" bg="red.50" p="4" color="red.700" fontSize="sm">{error}</Box>}
@@ -124,6 +126,7 @@ export function AdminEmailsPage() {
           <Button type="submit" size="sm" variant="outline">Search</Button>
           <Button type="button" size="sm" variant="ghost" aria-label="Refresh emails" onClick={() => setRevision((current) => current + 1)}><RefreshCw size={15} /></Button>
           <Button type="button" size="sm" variant="outline" colorPalette="red" disabled={loading || deleting || total === 0} onClick={() => void deleteAll()}><Trash2 size={15} /> Delete all</Button>
+          <Button type="button" size="sm" colorPalette="green" onClick={() => setComposing(true)}><Send size={15} /> Send email</Button>
         </Flex>
       </Flex>
       <Box overflowX="auto">
@@ -168,5 +171,7 @@ export function AdminEmailsPage() {
         <Dialog.Footer><Button variant="outline" onClick={() => { setSelectedId(null); setSelectedEmail(null); }}>Close</Button></Dialog.Footer>
       </Dialog.Content></Dialog.Positioner></Portal>
     </Dialog.Root>
+
+    <SendClientEmailDialog open={composing} onClose={() => setComposing(false)} />
   </>;
 }

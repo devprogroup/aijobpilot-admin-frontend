@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Box, Button, Flex, Text, Textarea } from "@chakra-ui/react";
-import { api, type SupportMessage } from "../../api";
+import { Box, Button, Flex, NativeSelect, Text, Textarea } from "@chakra-ui/react";
+import { api, type SupportMessage, type SupportMessageLevel } from "../../api";
 
 const categoryLabel = { payment: "Payment", bug: "Bug", feedback: "Feedback", other: "Other" };
 
 export function SupportInboxPage() {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [replies, setReplies] = useState<Record<number, string>>({});
+  const [levels, setLevels] = useState<Record<number, SupportMessageLevel>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -26,8 +27,9 @@ export function SupportInboxPage() {
     if (!content) return;
     setBusyId(message.id); setError(""); setNotice("");
     try {
-      await api.replyToSupportMessage(message.id, content);
+      await api.replyToSupportMessage(message.id, content, levels[message.id] ?? "normal");
       setReplies((current) => ({ ...current, [message.id]: "" }));
+      setLevels((current) => ({ ...current, [message.id]: "normal" }));
       setNotice(`Reply sent to ${message.userName || message.userEmail || "user"}.`);
       await refresh();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to send reply."); }
@@ -69,10 +71,13 @@ export function SupportInboxPage() {
             </Flex>
             <Text mt="4" whiteSpace="pre-wrap" fontSize="sm">{message.content}</Text>
             {message.attachments.length > 0 && <Flex mt="4" gap="2" wrap="wrap">{message.attachments.map((file, index) => <Button key={file.storageKey} size="sm" variant="outline" onClick={() => void openAttachment(message.id, index)}>{file.fileName}</Button>)}</Flex>}
-            {threadReplies.map((reply) => <Box key={reply.id} mt="4" ml={{ base: "0", md: "6" }} borderLeft="3px solid" borderColor="green.300" bg="gray.50" borderRadius="md" p="3"><Text fontWeight="semibold" fontSize="xs">Support · {new Date(reply.dateTime).toLocaleString()}</Text><Text mt="1" whiteSpace="pre-wrap" fontSize="sm">{reply.content}</Text></Box>)}
+            {threadReplies.map((reply) => <Box key={reply.id} mt="4" ml={{ base: "0", md: "6" }} borderLeft="3px solid" borderColor="green.300" bg="gray.50" borderRadius="md" p="3"><Flex align="center" gap="2" flexWrap="wrap"><Text fontWeight="semibold" fontSize="xs">Support · {new Date(reply.dateTime).toLocaleString()}</Text>{reply.level === "important" && <Text as="span" fontSize="2xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase" color="orange.700" bg="orange.100" borderRadius="full" px="2" py="0.5" title={reply.seenAt ? `Seen by the user ${new Date(reply.seenAt).toLocaleString()}` : "Not yet seen by the user"}>Important{reply.seenAt ? " · seen" : ""}</Text>}</Flex><Text mt="1" whiteSpace="pre-wrap" fontSize="sm">{reply.content}</Text></Box>)}
             <Box as="form" mt="5" onSubmit={(event) => void sendReply(event, message)}>
               <Textarea value={replies[message.id] ?? ""} onChange={(event) => setReplies((current) => ({ ...current, [message.id]: event.target.value }))} maxLength={10000} minH="100px" placeholder="Write a reply…" required />
-              <Flex justify="flex-end" mt="3"><Button type="submit" loading={busyId === message.id} colorPalette="green" disabled={!replies[message.id]?.trim()}>Send reply</Button></Flex>
+              <Flex justify="flex-end" align="center" gap="3" mt="3" flexWrap="wrap">
+                <NativeSelect.Root size="sm" w="56"><NativeSelect.Field aria-label="Reply level" value={levels[message.id] ?? "normal"} onChange={(event) => setLevels((current) => ({ ...current, [message.id]: event.target.value as SupportMessageLevel }))}><option value="normal">Normal</option><option value="important">Important · shown on next sign-in</option></NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+                <Button type="submit" loading={busyId === message.id} colorPalette="green" disabled={!replies[message.id]?.trim()}>Send reply</Button>
+              </Flex>
             </Box>
           </Box>;
         })}

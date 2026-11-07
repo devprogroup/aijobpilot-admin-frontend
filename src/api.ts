@@ -41,6 +41,8 @@ import type {
   MaintenanceEntry,
   MaintenancePayload,
   AdminEmail,
+  ClientMailingPayload,
+  ClientMailingResult,
   EmailStatusFilter,
   AdminEmailSummary,
   InboundEmail,
@@ -87,8 +89,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 export const api = {
   supportMessages: () => request<{ messages: SupportMessage[] }>("/support-messages"),
-  replyToSupportMessage: (id: number, content: string) =>
-    request<{ sent: boolean }>(`/support-messages/${id}/reply`, { method: "POST", body: JSON.stringify({ content }) }),
+  replyToSupportMessage: (id: number, content: string, level: SupportMessageLevel = "normal") =>
+    request<{ sent: boolean }>(`/support-messages/${id}/reply`, { method: "POST", body: JSON.stringify({ content, level }) }),
   markSupportMessageRead: (id: number) =>
     request<{ id: number; isRead: boolean }>(`/support-messages/${id}/read`, { method: "POST" }),
   supportAttachment: async (id: number, index: number) => {
@@ -189,6 +191,8 @@ export const api = {
   deleteEmail: (id: number) => request<void>(`/emails/${id}`, { method: "DELETE" }),
   deleteAllEmails: (search: string, status: EmailStatusFilter) =>
     request<{ deleted: number }>(`/emails?${new URLSearchParams({ ...(search ? { search } : {}), status })}`, { method: "DELETE" }),
+  sendClientEmail: (payload: ClientMailingPayload) =>
+    request<ClientMailingResult>("/emails/send", { method: "POST", body: JSON.stringify(payload) }),
   inboundEmails: (page: number, search: string, status: EmailStatusFilter) =>
     request<{ emails: InboundEmailSummary[]; total: number; page: number; pageSize: number }>(`/inbound-emails?${new URLSearchParams({ page: String(page), pageSize: "25", ...(search ? { search } : {}), status })}`),
   inboundEmail: (id: number) => request<{ email: InboundEmail }>(`/inbound-emails/${id}`),
@@ -389,6 +393,7 @@ export const api = {
     request<void>(`/email-templates/${id}`, { method: "DELETE" }),
 };
 
+export type SupportMessageLevel = "normal" | "important";
 export interface SupportMessage {
   id: number;
   userId: number;
@@ -400,6 +405,10 @@ export interface SupportMessage {
   dateTime: string;
   isRead: boolean;
   replyId: number | null;
+  /** Replies only: "important" ones open in a dialog on the user's next sign-in / app load. */
+  level: SupportMessageLevel;
+  /** When the user dismissed the important-reply dialog. */
+  seenAt: string | null;
   userName: string | null;
   userEmail: string | null;
 }
