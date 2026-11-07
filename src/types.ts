@@ -21,8 +21,11 @@ export type CrawlerParameterControlType = "input" | "textarea" | "single-select"
 export interface CrawlerTypeParameterOption { key:string; value:string }
 /** defaultValue: preset value; showWhen: only shown (and required) while those parameters have these values. */
 export interface CrawlerTypeParameter { controlType:CrawlerParameterControlType; options?:CrawlerTypeParameterOption[]; defaultValue?:string; showWhen?:Record<string,string> }
-export interface CrawlerType { id:number; name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
+/** A company crawler type (jobgether, jobright, simplify, tsenta): the settings its crawlers must set. */
+export interface CrawlerType { id:number; name:string; parameters:Record<string,CrawlerTypeParameter>; _count:{crawlers:number} }
 export interface CrawlerRunCounts { queued:number; inserted:number; ignored:number; duplicated:number; failed:number }
+/** One manual upload of crawled jobs (a run of the "Manual upload" crawler): total = its jobs. */
+export interface ManualUpload { id:number; uploadedAt:string|null; total:number; counts:CrawlerRunCounts }
 /** titleFiltered: jobs the run's title filter dropped; units: companies / boards / sites handled out of
  * the run's total (both from its log; crawler list only, null for non-API crawlers). */
 export interface CrawlerRun { logFilePath:string|null; id:string; status:string; startedAt:string|null; finishedAt:string|null; counts:CrawlerRunCounts; titleFiltered?:number|null; units?:{ done:number; total:number|null }|null }
@@ -30,7 +33,11 @@ export interface CrawlerRun { logFilePath:string|null; id:string; status:string;
 export interface CrawlerRunActivity { at:string|null; level:string; event:string; unit:string|null; published:number|null; filtered:number|null; total:number|null; message:string|null }
 /** How far a crawler run got, read from its log. total: companies / boards / sites the run set out to crawl. */
 export interface CrawlerRunProgress { crawler:string|null; startedAt:string|null; lastEventAt:string|null; total:number|null; done:number; crawled:number; skipped:number; failed:number; published:number; filtered:number; current:string|null; summary:Record<string,unknown>|null; finish:{ status:string|null; errorMessage:string|null }|null; recent:CrawlerRunActivity[] }
-export interface Crawler { id:number; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; stopSignalData:string|null; crawlerType:{id:number;name:string}; latestRun:CrawlerRun|null; crawlerRuns?:CrawlerRun[]; _count:{crawlerRuns:number} }
+/** "job": publishes jobs (workable, api-*, manual; /crawlers). "company": only fills the companies
+ * table (jobgether, jobright, simplify, tsenta; /company-crawlers). Ids are per kind. */
+export type CrawlerKind = "job" | "company";
+/** type: a job crawler's type name; crawlerType: a company crawler's crawler type. */
+export interface Crawler { id:number; kind:CrawlerKind; name:string; status:CrawlerStatus; active:boolean; queuedAt:string|null; lastRunAt:string|null; config:unknown; stopSignalData:string|null; type?:string; crawlerType?:{id:number;name:string}; latestRun:CrawlerRun|null; crawlerRuns?:CrawlerRun[]; _count:{crawlerRuns:number} }
 /** companies row: board/boardId split from tenant ("greenhouse/acme"); logo is a /imgs/<file> path. */
 export interface AdminCompany { id:number; tenant:string; board:string; boardId:string; name:string|null; url:string|null; logo:string|null; jobCount:number; createdAt:string|null; updatedAt:string|null }
 export interface CompanyBoard { board:string; companies:number; unnamed:number }
@@ -39,9 +46,11 @@ export interface CompanyJob { id:number; url:string; positionName:string|null; c
 export interface CompanyPayload { name?:string|null; url?:string|null; logo?:string|null }
 export interface Pagination { page:number; pageSize:number; total:number; totalPages:number }
 export interface CrawledJobRow { id:number; createdAt:string; title:string; company:string; status:string; crawlerName:string; crawlerType:string }
-export interface CreateCrawlerPayload { name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
+export type CreateCrawlerPayload =
+  | { kind:"company"; name:string; crawlerTypeId:number; config:Record<string,unknown>; stopSignalData?:string }
+  | { kind:"job"; name:string; type:string; config:Record<string,unknown>; stopSignalData?:string };
 export interface UpdateCrawlerPayload { name?:string; active?:boolean; config?:unknown; stopSignalData?:string|null }
-export interface CrawlerTypePayload { name:string; config:unknown; parameters:Record<string,CrawlerTypeParameter> }
+export interface CrawlerTypePayload { name:string; parameters:Record<string,CrawlerTypeParameter> }
 export interface User { id:number; name:string|null; username:string; email:string|null; emailVerified:boolean; credit:number; status:"active"|"inactive"|"suspended"; /** Internal / premium accounts may sign in to the internal platform. */ isInternal:boolean; isPremium:boolean; createdAt:string; updatedAt:string; /** Not-deleted profiles, list endpoint only. */ profileIds?:number[]; /** Not-deleted profiles with status "active", list endpoint only. */ activeProfileIds?:number[]; /** Newest sign-in or activity event, list endpoint only. */ lastAccess?:UserLastAccess|null; /** Newest device fingerprint, list endpoint only. */ lastFingerprint?:UserLastFingerprint|null; _count?:{profiles?:number;applications?:number} }
 /** A client's most recent access event (client-backend user_access_events). */
 export interface UserLastAccess { at:string; event:string; ip:string|null; country:string|null; region:string|null; city:string|null; browser:string|null; os:string|null; deviceType:string|null; device:string|null; /** Other accounts seen on this IP in the last 90 days. */ otherAccounts:number; /** IPs of this client in the last 90 days. */ ipCount:number }

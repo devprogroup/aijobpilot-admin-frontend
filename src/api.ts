@@ -5,6 +5,8 @@ import type {
   ApplicationSite,
   ApplicationSitePayload,
   Crawler,
+  CrawlerKind,
+  ManualUpload,
   CrawlerRunProgress,
   CrawledJobRow,
   CrawlerType,
@@ -53,6 +55,9 @@ import type {
   CompanyPayload,
   Pagination,
 } from "./types";
+
+/** A crawler's admin routes: job crawlers on /crawlers, company crawlers on /company-crawlers. */
+const crawlerBase = (kind: CrawlerKind) => (kind === "company" ? "/company-crawlers" : "/crawlers");
 const base = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
 const ADMIN_TOKEN_KEY = "jobpilot.adminToken";
 /** A /imgs/<file> company logo, served by the admin API next to /api. */
@@ -215,39 +220,52 @@ export const api = {
   addPaymentWallet: (address: string) => request<{ wallet: AdminDepositAddress }>("/payments", { method: "POST", body: JSON.stringify({ address }) }),
   syncPaymentWalletBalance: (id: number) => request<{ wallet: AdminDepositAddress }>(`/payments/${id}/sync-balance`, { method: "POST" }),
   deletePaymentWallet: (id: number) => request<void>(`/payments/${id}`, { method: "DELETE" }),
-  crawlers: () => request<{ crawlers: Crawler[] }>("/crawlers"),
-  crawler: (id: number) => request<{ crawler: Crawler }>(`/crawlers/${id}`),
+  /** One kind, or both: company crawlers first (crawler-backend runs them first), then job crawlers. */
+  crawlers: async (kind?: CrawlerKind): Promise<{ crawlers: Crawler[] }> => {
+    if (kind) return request<{ crawlers: Crawler[] }>(crawlerBase(kind));
+    const [company, job] = await Promise.all([
+      request<{ crawlers: Crawler[] }>("/company-crawlers"),
+      request<{ crawlers: Crawler[] }>("/crawlers"),
+    ]);
+    return { crawlers: [...company.crawlers, ...job.crawlers] };
+  },
+  crawler: (id: number, kind: CrawlerKind = "job") => request<{ crawler: Crawler }>(`${crawlerBase(kind)}/${id}`),
   crawledJobs: (
     page: number,
-    filters: { pageSize?: number; status?: string; crawlerId?: number } = {},
+    filters: { pageSize?: number; status?: string; crawlerId?: number; crawlerType?: string; crawlerRunId?: number } = {},
   ) => {
     const params: Record<string, string> = { page: String(page), pageSize: String(filters.pageSize ?? 25) };
     if (filters.status) params.status = filters.status;
     if (filters.crawlerId) params.crawlerId = String(filters.crawlerId);
+    if (filters.crawlerType) params.crawlerType = filters.crawlerType;
+    if (filters.crawlerRunId) params.crawlerRunId = String(filters.crawlerRunId);
     return request<{ crawledJobs: CrawledJobRow[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }>(
       `/crawlers/crawled-jobs?${new URLSearchParams(params)}`,
     );
   },
-  crawlerRunLog: (crawlerId: number, runId: string) =>
-    request<{ content: string }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
-  crawlerRunProgress: (crawlerId: number, runId: string) =>
-    request<{ progress: CrawlerRunProgress }>(`/crawlers/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/progress`),
-  updateCrawler: (id: number, payload: UpdateCrawlerPayload) =>
-    request<{ crawler: Crawler }>(`/crawlers/${id}`, {
+  crawlerRunLog: (crawlerId: number, runId: string, kind: CrawlerKind = "job") =>
+    request<{ content: string }>(`${crawlerBase(kind)}/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/log`),
+  crawlerRunProgress: (crawlerId: number, runId: string, kind: CrawlerKind = "job") =>
+    request<{ progress: CrawlerRunProgress }>(`${crawlerBase(kind)}/${crawlerId}/bot-runs/${encodeURIComponent(runId)}/progress`),
+  updateCrawler: (id: number, payload: UpdateCrawlerPayload, kind: CrawlerKind = "job") =>
+    request<{ crawler: Crawler }>(`${crawlerBase(kind)}/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
-  toggleCrawler: (id: number, active: boolean) =>
-    request(`/crawlers/${id}`, {
+  toggleCrawler: (id: number, active: boolean, kind: CrawlerKind = "job") =>
+    request(`${crawlerBase(kind)}/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ active }),
     }),
+  /** Both kinds: crawler-backend runs the company crawlers first. */
   runAllCrawlers: () =>
     request<{ queued: number }>("/crawlers/run-all", { method: "POST" }),
-  queueCrawler: (id: number) =>
-    request<{ crawler: Crawler }>(`/crawlers/${id}/run`, { method: "POST" }),
-  deleteCrawler: (id: number) =>
-    request<void>(`/crawlers/${id}`, { method: "DELETE" }),
+  queueCrawler: (id: number, kind: CrawlerKind = "job") =>
+    request<{ crawler: Crawler }>(`${crawlerBase(kind)}/${id}/run`, { method: "POST" }),
+  deleteCrawler: (id: number, kind: CrawlerKind = "job") =>
+    request<void>(`${crawlerBase(kind)}/${id}`, { method: "DELETE" }),
+  manualUploads: (page = 1) =>
+    request<{ uploads: ManualUpload[]; pagination: Pagination }>(`/crawlers/manual-uploads?page=${page}`),
   uploadCrawledJobs: (jobs: unknown[]) =>
     request<{ crawlerRunId: number; count: number }>("/crawlers/crawled-jobs", {
       method: "POST",
@@ -271,8 +289,8 @@ export const api = {
     request<{ deleted: boolean; jobsUnlinked: number }>(`/companies/${id}`, { method: "DELETE" }),
   crawlerTypes: () =>
     request<{ crawlerTypes: CrawlerType[] }>("/crawler-types"),
-  createCrawler: (payload: CreateCrawlerPayload) =>
-    request<{ crawler: Crawler }>("/crawlers", {
+  createCrawler: ({ kind, ...payload }: CreateCrawlerPayload) =>
+    request<{ crawler: Crawler }>(crawlerBase(kind), {
       method: "POST",
       body: JSON.stringify(payload),
     }),

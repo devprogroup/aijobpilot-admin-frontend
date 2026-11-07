@@ -4,7 +4,6 @@ import { api } from "../../api";
 import { PagePicker } from "../../components/PagePicker";
 import type { Crawler } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { UploadCrawledJobsModal } from "./components/UploadCrawledJobsModal";
 
 const STATUS_OPTIONS = ["created", "queued", "processing", "inserted", "ignored", "duplicated", "failed"];
 
@@ -23,10 +22,10 @@ export function CrawledJobsPage() {
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    api.crawlers().then((r) => setCrawlers(r.crawlers)).catch(() => {});
+    // Only job crawlers publish jobs (company crawlers fill the companies table).
+    api.crawlers().then((r) => setCrawlers(r.crawlers.filter((crawler) => crawler.kind === "job"))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -48,22 +47,12 @@ export function CrawledJobsPage() {
 
   const pages = result ? Math.max(1, Math.ceil(result.pagination.total / result.pagination.pageSize)) : 1;
   return <>
-    {showUpload && (
-      <UploadCrawledJobsModal
-        onClose={() => setShowUpload(false)}
-        onUploaded={() => {
-          setShowUpload(false);
-          setRevision((value) => value + 1);
-        }}
-      />
-    )}
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
       <Box>
         <Text as="h1" fontSize="3xl" fontWeight="bold">Crawled jobs</Text>
-        <Text color="gray.500">Jobs handed off to ats-engine, newest first. A run's jobs are removed once all are processed; its counts stay on the crawler.</Text>
+        <Text color="gray.500">Jobs handed off to ats-engine, newest first. A run's jobs are removed once all are processed; its counts stay on the crawler. Upload jobs by hand in Manual uploads.</Text>
       </Box>
       <Flex gap="3">
-        <Button bg="green.600" color="white" _hover={{ bg: "green.700" }} onClick={() => setShowUpload(true)}>Upload jobs</Button>
         <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
       </Flex>
     </Flex>

@@ -3,9 +3,11 @@ import { Box, Button, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
 import { X } from 'lucide-react'
 import { api } from "../../../api";
 import { StructuredLogViewer } from "../../../components/StructuredLogViewer";
+import type { CrawlerKind } from "../../../types";
 
-export function CrawlerRunLogDialog({ crawlerId, runId, onClose }: {
+export function CrawlerRunLogDialog({ crawlerId, kind = "job", runId, onClose }: {
   crawlerId: number;
+  kind?: CrawlerKind;
   runId: string;
   onClose: () => void;
 }) {
@@ -18,7 +20,7 @@ export function CrawlerRunLogDialog({ crawlerId, runId, onClose }: {
     let active = true;
     setLoading(true);
     setError("");
-    api.crawlerRunLog(crawlerId, runId).then((result) => {
+    api.crawlerRunLog(crawlerId, runId, kind).then((result) => {
       if (active) setContent(result.content);
     }).catch((error: unknown) => {
       if (active) setError(error instanceof Error ? error.message : "Unable to load log");
@@ -26,7 +28,7 @@ export function CrawlerRunLogDialog({ crawlerId, runId, onClose }: {
       if (active) setLoading(false);
     });
     return () => { active = false; };
-  }, [crawlerId, runId, revision]);
+  }, [crawlerId, kind, runId, revision]);
 
   return (
     <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>

@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { X } from "lucide-react";
 import { api } from "../../../api";
-import type { CrawlerType, CrawlerTypeParameter } from "../../../types";
+import type { CrawlerKind, CrawlerType, CrawlerTypeParameter } from "../../../types";
 
 type ParameterValue = string | string[];
 
@@ -141,10 +141,19 @@ function ParameterField({
 export function CreateCrawlerModal({
   onClose,
   onCreated,
+  kind: fixedKind,
 }: {
   onClose: () => void;
   onCreated: () => void;
+  /** The kind the page lists: the dialog creates only that kind. */
+  kind?: CrawlerKind;
 }) {
+  /** company: a crawler type's account (jobgether, jobright, simplify, tsenta), only filling the
+   * companies table. job: publishes jobs (workable, api-*), naming its type itself. */
+  const [kind, setKind] = useState<CrawlerKind>(fixedKind ?? "company");
+  const [jobType, setJobType] = useState("");
+  /** The crawler's other settings (mode, apiDelayMs, maxBatchesPerSession, ...), as JSON. */
+  const [settings, setSettings] = useState("{\n  \n}");
   const [types, setTypes] = useState<CrawlerType[]>([]);
   const [selected, setSelected] = useState<CrawlerType | null>(null);
   const [crawlerName, setCrawlerName] = useState("");
@@ -204,21 +213,37 @@ export function CreateCrawlerModal({
     return config;
   }
 
+  function parseSettings(): Record<string, unknown> | null {
+    try {
+      const parsed = JSON.parse(settings.trim() || "{}");
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // Reported below.
+    }
+    setError("Settings must be a JSON object");
+    return null;
+  }
+
   async function onSubmit() {
     setError("");
-    if (!selected || !crawlerName.trim()) return;
+    if (!canSubmit) return;
 
-    const config = buildConfig();
-    if (config === null) return;
+    const extra = parseSettings();
+    if (extra === null) return;
+    const parameters = kind === "company" ? buildConfig() : {};
+    if (parameters === null) return;
 
     setSubmitting(true);
     try {
-      await api.createCrawler({
+      const common = {
         name: crawlerName.trim(),
-        crawlerTypeId: selected.id,
         stopSignalData: stopSignalData.trim() || undefined,
-        config,
-      });
+        // The type's parameters win over the same keys in the settings.
+        config: { ...extra, ...parameters },
+      };
+      await api.createCrawler(kind === "company"
+        ? { kind, crawlerTypeId: selected!.id, ...common }
+        : { kind, type: jobType.trim(), ...common });
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to create crawler");
@@ -227,7 +252,7 @@ export function CreateCrawlerModal({
     }
   }
 
-  const canSubmit = Boolean(selected && crawlerName.trim());
+  const canSubmit = Boolean(crawlerName.trim() && (kind === "company" ? selected : jobType.trim()));
 
   return (
     <Dialog.Root open onOpenChange={(details) => !details.open && onClose()}>
@@ -237,7 +262,7 @@ export function CreateCrawlerModal({
           <Dialog.Content maxW="md" borderRadius="2xl" p="6">
             <Flex mb="5" align="center" justify="space-between">
               <Dialog.Title fontSize="lg" fontWeight="bold">
-                Create crawler
+                {fixedKind === "company" ? "Create company crawler" : fixedKind === "job" ? "Create job crawler" : "Create crawler"}
               </Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <IconButton
@@ -285,6 +310,38 @@ export function CreateCrawlerModal({
                   />
                 </Field.Root>
 
+                {!fixedKind && <Field.Root>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Kind
+                  </Field.Label>
+                  <NativeSelect.Root>
+                    <NativeSelect.Field
+                      value={kind}
+                      onChange={(event) => setKind(event.target.value as CrawlerKind)}
+                      borderColor="gray.200"
+                      fontSize="sm"
+                    >
+                      <option value="company">Company crawler (fills companies, publishes no jobs)</option>
+                      <option value="job">Job crawler (publishes jobs)</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Field.Root>}
+
+                {kind === "job" ? (
+                  <Field.Root>
+                    <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                      Type
+                    </Field.Label>
+                    <Input
+                      value={jobType}
+                      onChange={(event) => setJobType(event.target.value)}
+                      borderColor="gray.200"
+                      fontSize="sm"
+                      placeholder="e.g. api-greenhouse, workable"
+                    />
+                  </Field.Root>
+                ) : (<>
                 <Field.Root>
                   <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
                     Crawler type
@@ -337,6 +394,25 @@ export function CreateCrawlerModal({
                     Select a crawler type to configure it.
                   </Text>
                 )}
+                </>)}
+
+                <Field.Root>
+                  <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">
+                    Settings (JSON)
+                  </Field.Label>
+                  <Textarea
+                    value={settings}
+                    onChange={(event) => setSettings(event.target.value)}
+                    rows={5}
+                    borderColor="gray.200"
+                    fontFamily="mono"
+                    fontSize="xs"
+                    placeholder='{ "mode": "headless", "apiDelayMs": 2000 }'
+                  />
+                  <Text mt="1" fontSize="xs" color="gray.400">
+                    The crawler's other settings, e.g. mode, apiDelayMs, maxBatchesPerSession.
+                  </Text>
+                </Field.Root>
 
                 <Field.Root>
                   <Field.Label fontSize="xs" fontWeight="semibold" color="gray.500">

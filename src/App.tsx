@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { CrawlerTypesPage } from "./modules/crawler-types/CrawlerTypesPage";
+import { CrawlerTypesPage } from "./modules/companies/crawler-types/CrawlerTypesPage";
 import { ApplicationSitesPage } from "./modules/applications/ApplicationSitesPage";
 import { AllApplicationsPage } from "./modules/applications/AllApplicationsPage";
 import { ApplicationStatisticsPage } from "./modules/applications/ApplicationStatisticsPage";
@@ -7,7 +7,10 @@ import { CrawlerDetailsPage } from "./modules/crawlers/CrawlerDetailsPage";
 import { CrawlerFleetPage } from "./modules/crawlers/CrawlerFleetPage";
 import { CrawlerSettingsPage } from "./modules/crawlers/CrawlerSettingsPage";
 import { CrawledJobsPage } from "./modules/crawlers/CrawledJobsPage";
+import { ManualUploadsPage } from "./modules/crawlers/ManualUploadsPage";
 import { CompaniesPage } from "./modules/companies/CompaniesPage";
+import { CompanyCrawlersPage } from "./modules/companies/crawlers/CompanyCrawlersPage";
+import { CompanyCrawlerDetailsPage } from "./modules/companies/crawlers/CompanyCrawlerDetailsPage";
 import { UsersPage } from "./modules/users/UsersPage";
 import { UserDetailsPage } from "./modules/users/UserDetailsPage";
 import { ProfileDetailsPage } from "./modules/users/ProfileDetailsPage";
@@ -55,10 +58,14 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/crawlers/fleets" element={<CrawlerFleetPage />} />
           <Route path="/crawlers/fleets/:crawlerId" element={<CrawlerDetailsPage />} />
-          <Route path="/crawlers/types" element={<CrawlerTypesPage />} />
+          <Route path="/crawlers/types" element={<Navigate to="/companies/crawler-types" replace />} />
           <Route path="/crawlers/crawled-jobs" element={<CrawledJobsPage />} />
+          <Route path="/crawlers/manual-uploads" element={<ManualUploadsPage />} />
           <Route path="/crawlers/settings" element={<CrawlerSettingsPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/crawlers" element={<CompanyCrawlersPage />} />
+          <Route path="/companies/crawler-types" element={<CrawlerTypesPage />} />
+          <Route path="/companies/crawlers/:crawlerId" element={<CompanyCrawlerDetailsPage />} />
           <Route path="/companies/unknown" element={<Navigate to="/companies" replace />} />
           <Route path="/applications/sites" element={<ApplicationSitesPage />} />
           <Route path="/applications/all" element={<AllApplicationsPage />} />

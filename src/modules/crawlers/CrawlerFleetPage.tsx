@@ -15,17 +15,24 @@ import {
 import { ListOrdered, Play, Plus, RefreshCw, ScrollText, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
-import type { Crawler, CrawlerRunCounts } from "../../types";
+import type { Crawler, CrawlerKind, CrawlerRunCounts } from "../../types";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { CreateCrawlerModal } from "./components/CreateCrawlerModal";
 import { CrawlerRunLogDialog } from "./components/CrawlerRunLogDialog";
 import { onSocketEvent } from "../../services/websocket";
-import { isManualCrawler } from "./manual-crawler";
+import { crawlerPath, crawlerTypeName, isManualCrawler } from "./manual-crawler";
 
 interface CrawlerStatusChangedEvent {
   crawlerId: number;
+  /** Absent from older crawler-backends: a job crawler. */
+  kind?: CrawlerKind;
   status: Crawler["status"];
 }
+
+/** Ids are per kind (crawlers / company_crawlers). */
+const sameCrawler = (a: Pick<Crawler, "id" | "kind">, b: Pick<Crawler, "id" | "kind">) =>
+  a.id === b.id && a.kind === b.kind;
+const crawlerKey = (crawler: Pick<Crawler, "id" | "kind">) => `${crawler.kind}-${crawler.id}`;
 
 const ChakraRouterLink = chakra(Link);
 
@@ -44,22 +51,26 @@ const time = (date: string | null) =>
 const crawledTotal = (counts: CrawlerRunCounts) =>
   counts.queued + counts.inserted + counts.ignored + counts.duplicated + counts.failed;
 
-export function CrawlerFleetPage() {
+/** The crawlers of one kind: job crawlers (Crawlers > Crawler fleet) or company crawlers
+ * (Companies > Company crawlers, modules/companies/crawlers). */
+export function CrawlerFleetPage({ kind = "job" }: { kind?: CrawlerKind }) {
   const [items, setItems] = useState<Crawler[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [deletingCrawlerId, setDeletingCrawlerId] = useState<number | null>(null);
+  /** crawlerKey() of the crawler being deleted. */
+  const [deletingCrawlerId, setDeletingCrawlerId] = useState<string | null>(null);
   const [runningAll, setRunningAll] = useState(false);
   const [notice, setNotice] = useState("");
-  const [logRun, setLogRun] = useState<{ crawlerId: number; runId: string } | null>(null);
+  const [logRun, setLogRun] = useState<{ crawlerId: number; kind: CrawlerKind; runId: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
-      setItems((await api.crawlers()).crawlers);
+      // The "Manual upload" crawler never runs; its uploads are in Crawlers > Manual uploads.
+      setItems((await api.crawlers(kind)).crawlers.filter((crawler) => !isManualCrawler(crawler)));
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to load crawlers",
@@ -73,11 +84,11 @@ export function CrawlerFleetPage() {
     load();
     const timer = setInterval(load, 30000);
     return () => clearInterval(timer);
-  }, []);
+  }, [kind]);
 
   useEffect(() => onSocketEvent<CrawlerStatusChangedEvent>("crawler:status-changed", (event) => {
     setItems((current) => current.map((item) =>
-      item.id === event.crawlerId ? { ...item, status: event.status } : item,
+      sameCrawler(item, { id: event.crawlerId, kind: event.kind ?? "job" }) ? { ...item, status: event.status } : item,
     ));
     // A run that just started isn't the list's latestRun yet; reload so its log button appears.
     if (event.status === "running") void load();
@@ -89,21 +100,22 @@ export function CrawlerFleetPage() {
       (crawler) =>
         !term ||
         crawler.name.toLowerCase().includes(term) ||
-        (crawler.crawlerType?.name || "").toLowerCase().includes(term),
+        crawlerTypeName(crawler).toLowerCase().includes(term) ||
+        crawler.kind.includes(term),
     );
   }, [items, query]);
 
   const toggle = async (crawler: Crawler) => {
     setItems((current) =>
       current.map((item) =>
-        item.id === crawler.id ? { ...item, active: !item.active } : item,
+        sameCrawler(item, crawler) ? { ...item, active: !item.active } : item,
       ),
     );
     try {
-      await api.toggleCrawler(crawler.id, !crawler.active);
+      await api.toggleCrawler(crawler.id, !crawler.active, crawler.kind);
     } catch (error) {
       setItems((current) =>
-        current.map((item) => (item.id === crawler.id ? crawler : item)),
+        current.map((item) => (sameCrawler(item, crawler) ? crawler : item)),
       );
       setError(
         error instanceof Error ? error.message : "Unable to update crawler",
@@ -115,23 +127,23 @@ export function CrawlerFleetPage() {
     setError("");
     setItems((current) =>
       current.map((item) =>
-        item.id === crawler.id
+        sameCrawler(item, crawler)
           ? { ...item, status: "queued", queuedAt: new Date().toISOString() }
           : item,
       ),
     );
     try {
-      const { crawler: updated } = await api.queueCrawler(crawler.id);
+      const { crawler: updated } = await api.queueCrawler(crawler.id, crawler.kind);
       setItems((current) =>
         current.map((item) =>
-          item.id === crawler.id
+          sameCrawler(item, crawler)
             ? { ...item, status: updated.status, queuedAt: updated.queuedAt }
             : item,
         ),
       );
     } catch (error) {
       setItems((current) =>
-        current.map((item) => (item.id === crawler.id ? crawler : item)),
+        current.map((item) => (sameCrawler(item, crawler) ? crawler : item)),
       );
       setError(
         error instanceof Error ? error.message : "Unable to queue crawler",
@@ -164,10 +176,10 @@ export function CrawlerFleetPage() {
     if (!window.confirm(`Delete crawler "${crawler.name}"? This cannot be undone.`)) return;
 
     setError("");
-    setDeletingCrawlerId(crawler.id);
+    setDeletingCrawlerId(crawlerKey(crawler));
     try {
-      await api.deleteCrawler(crawler.id);
-      setItems((current) => current.filter((item) => item.id !== crawler.id));
+      await api.deleteCrawler(crawler.id, crawler.kind);
+      setItems((current) => current.filter((item) => !sameCrawler(item, crawler)));
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to delete crawler");
     } finally {
@@ -179,6 +191,7 @@ export function CrawlerFleetPage() {
     <>
       {showCreate && (
         <CreateCrawlerModal
+          kind={kind}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -204,7 +217,7 @@ export function CrawlerFleetPage() {
             textTransform="uppercase"
             color="#498366"
           >
-            Operations
+            {kind === "company" ? "Companies" : "Operations"}
           </Text>
           <Text
             as="h1"
@@ -213,14 +226,16 @@ export function CrawlerFleetPage() {
             fontWeight="bold"
             letterSpacing="tight"
           >
-            Crawler fleet
+            {kind === "company" ? "Company crawlers" : "Crawler fleet"}
           </Text>
           <Text mt="2" fontSize="sm" color="gray.500">
-            Manage crawler availability and queue runs.
+            {kind === "company"
+              ? "Jobgether, Jobright, Simplify and Tsenta accounts that fill the companies table. They publish no jobs and run before the job crawlers."
+              : "Manage crawler availability and queue runs."}
           </Text>
         </Box>
         <Flex align="center" gap="3">
-          <Button
+          {kind === "job" && <Button
             onClick={() => void runAll()}
             loading={runningAll}
             disabled={!items.some((crawler) => crawler.active && crawler.status === "idle")}
@@ -230,7 +245,7 @@ export function CrawlerFleetPage() {
           >
             <Icon as={ListOrdered} boxSize="4" />
             Run all
-          </Button>
+          </Button>}
           <Button
             onClick={() => setShowCreate(true)}
             bg="green.600"
@@ -238,7 +253,7 @@ export function CrawlerFleetPage() {
             _hover={{ bg: "green.700" }}
           >
             <Icon as={Plus} boxSize="4" />
-            Create crawler
+            {kind === "company" ? "Create company crawler" : "Create crawler"}
           </Button>
           <Button
             onClick={load}
@@ -418,10 +433,10 @@ export function CrawlerFleetPage() {
                 </Table.Row>
               )}
               {shown.map((crawler) => (
-                <Table.Row key={crawler.id} _hover={{ bg: "gray.50" }}>
+                <Table.Row key={crawlerKey(crawler)} _hover={{ bg: "gray.50" }}>
                   <Table.Cell px="5" py="4">
                     <ChakraRouterLink
-                      to={`/crawlers/fleets/${crawler.id}`}
+                      to={crawlerPath(crawler)}
                       fontWeight="semibold"
                       color="green.700"
                       _hover={{ textDecoration: "underline" }}
@@ -430,7 +445,10 @@ export function CrawlerFleetPage() {
                     </ChakraRouterLink>
                   </Table.Cell>
                   <Table.Cell px="5" py="4" color="gray.600">
-                    {crawler.crawlerType?.name ?? "Unknown type"}
+                    {crawlerTypeName(crawler) || "Unknown type"}
+                    {crawler.kind === "company" && (
+                      <Text as="span" ml="2" fontSize="xs" color="gray.400">company</Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell px="5" py="4">
                     <StatusBadge status={crawler.status} />
@@ -472,13 +490,13 @@ export function CrawlerFleetPage() {
                             color="green.700"
                             title="View the running crawl's log"
                             aria-label={`View ${crawler.name} run log`}
-                            onClick={() => setLogRun({ crawlerId: crawler.id, runId: crawler.latestRun!.id })}
+                            onClick={() => setLogRun({ crawlerId: crawler.id, kind: crawler.kind, runId: crawler.latestRun!.id })}
                           >
                             <Icon as={ScrollText} boxSize="3.5" />
                           </IconButton>
                         )}
                       </Flex>
-                      {crawler.latestRun.units && crawler.crawlerType?.name.startsWith("api-") && (
+                      {crawler.latestRun.units && crawlerTypeName(crawler).startsWith("api-") && (
                         <Text
                           mt="0.5"
                           fontSize="xs"
@@ -531,7 +549,7 @@ export function CrawlerFleetPage() {
                         variant="outline"
                         colorPalette="red"
                         disabled={crawler.status === "running" || deletingCrawlerId !== null}
-                        loading={deletingCrawlerId === crawler.id}
+                        loading={deletingCrawlerId === crawlerKey(crawler)}
                         onClick={() => void remove(crawler)}
                         aria-label={`Delete ${crawler.name}`}
                       >
@@ -547,7 +565,7 @@ export function CrawlerFleetPage() {
         </Box>
       </Box>
       {logRun && (
-        <CrawlerRunLogDialog crawlerId={logRun.crawlerId} runId={logRun.runId} onClose={() => setLogRun(null)} />
+        <CrawlerRunLogDialog crawlerId={logRun.crawlerId} kind={logRun.kind} runId={logRun.runId} onClose={() => setLogRun(null)} />
       )}
     </>
   );
