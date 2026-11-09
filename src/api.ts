@@ -123,6 +123,27 @@ export const api = {
       ...(filters.sortBy ? { sortBy: filters.sortBy } : {}),
       ...(filters.sortDir ? { sortDir: filters.sortDir } : {}),
     })}`),
+  /** The filtered applications as a zip ({profileId}/{applicationId}/ with job.txt, resume and screenshots). */
+  exportApplications: async (filters: ApplicationFilters) => {
+    const token = getAdminToken();
+    const params = new URLSearchParams(Object.entries(filters)
+      .filter(([key, value]) => value !== undefined && value !== "" && key !== "sortBy" && key !== "sortDir")
+      .map(([key, value]) => [key, String(value)]));
+    const response = await fetch(`${base}/applications/export?${params}`, {
+      credentials: "omit",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) {
+      setAdminToken(null);
+      window.dispatchEvent(new Event("admin:unauthorized"));
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Unable to export applications.");
+    }
+    const fileName = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? "applications.zip";
+    return { blob: await response.blob(), fileName };
+  },
   cancelApplication: (applicationId: number) =>
     request<void>(`/applications/${applicationId}`, { method: "DELETE" }),
   applicationFilterUsers: (search: string) =>
