@@ -175,13 +175,11 @@ export function AllApplicationsPage() {
 
   useEffect(() => { setPage(1); }, [debouncedId, debouncedJob, debouncedCompany]);
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true); setError("");
-    const dateRange = dateFilterRange(from, to);
+  // The table's filters, shared by the list and the export.
+  const currentFilters = () => {
     const appliedRange = dateFilterRange(appliedFrom, appliedTo);
-    api.applications(page, {
-      search: query, ...dateRange,
+    return {
+      search: query, ...dateFilterRange(from, to),
       status: status || undefined,
       applicationSiteId: applicationSiteId ? Number(applicationSiteId) : undefined,
       userId: filterUser?.id,
@@ -192,6 +190,32 @@ export function AllApplicationsPage() {
       source: sourceFilter || undefined,
       appliedFrom: appliedRange.from,
       appliedTo: appliedRange.to,
+    };
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const exportApplications = async () => {
+    setExporting(true); setActionError("");
+    try {
+      const { blob, fileName } = await api.exportApplications(currentFilters());
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : "Unable to export applications.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    api.applications(page, {
+      ...currentFilters(),
       sortBy: sort.by,
       sortDir: sort.dir,
     }).then((value) => {
@@ -292,7 +316,13 @@ export function AllApplicationsPage() {
   return <>
     <Flex as="header" justify="space-between" align="center" gap="4" mb="8">
       <Box><Text as="h1" fontSize="3xl" fontWeight="bold">All applications</Text><Text color="gray.500">Browse every application; filter and sort from the column headers.</Text></Box>
-      <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      <Flex gap="2">
+        <Button variant="outline" disabled={loading || exporting || !result?.total} onClick={() => void exportApplications()}
+          title="Download the filtered applications as a zip: profile/application folders with job.txt, resume and screenshots">
+          {exporting ? "Exporting..." : `Export${result?.total ? ` (${result.total})` : ""}`}
+        </Button>
+        <Button variant="outline" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Refresh</Button>
+      </Flex>
     </Flex>
     <Flex as="form" gap="3" mb="5" wrap="wrap" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
       <Input aria-label="Search applications" maxLength={200} placeholder="Search job, company, user, profile, ID or message" value={search} onChange={(event) => setSearch(event.target.value)} bg="white" flex="1" minW="56" />
