@@ -1,8 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Box, Button, Field, Flex, Input, NativeSelect, Text, Textarea } from "@chakra-ui/react";
+import { Box, Button, Field, Flex, Input, NativeSelect, Text } from "@chakra-ui/react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import type { User } from "../../types";
+import { RichTextEditor } from "../email-templates/RichTextEditor";
+import { MAX_CONTENT_LENGTH, messageHasText } from "./sanitizeMessageHtml";
 import { SupportInboxPage } from "./SupportInboxPage";
 
 type Recipient = "all" | "user";
@@ -35,6 +37,10 @@ function SendMessageTab() {
     event.preventDefault();
     setError("");
     setSuccess("");
+    if (!messageHasText(content)) {
+      setError("Write a message before sending.");
+      return;
+    }
     setSending(true);
     try {
       const result = await api.sendUserMessage({
@@ -94,10 +100,12 @@ function SendMessageTab() {
           <Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={180} required placeholder="Message title" />
         </Field.Root>
 
-        <Field.Root>
+        <Field.Root required invalid={content.length > MAX_CONTENT_LENGTH}>
           <Field.Label>Message</Field.Label>
-          <Textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength={10000} minH="180px" resize="vertical" required placeholder="Write your message. Basic HTML is supported." />
-          <Field.HelperText>Basic HTML formatting is supported, such as &lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;, and &lt;a href=&quot;...&quot;&gt;.</Field.HelperText>
+          <Box w="full"><RichTextEditor value={content} onChange={setContent} /></Box>
+          {content.length > MAX_CONTENT_LENGTH
+            ? <Field.ErrorText>The formatted message is too long ({content.length.toLocaleString()} of {MAX_CONTENT_LENGTH.toLocaleString()} characters including formatting).</Field.ErrorText>
+            : <Field.HelperText>Format with the toolbar: bold, italic, headings, lists and links.</Field.HelperText>}
         </Field.Root>
 
         <Field.Root>
@@ -128,7 +136,7 @@ function SendMessageTab() {
         {recipient === "all" && <Text fontSize="sm" color="orange.700" bg="orange.50" borderRadius="lg" p="3">This will send a message to all {users.length} active users.</Text>}
 
         <Flex justify="flex-end">
-          <Button type="submit" loading={sending} disabled={loadingUsers || (recipient === "user" && users.length === 0)} bg="green.600" color="white" _hover={{ bg: "green.700" }}>Send message</Button>
+          <Button type="submit" loading={sending} disabled={loadingUsers || (recipient === "user" && users.length === 0) || content.length > MAX_CONTENT_LENGTH} bg="green.600" color="white" _hover={{ bg: "green.700" }}>Send message</Button>
         </Flex>
       </Flex>
     </Box>
