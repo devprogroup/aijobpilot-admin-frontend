@@ -16,6 +16,9 @@ import type {
   User,
   UserDetails,
   UserAccessHistory,
+  UserCustomPrompts,
+  UserUrlSubmission,
+  UrlSubmissionFileKind,
   ClientDeletionResult,
   AdminProfileDetails,
   AdminApplication,
@@ -354,6 +357,27 @@ export const api = {
     total:number; page:number; pageSize:number;
   }>(`/users/${id}/payments?page=${page}`),
   userAccessEvents: (id: number, page: number) => request<UserAccessHistory>(`/users/${id}/access-events?page=${page}`),
+  userCustomPrompts: (id: number) => request<UserCustomPrompts>(`/users/${id}/custom-prompts`),
+  userUrlSubmissions: (id: number, page: number) => request<{
+    submissions: UserUrlSubmission[]; total: number; page: number; pageSize: number;
+  }>(`/users/${id}/url-submissions?page=${page}`),
+  userUrlSubmissionFile: async (userId: number, submissionId: number, kind: UrlSubmissionFileKind) => {
+    const token = getAdminToken();
+    const response = await fetch(`${base}/users/${userId}/url-submissions/${submissionId}/download/${kind}`, {
+      credentials: "omit",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.status === 401) {
+      setAdminToken(null);
+      window.dispatchEvent(new Event("admin:unauthorized"));
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Unable to download the URL list.");
+    }
+    const fileName = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? `upload-${submissionId}-${kind}.txt`;
+    return { blob: await response.blob(), fileName };
+  },
   updateUser: (id: number, payload: { name?: string | null; credit?: number; isInternal?: boolean; isPremium?: boolean }) =>
     request<{ user: User }>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateUserPassword: (id: number, password: string) =>
