@@ -9,6 +9,8 @@ import { UserDetailsDialog } from "./components/UserDetailsDialog";
 import { UserNameDialog } from "./components/UserNameDialog";
 import { UserPaymentHistory } from "./components/UserPaymentHistory";
 import { UserAccessHistory } from "./components/UserAccessHistory";
+import { UserCustomPrompts } from "./components/UserCustomPrompts";
+import { UserUrlSubmissions } from "./components/UserUrlSubmissions";
 import { useAuth } from "../../auth/AuthContext";
 
 const time = (value: string | null) => value ? new Date(value).toLocaleString() : "—";
@@ -107,6 +109,8 @@ export function UserDetailsPage() {
           {!details.profiles.length && <Table.Row><Table.Cell colSpan={canEditClients ? 6 : 5}>No profiles yet.</Table.Cell></Table.Row>}
         </Table.Body></Table.Root>
       </Box>
+      <UserCustomPrompts key={`prompts-${id}`} userId={id} />
+      <UserUrlSubmissions key={`urls-${id}`} userId={id} />
       <UserPaymentHistory key={id} userId={id} />
       <UserAccessHistory key={`access-${id}`} userId={id} />
       {editing && <UserDetailsDialog user={details.user} onClose={() => setEditing(false)} onSaved={(user) => { update(user); setEditing(false); }} />}

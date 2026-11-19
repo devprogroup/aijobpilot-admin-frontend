@@ -141,6 +141,28 @@ export interface ApplicationFilters {
 export type ApplicationSortKey = "id" | "status" | "job" | "company" | "site" | "source" | "user" | "profile" | "createdAt" | "appliedAt";
 export interface ApplicationFilterUser { id: number; name: string | null; username: string; email: string | null }
 export interface ApplicationFilterProfile { id: number; name: string | null; isDeleted: boolean }
+/** The client's own prompt rules; null means the default is used. */
+export interface UserCustomPrompts {
+  resumeTailorRules: string | null;
+  resumeTailorRulesTokens: number | null;
+  coverLetterRules: string | null;
+  answerRules: string | null;
+}
+
+export type UrlSubmissionFileKind = "source" | "total" | "auto-applicable" | "unsupported" | "invalid";
+
+export interface UserUrlSubmission {
+  id: number;
+  fileName: string | null;
+  status: "raw" | "queued" | "parsing" | "parsed";
+  totalCount: number;
+  autoApplicableCount: number;
+  unsupportedCount: number;
+  invalidCount: number;
+  createdAt: string;
+  parsedAt: string | null;
+}
+
 export interface UserDetails {
   user: User;
   profiles: { id:number; name:string|null; email:string|null; status:string; lastApplicationAt:string|null }[];
