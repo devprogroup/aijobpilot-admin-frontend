@@ -394,7 +394,7 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
   const [page, setPage] = useState(0);
   const rows = summary?.byCrawler ?? [];
   const pageCount = Math.max(1, Math.ceil(rows.length / CRAWLER_ROWS_PER_PAGE));
-  // The 15 s refresh can change how many crawlers ran today.
+  // The 15 s refresh can change how many crawlers ran in the last 24 hours.
   const currentPage = Math.min(page, pageCount - 1);
   const pageRows = rows.slice(currentPage * CRAWLER_ROWS_PER_PAGE, (currentPage + 1) * CRAWLER_ROWS_PER_PAGE);
   return (
@@ -409,11 +409,11 @@ function CrawlerSummarySection({ summary }: { summary: CrawlerSummary | null }) 
             <Text as="div" fontSize="xs" color="gray.400">
               {total ? (
                 <>
-                  {`${total.runs.toLocaleString()} runs started today · `}
+                  {`${total.runs.toLocaleString()} runs started in the last 24 hours · `}
                   <RunningCrawlers running={summary?.running ?? []} />
                   {` · ${total.failedRuns} failed`}
                 </>
-              ) : "Runs started today"}
+              ) : "Runs started in the last 24 hours"}
             </Text>
           </Box>
         </Flex>
@@ -658,10 +658,12 @@ export function DashboardPage() {
     catch { setApplicationSummary(null); }
   }, []);
 
+  // A rolling 24 hours, not the calendar day: the daily crawl runs at 01:00 UTC, so a local "today"
+  // that started after it (east of UTC) showed nothing but zeros until the next crawl.
   const loadCrawlerSummary = useCallback(async () => {
-    const today = todayDateInput();
-    const { from, to } = dateFilterRange(today, today);
-    try { setCrawlerSummary(await api.crawlerSummary(from!, to!)); }
+    const to = new Date();
+    const from = new Date(to.getTime() - 24 * 60 * 60_000);
+    try { setCrawlerSummary(await api.crawlerSummary(from.toISOString(), to.toISOString())); }
     catch { setCrawlerSummary(null); }
   }, []);
 
