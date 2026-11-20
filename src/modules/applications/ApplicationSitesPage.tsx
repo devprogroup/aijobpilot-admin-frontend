@@ -92,10 +92,10 @@ export function ApplicationSitesPage() {
         </Flex>
         <Box overflowX="auto">
           <Table.Root minW="900px" size="sm">
-            <Table.Header bg="gray.50"><Table.Row>{["Display text", "Type name", "Domain pattern", "Status", "Mode", "New context", "Input gap", "Submit delay", "Page timeout", "Wake up", "Actions"].map((label) => <Table.ColumnHeader key={label} px="4" py="3">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+            <Table.Header bg="gray.50"><Table.Row>{["Display text", "Type name", "Domain pattern", "Status", "Mode", "New context", "IP per run", "Input gap", "Submit delay", "Page timeout", "Wake up", "Actions"].map((label) => <Table.ColumnHeader key={label} px="4" py="3">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
             <Table.Body>
-              {loading && <Table.Row><Table.Cell colSpan={11} p="8" textAlign="center">Loading application sites...</Table.Cell></Table.Row>}
-              {!loading && !error && sites.length === 0 && <Table.Row><Table.Cell colSpan={11} p="8" textAlign="center" color="gray.500">No application sites configured yet. Add a site to get started.</Table.Cell></Table.Row>}
+              {loading && <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center">Loading application sites...</Table.Cell></Table.Row>}
+              {!loading && !error && sites.length === 0 && <Table.Row><Table.Cell colSpan={12} p="8" textAlign="center" color="gray.500">No application sites configured yet. Add a site to get started.</Table.Cell></Table.Row>}
               {!loading && sites.map((site) => <Table.Row key={site.id} _hover={{ bg: "gray.50" }}>
                 <Table.Cell px="4" py="4" fontWeight="semibold">{site.displayText}</Table.Cell>
                 <Table.Cell px="4">{site.typeName}</Table.Cell>
@@ -133,6 +133,20 @@ export function ApplicationSitesPage() {
                       aria-label={`New context required for ${site.displayText}`}
                       value={site.newContextRequired ? "yes" : "no"}
                       onChange={(event) => void updateSite(site, { newContextRequired: event.target.value === "yes" })}
+                    >
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Table.Cell>
+                <Table.Cell px="4">
+                  <NativeSelect.Root size="sm" disabled={pending === site.id}>
+                    <NativeSelect.Field
+                      aria-label={`Different IP for each run of ${site.displayText}`}
+                      title="Each application runs on a different VPN server (only on servers with VPN containers)"
+                      value={site.rotateIp ? "yes" : "no"}
+                      onChange={(event) => void updateSite(site, { rotateIp: event.target.value === "yes" })}
                     >
                       <option value="no">No</option>
                       <option value="yes">Yes</option>
