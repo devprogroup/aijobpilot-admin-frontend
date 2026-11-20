@@ -6,6 +6,8 @@ export interface ApplicationSite {
   domainRegex: string;
   active: boolean;
   newContextRequired: boolean;
+  /** A different IP (VPN server) for every application; only on a server with VPN_ENDPOINTS (prod). */
+  rotateIp: boolean;
   mode: "headless" | "headed" | "chrome-extension";
   fieldInputGapMs: number;
   submitDelayMs: number;

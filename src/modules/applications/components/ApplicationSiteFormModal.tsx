@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Dialog, Field, Flex, Input, NativeSelect, Portal, Textarea } from "@chakra-ui/react";
+import { Box, Button, Dialog, Field, Flex, Input, NativeSelect, Portal, Text, Textarea } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -15,6 +15,7 @@ const schema = yup.object({
   }),
   active: yup.boolean().required(),
   newContextRequired: yup.boolean().required(),
+  rotateIp: yup.boolean().required(),
   mode: yup.mixed<ApplicationSite["mode"]>().oneOf(["headless", "headed", "chrome-extension"]).required(),
   fieldInputGapMs: yup.number().typeError("Enter a number").integer().min(0).max(2147483647).required("Input gap is required"),
   submitDelayMs: yup.number().typeError("Enter a number").integer().min(0).max(2147483647).required("Submit delay is required"),
@@ -35,6 +36,7 @@ export function ApplicationSiteFormModal({ site, onClose, onSaved }: {
     defaultValues: {
       typeName: site?.typeName ?? "", displayText: site?.displayText ?? "", domainRegex: site?.domainRegex ?? "",
       active: site?.active ?? true, newContextRequired: site?.newContextRequired ?? false,
+      rotateIp: site?.rotateIp ?? false,
       mode: site?.mode ?? "headless", fieldInputGapMs: site?.fieldInputGapMs ?? 500,
       submitDelayMs: site?.submitDelayMs ?? 500,
       pageTimeout: site?.pageTimeout ?? 5000,
@@ -94,6 +96,10 @@ export function ApplicationSiteFormModal({ site, onClose, onSaved }: {
                   </Field.Root>
                   <Box as="label" display="flex" gap="2" alignItems="center"><input type="checkbox" {...register("active")} disabled={isSubmitting} />Active</Box>
                   <Box as="label" display="flex" gap="2" alignItems="center"><input type="checkbox" {...register("newContextRequired")} disabled={isSubmitting} />Require a new browser context</Box>
+                  <Box>
+                    <Box as="label" display="flex" gap="2" alignItems="center"><input type="checkbox" {...register("rotateIp")} disabled={isSubmitting} />Use a different IP for each run</Box>
+                    <Text fontSize="xs" color="gray.500" mt="1">Each application runs on its own VPN server. Only on servers with VPN containers (prod); elsewhere the site connects directly.</Text>
+                  </Box>
                   <Field.Root invalid={!!errors.config}>
                     <Field.Label>Config (JSON)</Field.Label>
                     <Textarea rows={5} fontFamily="mono" {...register("config")} disabled={isSubmitting} />
